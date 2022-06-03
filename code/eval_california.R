@@ -5,7 +5,7 @@ library(tidyverse)
 library(chillR)
 
 #load functions
-source('patching_function.R')
+source('code/patching_function.R')
 
 
 #prepare input data, only needed for first time, because then i saved the formated files

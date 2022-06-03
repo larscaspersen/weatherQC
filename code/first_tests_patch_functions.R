@@ -5,7 +5,7 @@ library(chillR)
 
 
 #read all patching functions
-source('patching_function.R')
+source('code/patching_function.R')
 
 ####
 #input data preparation

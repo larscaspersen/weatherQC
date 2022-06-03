@@ -3,7 +3,7 @@
 ########
 
 #load functions
-source('patching_function.R')
+source('code/patching_function.R')
 
 #read weather data
 tmin <- read.csv('data/salado_tmin.csv')
