@@ -1,0 +1,67 @@
+### R ###
+# History files
+.Rhistory
+.Rapp.history
+
+# folders containing figures, papers, old code
+reading/
+figures/
+code/old_code/
+code/old_code/UCIPM_list_90.RData
+code/old_code/UCIPM_list_aux_1.RData
+code/old_code/UCIPM_overview_90.RData
+code/old_code/UCIPM_overview_all.RData
+code/old_code/patch_california_workspace.RData
+
+# large objects just used for intermediate steps
+data/
+
+# Session Data files
+.RData
+.RDataTmp
+
+# User-specific files
+.Ruserdata
+
+# Example code in package build process
+*-Ex.R
+
+# Output files from R CMD build
+/*.tar.gz
+
+# Output files from R CMD check
+/*.Rcheck/
+
+# RStudio files
+.Rproj.user/
+
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+
+# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
+.httr-oauth
+
+# knitr and R markdown default cache directories
+*_cache/
+/cache/
+
+# Temporary files created by R markdown
+*.utf8.md
+*.knit.md
+
+# R Environment Variables
+.Renviron
+
+# pkgdown site
+docs/
+
+# translation temp files
+po/*~
+
+# RStudio Connect folder
+rsconnect/
+
+### R.Bookdown Stack ###
+# R package: bookdown caching files
+/*_files/
