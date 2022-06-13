@@ -1,7 +1,6 @@
 #scrap temperature records from wikipedia
 #follow example of https://towardsdatascience.com/scraping-data-from-wikipedia-tables-3efa04c6b53f
 library(tidyverse)
-library(rvest)
 
 #function to get temperature records
 get_temp_records <- function(region = 'world'){
@@ -10,15 +9,12 @@ get_temp_records <- function(region = 'world'){
     
     url <- 'https://en.wikipedia.org/wiki/List_of_countries_and_territories_by_extreme_temperatures'
     
-    temperature_html <- read_html(url)
-    
-    temperature_html %>% 
-      html_nodes(css = "table")
+    temperature_html <- rvest::read_html(url)
     
     temp_table <- temperature_html %>% 
-      html_nodes(css = "table") %>% 
+      rvest::html_nodes(css = "table") %>% 
       nth(1) %>% 
-      html_table(fill = TRUE, convert = F)
+      rvest::html_table(fill = TRUE, convert = F)
     
     cold <- readr::parse_number(temp_table$Coldest)
     
@@ -74,28 +70,6 @@ get_temp_records <- function(region = 'world'){
 
 
 
-#load cimis data
-load('data/CIMIS_list_90.RData')
-weather <- CIMIS_list_90[[1]]
-
-load('data/CIMIS_overview_90.RData')
-lat <- CIMIS_WS_90$Latitude[1]
-lon <- CIMIS_WS_90$Longitude[1]
-
-#fixed limit test
-#--> use the min and max record of california
-
-cal_rec <- records %>%
-  filter(State == 'California')
-
-var <- 'Tmin'
-
-tmin_flags <- tibble(fixed_limit_test = rep(FALSE, nrow(weather)),
-       variable_limit_test = rep(FALSE, nrow(weather)),
-       temporal_continuity_test = rep(FALSE, nrow(weather)),
-       spatial_consistency_test = rep(FALSE, nrow(weather)),
-       var_consistency_test = rep(FALSE, nrow(weather)))
-
 ###fixed limits test
 
 fixed_limit_test <- function(weather, level, var, country,  records = NULL){
@@ -119,7 +93,7 @@ fixed_limit_test <- function(weather, level, var, country,  records = NULL){
     
     #check if valide region is chosen
     valid_regions <- c('world', 'USA')
-    if(!level %in% valid_countries){
+    if(!level %in% valid_regions){
       stop(paste0('unvalid name for level You can only use: ', valid_regions, ' if the level you need is not available, then you need to research the records and supply them via "records"'))
     } 
     
@@ -153,61 +127,54 @@ fixed_limit_test <- function(weather, level, var, country,  records = NULL){
   
 }
 
-#only works with internet connection
-tmin_flags[, 'fixed_limit_test'] <- fixed_limit_test(weather = weather, 
-                                                     level = 'USA', 
-                                                     country = 'California', 
-                                                     var = 'Tmin')
 
 ###variable limit test
 
-variable_limit_test
+variable_limit_test <- function(weather, var, weather_coords, probs = c(0.01, 0.99),
+                                resolution = 0.5){
+  
+  #### download long term monthly means for the location
+  
+  #download weather data (if already downloaded the function will detect it and not download it a second time)
+  r <- raster::getData("worldclim",var=tolower(var),res= resolution, 
+               lon = weather_coords[1], lat = weather_coords[2])
+  
+  spatial_df <- sp::SpatialPoints(cbind(weather_coords[1], weather_coords[2]))
+  
+  #extract climate normals of worldclim data
+  values <- raster::extract(r,spatial_df)
+  values <- values / 10
 
-#take climate normals of world clim
-# library(raster)
-# library(sp)
-# 
-# r <- getData("worldclim",var="tmin",res=0.5, lon = lon, lat = lat)
-# 
-# meta_data <- CIMIS_WS_90[1,]
-# #create spatial dataframe
-# coordinates(meta_data) <- ~Longitude+Latitude
-# 
-# #extract climate normals of worldclim data
-# values <- extract(r,meta_data) 
-# values <- values / 10
-# 
-# #remove downloaded geospatial data
-# rm(r)
+  #remove downloaded geospatial data
+  rm(r)
+  
+  
+  #### create quantiles of deviation from monthly means 
+  
+  #split to monthly groups
+  monthly_weather <- split(weather, f = weather$Month)
+  
+  #get monthly percentiles
+  monthly_test <- purrr::map(monthly_weather, ~quantile(.x[,var], probs = c(probs[1], probs[2]), na.rm = T)) %>%
+    purrr::map2(monthly_weather, function(x,y)ifelse(is.na(y[,var]),yes = F, no = ((y[,var]<x[1])|y[,var]>x[2]))) %>%
+    purrr::map2(monthly_weather, cbind) %>%
+    do.call(rbind, .) %>%
+    arrange(Date) %>%
+    .[,1]
+  
+  #also test for yearly quantiles
+  yearly_test <- quantile(weather[,var], probs = c(probs[1], probs[2]), na.rm = T) %>%
+    {ifelse(is.na(weather[,var]), yes = F, no = ((weather[, var] < .[1])|(weather[,var]>.[2])))}
+  
+  return(yearly_test | monthly_test)
+
+}
 
 #function to add date column 
 add_date <- function(x){
   x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = '%Y-%m-%d')
   return(x)
 }
-
-#add date
-weather <- add_date(weather)
-
-#split to monthly groups
-monthly_weather <- split(weather, f = weather$Month)
-
-#get monthly percentiles
-monthly_perc <- purrr::map(monthly_weather, ~quantile(.x[,var], probs = c(0.01, 0.99), na.rm = T))
-
-var_consistency <-  purrr::map2(monthly_weather, monthly_perc, function(x,y)ifelse(is.na(x[,var]),yes = F, no = ((x[,var]<y[1])|x[,var]>y[2])))
-
-#bring back the var consistency to original format
-var_test <- purrr::map2(var_consistency, monthly_weather, cbind) %>%
-  do.call(rbind, .) %>%
-  arrange(Date)
-
-#also test for yearly quantiles
-yearly_quan <- quantile(weather[,var], probs = c(0.01, 0.99), na.rm = T)
-
-yearly_var_test <- ifelse(is.na(weather[,var]), yes = F, no = ((weather[, var] < yearly_quan[1])|(weather[,var]>yearly_quan[2])))
-
-tmin_flags[, 'variable_limit_test'] <- (yearly_var_test | var_test[,1])
 
 
 ###temporal continuity
@@ -223,9 +190,6 @@ temporal_continuity_test <-  function(weather, var, prob = 0.995){
   return(ifelse(is.na(diffs), yes = F, no = (diffs > jump_quan)))
   
 }
-
-tmin_flags[, 'temporal_continuity_test'] <- temporal_continuity_test(weather = weather,
-                                                                     var = var)
 
 
 #### consitstency between variables (I ignore the mean temperature for now)
@@ -244,35 +208,6 @@ temperature_consistency_test <- function(weather, probs = 0.99){
   
 }
 
-#if any of cons1, cons2 or cons3 is true, then tmin and tmax is labelled as doubious
-tmin_flags[, 'var_consistency_test'] <- temperature_consistency_test(weather = weather)
-
-
-
-#compute distance to weather station
-#extract data 
-#drop stations not fulfilling mininmum overlap of 40 days
-#calculate correlation coefficient with x, drop stations with value lower than 0.8
-#create selection of days for each day that is closest to the target observation from a three day window
-#perform regression
-#
-#
-load('data/CIMIS_list_90.RData')
-load('data/UCIPM_list_90.RData')
-load('data/UCIPM_list_aux_1.RData')
-
-CIMIS_WS_90$id <-  paste0('cimis_', CIMIS_WS_90$Stat_num)
-names(CIMIS_list_90) <- CIMIS_WS_90$id
-
-aux_data <- c(aux_data, CIMIS_list_90, UCIPM_list_90)
-rm(CIMIS_list_90, UCIPM_list_90)
-
-load('data/UCIPM_overview_all.RData')
-UCIPM_WS_51s_10s <-  rename(UCIPM_WS_51s_10s, id = chillR_code)
-
-aux_overview <- merge.data.frame(UCIPM_WS_51s_10s, CIMIS_WS_90, 
-                 by = c('id', 'Name', 'Latitude', 'Longitude'), all = T) %>%
-                dplyr::select(id, Name, Longitude, Latitude)
 
 select_target_days <- function(df, var, period_start, period_end){
   
@@ -495,9 +430,83 @@ spatial_consistency_test <- function(weather, weather_coords, aux_list, aux_info
   
 }  
 
-spat_flag <- spatial_consistency_test(weather = weather, 
-                         weather_coords = c(CIMIS_WS_90$Longitude[1], CIMIS_WS_90$Latitude[1]), 
-                         aux_list = aux_data, aux_info = aux_overview, var = 'Tmin')
+
+#outlier test combined
+
+test_for_outlier <- function(weather, weather_coords, var,
+                             aux_list, aux_info, level, country, records = NULL,
+                             probs_variable_limit = c(0.01, 0.99), resolution = 0.5,
+                             probs_temporal_continuity = 0.995,
+                             probs_temperature_consistency = 0.99,
+                             max_dist = 75, window_width = 75, 
+                             min_coverage = 40, min_correlation = 0.8,
+                             min_station = 3, max_station = 7, max_res = 8, 
+                             max_res_norm = 4){
+  
+  #if temperature, then Tmean is needed
+  if(var %in% c('Tmin', 'Tmax')){
+    if(!'Tmean' %in% colnames(weather)){
+      stop('For variable consistency test daily average temperature called "Tmean" is required')
+    }
+  }
+  
+  if(!'Date' %in% colnames(weather)){
+    weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
+                            format = '%Y-%m-%d')
+  }
+
+  #do testing of input stuff: 
+  #   weather needs to have certain columns
+  #   weather coords needs to be of length two and numeric
+  #   var should be tmin, tmax (or preciptiation)
+  #   aux_list needs to be list, names need to be same as in aux_info$id; colnames should contain same objects as weather does
+  #   aux_info needs to contain coordinates and date?
+  
+  #call fixed limits test
+  fixed_lim <- fixed_limit_test(weather = weather, level = level, 
+                   country = country,var = var)
+  
+  #call variable limits test
+  variable_lim <- variable_limit_test(weather = weather, var = var, weather_coords = weather_coords,
+                                      probs = probs_variable_limit, resolution = resolution)
+  
+  #call temporal consistency test
+  temporal_consistency <- temporal_continuity_test(weather = weather, var = var, 
+                                                   prob = probs_temporal_continuity)
+  
+  #call variable consistency test (only applicable for temperature data)
+  #make ifelse condition for temperature and precipitation
+  if(var %in% c('Tmin', 'Tmax')){
+    variable_consistency <- temperature_consistency_test(weather = weather,
+                                                            probs = probs_temperature_consistency)
+  } else if(var == 'Precip'){
+    variable_consistency <- NA
+  }
+  
+  
+  #call spatial consistency test
+  spatial_consistency <- spatial_consistency_test(weather = weather, 
+                                        weather_coords = weather_coords, 
+                                        aux_list = aux_list, aux_info = aux_info, 
+                                        var = var, max_dist = max_dist, 
+                                        window_width = window_width, 
+                                        min_coverage = min_coverage, 
+                                        min_correlation = min_correlation,
+                                        min_station = min_station, 
+                                        max_station = max_station, max_res = max_res, 
+                                        max_res_norm = max_res_norm)
+  
+  test_res <- tibble(fixed_lim, variable_lim, temporal_consistency, variable_consistency, 
+                    spatial_consistency)
+  
+  test_res$outlier <- rowSums(test_res, na.rm = T) >= 2
+  
+  return(test_res)
+}
+
+
+
+
 
 
 
@@ -505,77 +514,6 @@ spat_flag <- spatial_consistency_test(weather = weather,
 
 
  
- library(tidyverse)
- 
- weather <- gw$weather %>%  
-   dplyr::select(Date, Year, Month, Day,`Minimum Air Temperature`,
-                 `Average Air Temperature`, `Maximum Air Temperature`,Precipitation) %>%
-   dplyr::rename(Tmin = `Minimum Air Temperature`,
-                 Tmean = `Average Air Temperature`,
-                 Tmax = `Maximum Air Temperature`,
-                 Prec = Precipitation) 
- 
- 
- 
- 
- 
- 
-stat_list <- data.frame("Station Number" = c("119", "139", "6"),
-                        Latitude = c(38.49500, 38.50126, 38.53569),
-                        Longitude = c(-122.0040, -121.9785, -121.7764),
-                        Start_date =c("1993-08-21 UTC", "1998-06-15 UTC", "1982-07-17 UTC"),
-                        End_date = c("1995-01-25", "2016-03-06", "2016-03-06"))
 
 
-
-
-
-
-meta_data
-
-gw <- handle_cimis(action = "download_weather",location = "2",
-                   time_interval = c(1990 ,2020))
-
-#remove values which are flagged to be suspicious
-drop <- gw$weather$`QC for Maximum Air Temperature` %in% c('R', 'S', 'I')
-gw$weather[drop, ]$`Maximum Air Temperature`
-
-drop <- gw$weather$`QC for Minimum Air Temperature` %in% c('R', 'S', 'I')
-gw$weather[drop, ]$`Minimum Air Temperature`
-
-drop <- gw$weather$`QC for Precipitation` %in% c('I', 'S', 'H', 'R')
-gw$weather[drop, ]$Precipitation
-gw$weather[drop, ]$`QC for Precipitation`
-
-
-
-
-
-
-
-#evaluate the dataset with the plausability checks and then see which data is marked
-
-#check quality control flags from other sources
-#ucipm, gsod, dwd
-load('data/UCIPM_overview_90.RData')
-dat <- handle_ucipm(action = "download_weather", location = UCIPM_WS_90$chillR_code[1], time_interval = c(1951,2021))
-
-#ucipm did not state on the quality control and did not supply qc flags
-
-load('data/GSOD_overview_90.RData')
-
-#use gsodr package
-inventory <- GSODR::get_inventory()
-inventory %>%
-  filter(CTRY == 'US', STATE == 'CA', BEGIN <= 19510101, END >= 20201231)
-tbar <- GSODR::get_GSOD(station = '722860-23119', years = 1951:2020)
-
-str(tbar)
-vignette("GSODR", package = "GSODR")
-
-as.factor(tbar$PRCP_ATTRIBUTES)
-rm(tbar, dat)
-
-#handle_gsod(action = "download_weather", location = GSOD_WS_90$STNID[1], time_interval = c(1951,2021))
-#
 
