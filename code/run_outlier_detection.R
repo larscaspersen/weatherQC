@@ -1,4 +1,5 @@
 #run outlier analysis
+library(tidyverse)
 
 #load CIMIS data
 target_info <- readRDS('data/cimis-overveiw.RData')
@@ -33,6 +34,9 @@ weather_coords <- c(target_info$Longitude[1], target_info$Latitude[1])
 test_res <- test_for_outlier(weather = weather_list[[id]], weather_coords = weather_coords, 
                                  var = 'Tmin', aux_list = aux_data, aux_info = aux_overview, 
                                  level = 'world', country = 'United States')
+
+test <- precipitation_spatial_corrobation_test(weather = weather, weather_coords = weather_coords,
+                                       aux_info = aux_overview, aux_list = aux_data)
 
 #combine test results with weather data
 test_res <- tibble(weather, test_res)
