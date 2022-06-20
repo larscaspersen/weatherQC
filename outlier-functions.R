@@ -1182,6 +1182,71 @@ perform_climate_outlier_check <- function(weather, var, max_temperature_z = 6,
 
 #iterative temperature consistency
 
+weather <- weather_list[[1]]
+
+quickker_iterat_consistency <- function(weather){
+  
+  #this objects determines how long the while loop goes, start value is arbetrary and just chosen, so that the while loop runs at least one time
+  max_violations <- 2
+  
+  #object to save the flags
+  tmin_flag <- tmax_flag <- tmean_flag <- rep(FALSE, nrow(weather))
+  
+  while(max_violations > 1){
+    #check which observations are available
+    tmin0 <- is.na(weather$Tmin) == FALSE
+    tmin1 <- is.na(tmin_lead) == FALSE
+    tmax0 <- is.na(weather$Tmax) == FALSE
+    tmax1 <- is.na(tmax_lead) == FALSE
+    tmean0 <- is.na(weather$Tmean) == FALSE
+    
+    #objects to count the amount of positive tests 
+    tmin_violations <- tmax_violations <- tmean_violations <- rep(0, nrow(weather))
+    
+    #1
+    t1 <- ifelse(tmax0 & tmin0, yes = weather$Tmax < (weather$Tmin-1), no = FALSE)
+    
+    #2
+    t2 <- ifelse(tmean0 & tmax0, yes = ifelse(weather$Tmean > (weather$Tmax + 1), yes = TRUE, no = FALSE), no = FALSE)
+    
+    #3
+    t3 <- ifelse(tmean0 & tmin0, yes = weather$Tmean < (weather$Tmin + 1), no = FALSE)
+    
+    #4
+    t4 <- ifelse(tmax0 & tmin1, yes = (weather$Tmax < (lead(weather$Tmin) - 1)), no = FALSE)
+    
+    #5
+    t5 <- ifelse(tmin0 & tmax1, yes = weather$Tmin > (lead(weather$Tmax) + 1), no = FALSE)
+    
+    #6
+    t6 <- ifelse(tmax1 & tmean0, yes = lead(weather$Tmax) < (weather$Tmin -1), no = FALSE)
+    
+    #7
+    t7 <- ifelse(tmin1 & tmean0, yes = lead(weather$Tmin) > (weather$Tmean +1), no = FALSE)
+    
+    #count the amount of positive tests per reading, account for lead values
+    tmax_violations <- t1 + t2 + t4 + lag(t5) + lag(t6)
+    tmin_violations <- t1 + t3 + t5 + lag(t4) + lag(t7)
+    tmean_violations <- t2 + t3 + t6 + t7
+    
+    #identify max amount of violations
+    max_violations <- max(tmax_violations, tmin_violations, tmean_violations, na.rm = T)
+    
+    #mark in flag objects which entries will be removed
+    tmin_flag[tmin_violations == max_violations] <- TRUE
+    tmax_flag[tmax_violations == max_violations] <- TRUE
+    tmean_flag[tmean_violations == max_violations] <- TRUE
+    
+    #remove objects from weather
+    weather$Tmin[tmin_flag] <- NA
+    weather$Tmax[tmax_flag] <- NA
+    weather$Tmean[tmean_flag] <- NA
+  }
+  
+  return(data.frame(tmin_flag, tmean_flag, tmax_flag))
+
+}
+
 perform_iterative_temperature_consistency <- function(weather){
   
   #flag which is later returned
@@ -1298,8 +1363,10 @@ perform_iterative_temperature_consistency <- function(weather){
 #temperature day at 0 is larger than +-25 than day -1 and 1
 
 do_spike_dip_test <- function(weather, var, dip_threshold = 25){
-  return(abs(weather[,var] - lead(weather[,var])) >= dip_threshold & abs(weather[,var] - lag(weather[,var])) >= dip_threshold
-)
+  flag <- abs(weather[,var] - lead(weather[,var])) >= dip_threshold & abs(weather[,var] - lag(weather[,var])) >= dip_threshold
+  
+  flag <- replace_na(flag[,1], FALSE)
+  return(flag)
 }
 
 #lagged range test
@@ -1614,6 +1681,64 @@ durre_weather_quality_control <- function(weather_list, weather_info){
                                                                    var = 'Precip'), 
                        test_name = 'clim_outlier')
   })
+  
+  
+  ######
+  #Temporal consistency checks
+  ######
+  
+  #iterative temperature consistency
+  
+  test_list <- map(weather_list, quickker_iterat_consistency)
+  
+  weather_list <- map2(weather_list, test_list, function(x,y){
+    clear_flagged_data(weather = x, var = 'Tmin', test_result = y$tmin_flag, 
+                       test_name = 'iterative_consistency')
+  })
+  
+  weather_list <- map2(weather_list, test_list, function(x,y){
+    clear_flagged_data(weather = x, var = 'Tmax', test_result = y$tmax_flag, 
+                       test_name = 'iterative_consistency')
+  })
+ 
+  #spike - dip check
+  #tmin
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmin', 
+                       test_result = do_spike_dip_test(weather = x, 
+                                                                   var = 'Tmin'), 
+                       test_name = 'spike-dip')
+  })
+  
+  #tmax
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmax', 
+                       test_result = do_spike_dip_test(weather = x, 
+                                                       var = 'Tmax'), 
+                       test_name = 'spike-dip')
+  })
+
+  
+  #lagged temperature range check
+  
+  
+  
+  #####
+  #spatial consistency check
+  #####
+  
+  #regression check
+  
+  #corrobation check: temperature
+  
+  #corrobation check: precipitation
+  
+  
+  ####
+  #mega consistency check
+  ####
+  
+  #extremes mega consistency check
   
   
 }
