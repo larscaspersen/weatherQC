@@ -123,7 +123,9 @@ fixed_limit_test <- function(weather, level, var, country,  records = NULL){
     
   }
   
-  return(ifelse(is.na(weather[,var]),yes = FALSE, no = (weather[,var] < records[1]) | (weather[,var] > records[2])))
+  flag <- ifelse(is.na(weather[,var]),yes = FALSE, no = (weather[,var] < records[1]) | (weather[,var] > records[2]))
+  
+  return(as.logical(flag))
   
 }
 
@@ -180,30 +182,6 @@ add_date <- function(x){
 ###temporal continuity
 #calculate absolute difference to next day
 #add doy to weather
-doy <- 1
-#get doys of target days
-lim_doy <- doy + c(-7,7)
-#adjust for lower lims in old year
-lim_doy <- ifelse(lim_doy <= 0, yes = lim_doy + 365,no = lim_doy)
-#adjsut for upper lims in new year
-lim_doy <- ifelse(lim_doy >= 365, yes = lim_doy - 365, no = lim_doy)
-#if the range of days falls inbetween two years, than different subsetting needed
-if(lim_doy[1] > lim_doy[2]){
-  
-  target_days <- weather$doy >= lim_doy[1] | weather$doy <= lim_doy[2]
-  
-} else {
-  
-  target_days <- weather$doy >= lim_doy[1] | weather$doy <= lim_doy[2]
-}
-
-mean(weather[target_days,'Tmin'], na.rm = T)
-
-
-
-
-weather$doy
-
 
 temporal_continuity_test <-  function(weather, var, prob = 0.995){
   #calculate difference to next day, append one NA to keep same length
@@ -737,10 +715,6 @@ test_for_outlier <- function(weather, weather_coords, var,
 # -same calendar month of different years
 # -between TMAX and TMIN: Tmax == Tmin for at least 10 days or mor of a month
 
-var <- 'Tmin'
-
-
-
 get_duplicated_values <- function(weather, var){
   
   #instanice the flags
@@ -782,13 +756,13 @@ get_duplicated_values <- function(weather, var){
     
     #for this year(s) checj which months are duplciated
     res1 <- weather %>%
-      filter(Year == sus_year) %>%
+      filter(Year %in% sus_year) %>%
       split(.$Year) %>%
       map(function(x) duplicated(split(x[,var], x$Month))) %>%
       map(which)
     
     res2 <-weather %>%
-      filter(Year == sus_year) %>%
+      filter(Year %in% sus_year) %>%
       split(.$Year) %>%
       map(function(x) duplicated(split(x[,var], x$Month), fromLast=TRUE)) %>%
       map(which)
@@ -828,13 +802,13 @@ get_duplicated_values <- function(weather, var){
     
     #for this year(s) checj which months are duplciated
     res1 <- weather %>%
-      filter(Month == sus_month) %>%
+      filter(Month %in% sus_month) %>%
       split(.$Month) %>%
       map(function(x) duplicated(split(x[,var], x$Year))) %>%
       map(which)
     
     res2 <-weather %>%
-      filter(Month == sus_month) %>%
+      filter(Month %in% sus_month) %>%
       split(.$Month) %>%
       map(function(x) duplicated(split(x[,var], x$Year), fromLast=TRUE)) %>%
       map(which)
@@ -867,11 +841,10 @@ get_duplicated_values <- function(weather, var){
 
 
 
+
+
 ###repition checks
 
-
-#add date to weather
-weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'), '%Y-%m-%d')
 
 get_streaks <- function(weather, var, rep_threshold = 20){
   
@@ -903,14 +876,9 @@ get_streaks <- function(weather, var, rep_threshold = 20){
   return(weather$Date %in% pull(sus_days))
 }
 
-get_streaks(weather, 'Precip')
-
-
 
 #identical value frequent check
 #only applies to precipitaiton
-
-weather$doy <- lubridate::yday(weather$Date)
 
 #helper function to check if a frequent value exceeds the threshold
 helper_check_frequent_val <-  function(val, val_rep,doy, percentile_df){
@@ -931,22 +899,26 @@ helper_check_frequent_val <-  function(val, val_rep,doy, percentile_df){
     stop("Repitions not higher than the needed minimum of repitions (=5)")
   }
   
-  return(val >= as.numeric(percentile_df[doy,col_check]))
+  #check if value is available in percentile df, if it is NA, return FALSE
+  if(is.na(percentile_df[doy,col_check]) == T){
+    return(FALSE)
+  } else{
+   
+  #return test result, if val is greater or equal to percentile
+   return(val >= as.numeric(percentile_df[doy,col_check])) 
+  }
+  
+
   
 }
 
-#create data frame, setting the climatic percentiles of precipitation 
-perc_df <- map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, doy = .x, probs = probs, min_non_zero_days = min_non_zero_days)) %>%
-  bind_rows() %>%
-  mutate(doy = unique(weather$doy))
-
 #only aplicable for precipitation
 frequent_value_check <- function(weather, percentile_df, min_identical = 5, 
-                                 min_non_zero_days = 20 ){
+                                 min_non_zero_days = 20){
   
   #drop na values, and 0
   x <- weather %>%
-    na.omit(Precip) %>%
+    .[is.na(.$Precip) == FALSE,] %>%
     filter(Precip > 0)
   
   #flag 
@@ -960,6 +932,8 @@ frequent_value_check <- function(weather, percentile_df, min_identical = 5,
       if(sum(table(x[i:(i+9),'Precip'])>=min_identical) == 1){
         #extract the value of repitions and check if the repeated value exceeds the limits of the test
         val_rep <- table(x[i:(i+9),'Precip'])[table(x[i:(i+9),'Precip'])>=min_identical]
+        
+        #look up if repeated value exceeds the threshold in percentile df
         if(helper_check_frequent_val(val = as.numeric(names(val_rep)), val_rep = val_rep, 
                               doy = weather$doy[i], percentile_df = percentile_df)){
           
@@ -972,6 +946,9 @@ frequent_value_check <- function(weather, percentile_df, min_identical = 5,
       } else{
         #case that we have two times repitions of 5
         sus_val_present <- as.numeric(names(table(x[i:(i+9),'Precip']))) >= as.numeric(percentile_df[weather$doy[i],"90%"])
+        
+        #in case the check returned NA, change it to FALSE instead
+        sus_val_present[is.na(sus_val_present)] <- FALSE
         
         #at least one exceeds the test
         if(any(sus_val_present)){
@@ -988,11 +965,23 @@ frequent_value_check <- function(weather, percentile_df, min_identical = 5,
     
   }
   
-  return(frequent_value_flag)
+  #need to bring frequent value flag to same size as weather again
+  
+  #bind flag to x
+  x$flag <- frequent_value_flag
+  
+  #merge x and weather
+  weather <- merge(weather, x, by = colnames(weather), all.x = T) %>%
+    arrange(Date)
+  
+  #change NAs in Flag to FALSE
+  weather$flag[is.na(weather$flag)] <- FALSE
+  
+  #return flag
+  return(weather$flag)
   
 }
 
-frequent_value_check(weather = weather, percentile_df = perc_df)
 
 #####
 #outlier checks
@@ -1026,7 +1015,7 @@ get_gap_monthly <- function(x, temp =TRUE, gap_threshold){
   
   if(temp == TRUE){
     #detect position of median. make this the new start for the search
-    start <-which.quantile(x,probs = 0.5)
+    start <- which.quantile(x,probs = 0.5)
     
     #increment for next iteration, in case of temperature go up and go down
     step <- c(1,-1)
@@ -1094,10 +1083,10 @@ perform_gap_check <- function(weather, var, temp_gap_threshold = 10,
     x <- x[is.na(x[,var]) == FALSE,]
     
     #sort decreasing 
-    x <- x[order(x[,var]),]
+    x <- arrange(x, x[,var])
     
     #get monthly flag
-    x$gap_flag <-  get_gap_monthly(x[,var], gap_threshold = gap_threshold)
+    x$gap_flag <-  get_gap_monthly(x = x[[var]], gap_threshold = gap_threshold)
     
     return(x)
     
@@ -1106,17 +1095,16 @@ perform_gap_check <- function(weather, var, temp_gap_threshold = 10,
     arrange(Date) %>%
     merge.data.frame(weather, ., by = colnames(weather), all.x = TRUE) %>%
     select(gap_flag)
+  
+  #replace NAs with FALSE values
+  gap_flag <- gap_flag[,1] %>%
+    replace_na(FALSE)
 
   #return gap_flag column
-  return(as.logical(gap_flag[,1]))
+  return(gap_flag)
 
 
 }
-
-perform_gap_check(weather = weather, var = 'Tmin')
-
-
-doy <- 8
 
 #get long term mean and sd of each doy for a window of 15days centered at day of interest
 get_longterm_mean_and_sd <- function(weather, var, doy){
@@ -1143,8 +1131,8 @@ get_longterm_mean_and_sd <- function(weather, var, doy){
 
   
   return(data.frame(doy = doy,
-                    mean = mean(weather[target_days, var], na.rm =T), 
-                    sd = sd(weather[target_days, var], na.rm =T)))
+                    mean = mean(weather[[var]][target_days], na.rm =T), 
+                    sd = sd(weather[[var]][target_days], na.rm =T)))
 
 }
 
@@ -1164,7 +1152,11 @@ perform_climate_outlier_check <- function(weather, var, max_temperature_z = 6,
     weather <- merge(weather, clim_df, by = 'doy') %>%
       arrange(Date)
     
-    return(abs((weather[,var] - weather$mean) / weather$sd) > max_temperature_z)
+    clim_outlier <- abs((weather[,var] - weather$mean) / weather$sd) > max_temperature_z
+      
+    clim_outlier <- replace_na(data = clim_outlier, replace = FALSE)
+    
+    return(clim_outlier)
   } else if(var == 'Precip'){
     
     weather <- map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
@@ -1177,6 +1169,9 @@ perform_climate_outlier_check <- function(weather, var, max_temperature_z = 6,
     #in case precipitation happening at freezing temperatures, choose a lower threshold
     clim_outlier <- weather[,var] >= ifelse((weather$Tmax + weather$Tmin) / 2 > 0, yes = weather$percentile * max_prec_threshold, 
            no = weather$percentile * max_prec_threshold_freezing)
+    
+    #change na to false
+    clim_outlier <- replace_na(data = clim_outlier, replace = FALSE)
     
     return(clim_outlier)
   }
@@ -1299,9 +1294,6 @@ perform_iterative_temperature_consistency <- function(weather){
                     'Tmax_flag' = tmax_flag))
 }
 
-perform_iterative_temperature_consistency(weather)
-
-
 #spike and dip check
 #temperature day at 0 is larger than +-25 than day -1 and 1
 
@@ -1343,9 +1335,6 @@ perform_lagged_temperature_check <- function(weather, max_diff = 40){
   return(data.frame('Tmin_flag' = (tmin_flag | tmin_flag2), 
                     'Tmax_flag' = (tmax_flag | tmax_flag2)))
 }
-
-perform_lagged_temperature_check(weather = weather)
-
 
 ###
 #temperature corrobation check
@@ -1421,35 +1410,55 @@ perform_naught_check <- function(weather){
 }
 
 
+#helper function: clear flagged values, mark which test lead to the removel
+clear_flagged_data <- function(weather, var, test_result, test_name){
+  #set values to NA for positive test results
+  weather[test_result, var] <- NA
+  
+  #indicate which test lead to removal
+  weather[test_result, paste0('org_', var)] <- test_name
+  
+  return(weather)
+}
+
+#helper function to carry out the climate percentile check for all doys
+get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7, .9)){
+  
+  names <- c('doy', paste0(probs * 100, '%'))
+  
+  map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
+                                                       doy = .x,
+                                                       probs = probs)) %>%
+    do.call(rbind, .) %>%
+    data.frame(doy = unique(weather$doy), .) %>%
+    `colnames<-`(names)
+}
+
+region <- 'USA'
+sub_region <- 'California'
+
 durre_weather_quality_control <- function(weather_list, weather_info){
   
   #add a column to weather_list objects indicating which test performed positive
-  weather_list <- map(weather_list, function(x) tibble(x, 'Tmin_org' = x$Tmin, 
+  #also add Date and doy
+  weather_list <- map(weather_list, function(x) tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d"),
+                                                       'Tmin_org' = x$Tmin, 
                                                        'Tmax_org' = x$Tmax, 'Precip_org' = x$Precip,
                                                        'Tmin_flag' = NA, 'Tmax_flag' = NA, 
-                                                       'Precip_flag' = NA))
+                                                       'Precip_flag' = NA) %>%
+                        mutate(doy = lubridate::yday(Date)))
   
   ####
   #basic integrity check
   ####
-  
-  clean_data <- function(weather, var, test_result, test_name){
-    #set values to NA for positive test results
-    weather[test_result, var] <- NA
-    
-    #indicate which test lead to removal
-    weather[test_result, paste0('org_', var)] <- test_name
-    
-    return(weather)
-  }
-  
+
   #1: naught check
-  weather_list <- map(weather_list, function(x) clean_data(weather = x, 
+  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, 
                                            var = 'Tmin', 
                                            test_result = perform_naught_check(x),
                                            test_name = 'naught_check'))
   
-  weather_list <- map(weather_list, function(x) clean_data(weather = x, 
+  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, 
                                                            var = 'Tmax', 
                                                            test_result = perform_naught_check(x),
                                                            test_name = 'naught_check'))
@@ -1457,33 +1466,156 @@ durre_weather_quality_control <- function(weather_list, weather_info){
   #2 duplicate check
   #between entire years only for precipitation
   #tmin
-  weather_list <- map(weather_list, function(x) clean_data(weather = x, var = 'Tmin', 
+  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, var = 'Tmin', 
                                            test_result = get_duplicated_values(weather = x, var = 'Tmin'), 
                                            test_name = 'duplicated'))
+  
   #tmax
-  weather_list <- map(weather_list, function(x) clean_data(weather = x, var = 'Tmax', 
+  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, var = 'Tmax', 
                                                            test_result = get_duplicated_values(weather = x, var = 'Tmax'), 
                                                            test_name = 'duplicated'))
   #precipitation
-  weather_list <- map(weather_list, function(x) clean_data(weather = x, var = 'Precip', 
+  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, var = 'Precip', 
                                                            test_result = get_duplicated_values(weather = x, var = 'Precip'), 
                                                            test_name = 'duplicated'))
   
+  ###Problem: flags also months with only NAs (this doesn't make sense)
+  #           flags month with sparse precipitation, especially completely dry months
+  
+  #### record exceedance test
+  
+  #download records
+  records <- get_temp_records(region = region) %>%
+    filter(Country == sub_region)
+  
+  #Tmin
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmin', 
+                       test_result = fixed_limit_test(weather = x, 
+                                                      var = 'Tmin',
+                                                      level = NULL,
+                                                      country = NULL,
+                                                      records = c(records$Tmin, records$Tmax)), 
+                       test_name = 'record_exceedance')
+  })
+  
+  #Tmax
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmax', 
+                       test_result = fixed_limit_test(weather = x, 
+                                                      var = 'Tmax',
+                                                      level = NULL,
+                                                      country = NULL,
+                                                      records = c(records$Tmin, records$Tmax)), 
+                       test_name = 'record_exceedance')
+  })
+  
+  #Precipitation
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Precip', 
+                       test_result = fixed_limit_test(weather = x, 
+                                                      var = 'Precip',
+                                                      level = NULL,
+                                                      country = NULL,
+                                                      records = c(0, records$Precip)), 
+                       test_name = 'record_exceedance')
+  })
   
   
-  #record exceedence test
-  #tmin
+  #identical value streak test
   
-  #change fixed limit test, so that the download only happns once
+  #Tmin
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmin', 
+                       test_result = get_streaks(weather = x, 
+                                                      var = 'Tmin'), 
+                       test_name = 'streaks')
+  })
+  
+  #Tmax
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmax', 
+                       test_result = get_streaks(weather = x, 
+                                                 var = 'Tmax'), 
+                       test_name = 'streaks')
+  })
+  
+  #Precip
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Precip', 
+                       test_result = get_streaks(weather = x, 
+                                                 var = 'Precip'), 
+                       test_name = 'streaks')
+  })
+  
+  #calculate percentiles for each weather df, store in list
+  prec_percentile_list <- map(weather_list, get_each_day_precipitation_percentile)
   
   
+  weather_list <- map2(weather_list, prec_percentile_list, function(x,y){
+    clear_flagged_data(weather = x, var = 'Precip', 
+                       test_result = frequent_value_check(weather = x, 
+                                                          percentile_df = y),
+                       test_name = 'frequent_ident_value')
+  })
   
-  map(weather_list, function(x) clean_data(weather = x,var = 'Tmin',
-                                           test_result = fixed_limit_test()))
   
-  table(weather_list[[1]]$Tmin_flag)
-  table(weather_list[[1]]$Tmax_flag)
-  table(weather_list[[1]]$Precip_flag)
+  ####
+  #outlier checks
+  ####
+  
+  #gap check
+  #Tmin
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmin', 
+                       test_result = perform_gap_check(weather = x, 
+                                                 var = 'Tmin'), 
+                       test_name = 'gap_check')
+  })
+  
+  #Tmax
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmax', 
+                       test_result = perform_gap_check(weather = x, 
+                                                       var = 'Tmax'), 
+                       test_name = 'gap_check')
+  })
+  
+  #Precip
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Precip', 
+                       test_result = perform_gap_check(weather = x, 
+                                                       var = 'Precip'), 
+                       test_name = 'gap_check')
+  })
+  
+
+  #climatological outlier
+  #Tmin
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmin', 
+                       test_result = perform_climate_outlier_check(weather = x, 
+                                                       var = 'Tmin'), 
+                       test_name = 'clim_outlier')
+  })
+  
+  #Tmax
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Tmax', 
+                       test_result = perform_climate_outlier_check(weather = x, 
+                                                                   var = 'Tmax'), 
+                       test_name = 'clim_outlier')
+  })
+  
+  #Precip
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, var = 'Precip', 
+                       test_result = perform_climate_outlier_check(weather = x, 
+                                                                   var = 'Precip'), 
+                       test_name = 'clim_outlier')
+  })
+  
+  
 }
 
 
