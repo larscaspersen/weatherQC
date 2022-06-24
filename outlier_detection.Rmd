@@ -1,0 +1,380 @@
+---
+
+title: "Outlier detection functions"
+author: "Lars Caspersen"
+date: '2022-06-13'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gridExtra) #for side by side plots
+```
+
+## Principle
+
+Screening for outlier in weather data is important. Erroneous weather data can be introduced to weather data sets for example via to malfunctioning of sensors or in the form of "false zeros", where a zero is intended to represent actually a missing data point instead an actual measurement. Often agencies collecting and providing data for the public exercise outlier detection and either mark suspicious weather readings with quality flags or remove them from the data set. Often there are automated checks based on deviations from confidence intervals (for example in CIMIS). I need to make more literature review! 
+
+For my master thesis I originally planned to do some chill analysis for California (since the last proper one is almost ten years ago). I noticed that especially the CIMIS weather data set is full of outliers. Some are easy to spot, but others are more subtle.
+
+
+```{r, echo=FALSE, warning=FALSE}
+
+#load outlier functions
+source('code/outlier-functions.R')
+
+#load target and aux data
+aux_data <- readRDS('data/quality_control_aux-data.RData')
+aux_info <- readRDS('data/quality_control_aux-info.RData')
+weather_list <- readRDS('data/quality_control_target-data.RData')
+weather_info <- readRDS('data/quality_control_target-info.RData')
+
+#set theme
+theme_set(theme_bw(base_size = 15))
+
+weather <- weather_list[[1]] 
+weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'), format = '%Y-%m-%d')
+
+
+x_upper_outlier <- c('1990-07-02', '1992-01-15', '1990-12-15', '1990-12-25')
+y_upper_outlier <- c(84, 40, 38, 33)
+
+p1 <- ggplot(weather, aes(x = Date, y = Tmin)) + geom_line() +
+  geom_hline(yintercept = c(-43,57), linetype = 'dashed')+
+   annotate(geom = 'text', x = as.Date('1995-01-01'), y = c(-50,65), label = "California Temperature Records", hjust = "left") +
+  coord_cartesian(ylim = c(-100,100))
+
+
+p2 <- ggplot(weather, aes(x = Date, y = Tmin)) + geom_line() +
+  geom_point()+
+  coord_cartesian(ylim = c(-5,25), xlim = as.Date(c('2009-06-01', '2009-06-30')))
+
+
+grid.arrange(p1, p2, ncol=2)
+
+```
+
+I realized that some cleaning is necissary before doing further analysis (like feeding the data to weather generators or calculating chill portions). Since manual outlier detection requires time and skill (both of which I do not possess), so automated outlier detection routines are necessary. There are some general data quality paxckages specialised mainly for medical data [Marino 2022] but few are specialized for weather data. The patching and homogenisation package 'Climatol' offers a simple outlier detection where the weather reading is compared to a model output. Based on a (user-defined) threshold daily measurements with a residual (|observation - model|) exceeding the threshold were identified and removed. The reddprec package is specialised on quality control and missing data imputation of precipitation data. A detailed set of weatehr outlier detection algorithm is described by Durre 2010, who also validated the algorithms performance by manually checking the labelled outliers. Instead of using a single criterion a set of different plausibility checks were carried out. The plausibility checks range from basic integrity tests (for example duplicated records in different months) to more detailed tests like spatial integrity checks. These algorithms were also used for the Global Historical Climatology Network (GHCN-) Daily and are allegedly also available as a FORTRAN-code, but I can't find in on the web. A less exhaustive set of outlier tests were proposed by Costa 2021 for a dataset of Brazilian weather stations. Both proposed weather quality algorithms of Costa 2021 and Durre 2010 were here reconstructed in R as close as possible from the descriptions in the manuscripts and tested for a network of weather stations in California including daily observations of minimum and maxium temperature (Tmin, Tmax) and precipitaiton (Precip). A total of 33 weather stations were used having records from 1990 to 2021. Additionally, 92  auxilliary weather stations from the UCIPM-database were used for spatial plausibility test. 
+
+```{r map_stations_california, fig.align = 'center', echo=F, out.width = "50%", fig.cap = "Map of target stations (from CIMIS database) and auxiliary weather stations for spatial plausibility checks (from UCIPM database)", label = 'map_stations_california'}
+knitr::include_graphics(here::here("figures", "map_california_qc.png"))
+```
+
+
+## Weather quality tests by Costa 2021
+
+Workin on a dataset of daily precipitation and temperature measurement in north-eastern Brazil, the authors proposed a set of 6 plausibility checks to detect suspicious data. The tests included checks on the meta data, fixed limit test, variable limit tests, consistency among variables, temporal consistency and spatial consistency tests. The main idea is, that a measurement needs to be flagged by at least two of these tests in order to be removed from the dataset. This should reduced the amount of false positive rates. 
+The concept of the Costa 2021 quality control tests has been written as an R function called `weather_qc_costa()`. It takes `weather`, `weather_coords`, `var`, `aux_list`, `aux_info`, `level` and `country` as mandatory inputs and returns a boolean vector of the same length as days rows in weather as an output, indicating suspicious data with TRUE and data save to keep with FALSE.
+`weather` is a dataframe, organized with the variables in the columns and daily measurenent in the rows. The quality control checks of Costa 2021 were described with a dataset containing minimum and maximum temperature, daily precipitation, relative humididty, atmospheric pressure, windspeed and insulation. However, in its current state it was written to satisfy the needs of the other functions of chillR, which only work with daily extreme temperatures and to a lesser extend with precipitation. Some of the tests require additionally the daily average temperature, so it should be supplied alongside to daily minimum and maximum temperature.Aditionally, the dataframe needs to contain columns called Day, Month and Year. An example for weather can be seen in the following.
+
+```{r}
+head(weather)
+```
+
+`weather_coords` is a numeric vector of length two, which contains the Longitude and Latitude of the target weather station. 
+
+`var` is the variable the quality control function should target. It needs to be the same name as the column name in `weather`.
+
+`aux_list` is a named list containing dataframes of additional weather stations. The data.frames should organized the same way as in `weather`. Furthermore, the list elements should be named.
+
+`aux_info` is a dataframe which should contain the id names of the auxiliary weather stations. These ids should be also used for the naming of the elements contained by `aux_list`. Furthermore, it should contain columns called 'Longitude' and 'Latitude' which contain the coordinates of the auxiliary weather stations. The coordinates are needed for distance calculation to the target weather station. 
+
+The last mandatory arguments are `level` and `country` which need to be both characters. They are needed for the location-specific lookup of measurement records for the variable. Sofar `level` can be either `world` or `USA`. `country` is then used to further narrow down the lookup. In case of `level = 'world'` it needs to be the the name of a country or in case of `level == 'USA'` it needs to be the name of the state the weather stations are located. It can be that for certain countries and variables no records are available. In these cases the records need to be supplied manually via the `records` argument, which is set as NULL in default.
+
+
+In the following the priciples of the plausibility checks used in the function `weather_qc_costa()` are explained. For more details please refer to the original paper: XYX.
+
+### Metadata test
+
+In this version of the quality control function, the metadata accompanying the weather data was not analyzed. Originally, the test checks if the weather station specific identifier is the same throuhout the weather data.
+
+### Fixed limit test
+
+This test checks if the specified variable is outside of the range of the highest and lowest measurements for the specified subregion. The records can be either supplied manually via `records` or they can be looped up by the function. In case of user-defined records, it needs to contain the lower and upper bound. In case of daily precipitation the lower bound is zero. In case the user does not supply the records manually, a function downloads the weather records from resources in the internet. In case of `level = 'world'` the function scraps data from the website 'https://en.wikipedia.org/wiki/List_of_countries_and_territories_by_extreme_temperatures' which may not be the most professional looking source but I couldn't find anything else which contained most of the countries. If there are ideas for a more trusted source of temperature records, please let me know. Also, in case of variables which are not temperature, records need to be supplied manually. In case of `level = 'USA'` the function loads a csv-file accessible via 'https://www.ncdc.noaa.gov/extremes/scec/records.csv'. Sometimes the server seems to be down, in these cases records need to be supplied manually.
+
+```{r}
+head(get_temp_records(region = 'world'))
+```
+
+As can be seen, not all countries have a complete set of record temperature and currently there is no data for precipitation. An example for the state-specific data of the United States can be seen next.
+
+
+```{r}
+head(get_temp_records(region = 'USA'))
+```
+The test simply compares if the target is either lower or higher than the region-specific record. An example for Californian minimum temperature was already shown in the beginning of the document.
+
+### Variable limits test
+
+The variable limit test is based on the percentiles of the variable for each month. The test simply flags for each month observaitons higher than the 99% percentile or lower than the 1% percentile. Additionally to the monthly percentiles, the same is done for the whole year percentiles.
+
+```{r, echo = FALSE, warning=FALSE}
+
+limits <- weather %>%
+  filter(Month == 1) %>%
+  summarise(upper = quantile(Tmin, 0.99, na.rm = T),
+            lower = quantile(Tmin, 0.01, na.rm = T))
+
+weather %>%
+  filter(Month == 1, Year == 1992) %>%
+  ggplot(aes(x = Date)) +
+  geom_line(aes(y = Tmin))+
+  geom_point(aes(y = Tmin))+
+  geom_hline(yintercept = limits[1,1], linetype = 'dashed') + 
+  geom_hline(yintercept = limits[1,2], linetype = 'dashed') + 
+  coord_cartesian(ylim = c(-30, 50))
+
+```
+
+
+### Temporal consistency test
+
+This test investigates unexpected jumps and drops in the target variable. Again, the flaggin is based on percentiles. The absolute day-to-day difference of the target variable is calculated. If the difference to the following day exceeds the 99.5% percentile, then this observation receives a flag. The figure below shows the minum temperature for January 1990 at the 'Five Points' weather station. The observation at Jan-10 looks suspicious, as there is a large jump. followed by a strong dip. Using the absolute day-to-day difference and comparing it the 99.5% percentile (10.8°C) it can be seen, that the outlier is successfully detected. However, the following day receives a flag, too. But since the test requires at leas two positive tests, it is unlikely that the falsely flagged second observation at Jan-11 gets marked as suspicious data.
+
+```{r, echo=F, warning=FALSE}
+example_df <- data.frame(Tmin = weather$Tmin[1:31], Date = weather$Date[1:31])
+example_df$Tmin[10] <- 15
+example_df$diff_next_day <- c(abs(diff(example_df$Tmin)),NA)
+
+example_df_long <- reshape2::melt(example_df, id.var = 'Date')
+
+quan_df <- data.frame(variable = c('Tmin', 'diff_next_day'), 
+                      value = c(NA,quantile(abs(diff(weather$Tmin)), probs = 0.995, na.rm = T)))
+
+quan_df$variable <- factor(quan_df$variable, levels = c('Tmin', 'diff_next_day'))
+
+library(ggplot2)
+ggplot(example_df_long, aes(x = Date)) +
+  geom_line(aes(y = value, group = variable)) + 
+  geom_point(aes(y = value)) + 
+  geom_hline(data = quan_df, aes(yintercept = value), linetype = 'dashed')+
+  facet_wrap(~variable,nrow = 2,ncol = 1)
+
+```
+Wouldnt this test applied to precipitation penelize strong precipitation events? These events probably also get a flag by the variable limits test.
+
+### Variable consistency test
+
+These tests mainly focus on temperature variables. They include simple tests, such as that daily minimum temperature should not exceed daily maximum temperature, or that average temperature should be lower than maximum but higher than minimum temperature of the same day.
+Additionally it compares the reported average temperature to the mean of daily minumum and maximum temperature. Absolute residuals of reported to computed daily mean temperautre exceeding the 99% percentile also get flagged. In these cases both minimum and maximum temperature get flagged.
+
+```{r, echo=F, warning=FALSE}
+int_df <- weather %>%
+  mutate(Tmean_calc = (Tmin + Tmax)/2) %>%
+  mutate(Tmean_res = Tmean - Tmean_calc)
+
+lim <- quantile(abs(int_df$Tmean_res), probs = 0.99, na.rm = T)
+
+ggplot(int_df, aes(x = Tmean, y = Tmean_calc)) + 
+  geom_point() + 
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed', col = 'blue') +
+  geom_abline(slope = 1, intercept = lim, col = 'blue')+
+  geom_abline(slope = 1, intercept =-lim, col = 'blue')+
+  coord_cartesian(xlim = c(-10, 40), y = c(-10, 40)) 
+
+```
+
+
+### Spatial consistency test
+
+The authors mentioned that a spatial consistency test was carried out, but they did not explain any details to it. So for this kind of test, spatial regression of temperature and spatial corrobation test for precipitation were taken instead, which is explained in more detail by Durre 2010 and in the lower section dedicated to the Durre 2010 weather quality test. in general the outcome of the spatial consistency test also depend on the quality of the auxiliary weather stations. 
+
+
+### Run quality control after Costa 2021
+
+```{r, warning=FALSE, eval=FALSE}
+
+#define variables
+id <- weather_info$id[1]
+weather <- weather_list[[id]]
+target_coord <- c(weather_info$Longitude[weather_info$id == id],
+                  weather_info$Latitude[weather_info$id == id])
+
+#run costa 2021 quality control
+test_result <- weather_qc_costa(weather = weather, weather_coords = target_coord, variable = 'Tmin',aux_list = aux_data, aux_info = aux_info, level = 'USA', country = 'California')
+
+#check the output
+head(test_result)
+
+
+```
+
+```{r, warning=FALSE, echo=FALSE}
+
+#read pre-run test result of costa 2021
+test_result <- read.csv('data/qc_costa_tmin_example.csv')
+
+#check the output
+head(test_result)
+
+
+```
+As you can see the output is a tibble with six columns. The first five relate to the previous mentioned plausibility checks and the respective outcomes for `variable = 'Tmin'`. The last column called `outlier` indicates that at least two tests showed a positive result. This column could be then used to either manually screen the identified suspicious data or to replace the values by `NA` values if convinced that they are indeed erronous data. 
+
+One of the major drawbacks of this test approach is, that the erronous data can deteriote subsequent tests, especially the spatial consistency test.
+
+
+### Check flagged Tmin data
+
+For each daily observation of the variables a column indicating potential problems with the data was downloaded. The details of the flag codes can be read in Echem & Temesgen (no date) and statistical tests for the data in Eching and Snysder (no date). In short there are flags indicating `R` data for outside the range of historical range (x > 99.8% percentile), `S` consistency problems of Tmin and Tmax or problems with the sensor and `Y` data moderately outside historical range (x > 96%). Further flags include `M` for missing data, `P` for pending quality test. While not explained in the manual, there can be also the quality flag `*` or no quality flag at all. I assume that in these cases there are no problems with the observation. A summary of the flags for `Tmin` for the weather station 'Five Points' can be seen below
+
+```{r, warning=FALSE}
+
+table(weather$QC_Tmin)
+
+
+```
+
+Focussing on the flags `S` (=erronous sensor or inconsistency among variables) and `Y` (=strong historical outliers) we can see that the costa 2021 quality detects less than half of the flagged data. 
+
+```{r, warning=FALSE}
+#add test result to weather data frame
+weather <- cbind(weather, test_result)
+
+#cases of flag and outlier detected
+sum(weather$QC_Tmin %in% c('R', 'S') & weather$outlier == T) / sum(weather$QC_Tmin %in% c('R', 'S'))
+
+
+```
+
+The detected cases were also pretty obvious
+
+```{r, warning=FALSE}
+
+weather %>%
+  filter(QC_Tmin %in% c('R', 'S') & outlier == T) %>%
+  select(Date, Tmax, Tmin, QC_Tmin, outlier)%>%
+  head(n = 10)
+```
+
+
+Lets look at the cases which received a flag of `R` or `S` but remained undetected by the test. 
+
+```{r, warning=FALSE}
+
+weather %>%
+  filter(QC_Tmin %in% c('R', 'S') & outlier == F) %>%
+  select(Date, Tmax, Tmin, QC_Tmin, outlier)%>%
+  head(n = 10)
+```
+
+
+ In many cases the data was already marked by an `NA`. 
+ 
+```{r, warning=FALSE}
+sum(weather$QC_Tmin %in% c('R', 'S') & is.na(weather$Tmin))
+
+```
+
+
+This means the quality test didn't have a chance to detect 31 out of the 76 cases. So the rate of correctly detecting flags R and S by the Costa 2021 quality test is actually
+
+```{r, warning=FALSE}
+sum(weather$QC_Tmin %in% c('R', 'S') & is.na(weather$Tmin) ==F & weather$outlier == T) / sum(weather$QC_Tmin %in% c('R', 'S') & is.na(weather$Tmin) ==F)
+
+```
+
+So rouhly 78% of the flags were detected. Not bad bad also not great. Lets have a look at the cases which slipped through the test.
+
+```{r, warning=FALSE}
+
+weather %>%
+  filter(QC_Tmin %in% c('R', 'S') & outlier == F & is.na(Tmin) == F) %>%
+  select(Date, Tmax, Tmin, QC_Tmin, outlier)%>%
+  head(n = 10)
+```
+
+There is at least one case in which the Tmax was smaler than Tmin. It probably remained undetected because of the rule that at least two tests need to detect an outlier. This is a major drawback of this approach, because it is safe to assume that this observation is fishy. 
+
+Another aspect are the cases which were marked as outlier by the test, but did not get any R or S flag.
+
+```{r, warning=FALSE}
+
+weather %>%
+  filter(!(QC_Tmin %in% c('R', 'S')) & outlier == T) %>%
+  select(Date, Tmax, Tmin, QC_Tmin, outlier)%>%
+  head(n = 10)
+```
+ 
+ 
+```{r, warning=FALSE, echo = FALSE}
+
+weather %>%
+  filter(Year == 1990 & Month == 9) %>%
+  ggplot(aes(x = Date)) + geom_line(aes(y = Tmin, col = 'Tmin')) +  geom_point(aes(y = Tmin, col = 'Tmin')) + 
+  geom_line(aes(y = Tmax, col = 'Tmax'))+ geom_point(aes(y = Tmax, col = 'Tmax')) + 
+   geom_point(size = 7, pch = 1, stroke = 2, col = 'red', aes(x = as.Date('1990-09-14'), y = 1.1))
+  
+```
+
+The circled point of Tmin was labelled by the Costa 2021 quality control function as an outlier, while the almost equally low observations of the two days prior remained in the end unflagged. All three points were flagged by the variable limits test. However, the circle point was also flagged by the temporal consistency test due to the sudden jump in temperature the day after and by the consistency among variables test, because the calculated mean temperature was far off the reported mean temperature (this might have been caused by the equally suspicious observaiton of Tmax at that day). 
+
+In total the weather quality test by Costa 2021 flagged 95 cases of Tmin (0.8%). It seems the majority of flagged data include unreasonably high or low readings, but there were also several cases of 'false zeros'
+
+```{r, warning=FALSE}
+
+weather %>%
+  ggplot(aes(x = Date, y = Tmin)) + 
+  geom_point() + coord_cartesian(ylim = c(-20,40)) + 
+  geom_point(data = weather[weather$outlier,], aes (x = Date, y = Tmin), col = 'red')
+  
+```
+
+
+check which test lead how often to a flagged outlier
+sum
+
+```{r, warning=FALSE}
+
+data.frame(test = c(rep('fixed_limt', 2),
+                    rep('variable_limit',2),
+                    rep('temporal_consistent', 2),
+                    rep('consistent_variable', 2),
+                    rep('spatial_consistent', 2)), 
+           outlier = rep(c(T,F), 5), 
+           cases = c(sum(weather$outlier & weather$fixed_limit),
+                     sum(weather$outlier == F & weather$fixed_limit),
+                     sum(weather$outlier & weather$variable_limit),
+                     sum(weather$outlier == F & weather$variable_limit),
+                     sum(weather$outlier & weather$temporal_consistent),
+                     sum(weather$outlier == F & weather$temporal_consistent),
+                     sum(weather$outlier & weather$consistent_variables),
+                     sum(weather$outlier == F & weather$consistent_variables),
+                     sum(weather$outlier & weather$spatial_consistent),
+                     sum(weather$outlier == F & weather$spatial_consistent))) %>%
+  ggplot(aes(x = test, y= cases, fill = outlier)) + 
+  geom_bar(stat = 'identity')+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+
+
+```
+
+It can be seen that the consistency among variables and the variable limits test lead to the most instances of outlier flags, however, they both have a low specificity as the share of stand-alone positive test results is high. Positive fixed limit test results always lead to outlier flags, the is very specific but not very sensitive as the majority of outlier flags came from other tests. Spatial consistency and temporal consistency lie somewhere in the middle between specificity and sensitivity. In both cases true test results also lead in the majority of cases also to flagging of outlier.
+
+
+
+## Weather quality control after Durre 2010
+
+As we could see the testing philosophy of Costa 2021 was to use the union of very sensitive test and more specific ones to flag suspicious data. The testing philosophy of Durre 2010 quality control schemes is different. The qc-scheme uses more tests, the testing limits are however very wide and the testing order plays an important role. Each positive test leads automaically to an outlier flag and the removal of the observation. The testing ranges are wide to reduce the false positive rate. The first tests are very broad and become more and more specific with the progress of the qc-scheme. At first basic integrity tests are carried out to detect duplicated months or 'flase zeros'. Then come the outlier checks for instance for climatological outliers (similar to the variable limits test). However, the tests rely on hard threshold instead of percentiles.  The comes the temporal consistency tests like the spike and dips test (similar to the temporal consistency test of Costa 2021). Next come spatial consistency test which include linear regressions and corrobation tests. Finally megaconsistency test look for remaining incosnsistency of the data. The original testing framework of Durre 2010 included tests for snow coverage, but these were skipped in the here presented R-functions. In the following the test will be explained, for more details please refer to Durre 2010.
+
+### Basic integrity checks
+
+The basic integrity tests include tests which try to detect severe problems with the data. For example the  function `perform_naught_check()` investigates repetitions of false zeros in temperature data. It checks if minimum and maximum daily temperature both are either 0°C or -17.8°C (which are 0°F). In such a case both observations get removed. The naught check did yield positive results for any of the 33 target weather stations.
+
+The second function called `get_duplicated_values` performs several checks to detect duplicated values. For precipitation data it checks if whole years are duplicated, given a year contains at least three rain events. For temperature and precipitation data the function also checks if either months of the same year are duplicated or if same months of different years contain exactly the same data. 
+
+
+```{r, warning=FALSE}
+
+map(weather_list, perform_naught_check) %>%
+  map(sum)
+
+
+```
+
+

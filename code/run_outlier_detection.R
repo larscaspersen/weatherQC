@@ -27,6 +27,38 @@ aux_overview <- merge.data.frame(UCIPM_WS_51s_10s, target_info,
 
 rm(UCIPM_WS_51s_10s)
 
+saveRDS(aux_data, file = 'data/quality_control_aux-data.RData')
+saveRDS(aux_overview, file = 'data/quality_control_aux-info.RData')
+saveRDS(target_info, file = 'data/quality_control_target-info.RData')
+saveRDS(weather_list, file = 'data/quality_control_target-data.RData')
+
+#run outlier detection costa 2021 on first element of weather_list for Tmin
+#define variables
+id <- target_info$id[1]
+weather <- weather_list[[id]]
+target_coord <- c(target_info$Longitude[target_info$id == id],
+                  target_info$Latitude[target_info$id == id])
+
+#run costa 2021 quality control
+test_result <- weather_qc_costa(weather = weather, weather_coords = target_coord, variable = 'Tmin',aux_list = aux_data, aux_info = aux_info, level = 'USA', country = 'California')
+
+write.csv(test_result, file = 'data/qc_costa_tmin_example.csv', row.names = FALSE)
+
+
+
+start_time <- Sys.time()
+durre_weather_quality_control(weather_list = weather_list[1],
+                              weather_info =  target_info[1,],
+                              aux_list = aux_data, 
+                              aux_info = aux_overview,
+                              country = 'USA',
+                              sub_region = 'California')
+end_time <- Sys.time()
+
+
+
+
+
 
 id <- target_info$id[1]
 weather_coords <- c(target_info$Longitude[1], target_info$Latitude[1])
