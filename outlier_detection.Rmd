@@ -366,14 +366,19 @@ As we could see the testing philosophy of Costa 2021 was to use the union of ver
 
 The basic integrity tests include tests which try to detect severe problems with the data. For example the  function `perform_naught_check()` investigates repetitions of false zeros in temperature data. It checks if minimum and maximum daily temperature both are either 0°C or -17.8°C (which are 0°F). In such a case both observations get removed. The naught check did yield positive results for any of the 33 target weather stations.
 
-The second function called `get_duplicated_values` performs several checks to detect duplicated values. For precipitation data it checks if whole years are duplicated, given a year contains at least three rain events. For temperature and precipitation data the function also checks if either months of the same year are duplicated or if same months of different years contain exactly the same data. 
+The second function called `get_duplicated_values()` performs several checks to detect duplicated values. For precipitation data it checks if whole years are duplicated, given a year contains at least three rain events. For temperature and precipitation data the function also checks if either months of the same year are duplicated or if same months of different years contain exactly the same data (in case of precipitation there needs to be at least three rain events for a month to be included in the test). Furthermore, the test checks for months containing at least 10 cases in which minimum and maximum temperature are equal. In case one of the test finds instances of a duplicated month/year, the whole observation of that detected period gets flagged. 
+
+Somehow the function still returns months of Precipitation which have only zeros. Check why.
 
 
 ```{r, warning=FALSE}
 
-map(weather_list, perform_naught_check) %>%
+map(weather_list,~ get_duplicated_values(weather = .x, var = 'Precip') & is.na(.x[,'Precip']) == F) %>%
   map(sum)
 
+which(get_duplicated_values(weather = weather_list[[1]], var = 'Precip') & is.na(weather_list[[1]]$Precip) == F)
+
+weather[10744:10773, 'Precip']
 
 ```
 
