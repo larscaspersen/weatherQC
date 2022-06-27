@@ -244,6 +244,9 @@ The detected cases were also pretty obvious
 
 ```{r, warning=FALSE}
 
+weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
+                        format = '%Y-%m-%d')
+
 weather %>%
   filter(QC_Tmin %in% c('R', 'S') & outlier == T) %>%
   select(Date, Tmax, Tmin, QC_Tmin, outlier)%>%
@@ -368,20 +371,51 @@ As we could see the testing philosophy of Costa 2021 was to use the union of ver
 
 The basic integrity tests include tests which try to detect severe problems with the data. For example the  function `perform_naught_check()` investigates repetitions of false zeros in temperature data. It checks if minimum and maximum daily temperature both are either 0°C or -17.8°C (which are 0°F). In such a case both observations get removed. The naught check did yield positive results for any of the 33 target weather stations.
 
-The second function called `get_duplicated_values()` performs several checks to detect duplicated values. For precipitation data it checks if whole years are duplicated, given a year contains at least three rain events. For temperature and precipitation data the function also checks if either months of the same year are duplicated or if same months of different years contain exactly the same data (in case of precipitation there needs to be at least three rain events for a month to be included in the test). Furthermore, the test checks for months containing at least 10 cases in which minimum and maximum temperature are equal. In case one of the test finds instances of a duplicated month/year, the whole observation of that detected period gets flagged. 
+The second function called `get_duplicated_values()` performs several checks to detect duplicated values. For precipitation data it checks if whole years are duplicated, given a year contains at least three rain events. For temperature and precipitation data the function also checks if either months of the same year are duplicated or if same months of different years contain exactly the same data (in case of precipitation there needs to be at least three rain events for a month to be included in the test). Furthermore, the test checks for months containing at least 10 cases in which minimum and maximum temperature are equal. In case one of the test finds instances of a duplicated month/year, the whole observation of that detected period gets flagged. The `get_duplicated_values()` function does not return any flags for non_NA observations when applied to Tmin, Tmax or Precip. However, it returns flags for some months which have no observations at all. This behavior should be changed, because the flags are in these cases meaningless and potentially misleading.
 
-Somehow the function still returns months of Precipitation which have only zeros. Check why.
+Next comes the record exceedance test. It is implemented as described in the Costa 2021 quality control algorithm. The function `fixed_limit_test()` allows for the retrieval of country-specific temperature records and in the case of US-States also precipitation records and then flags observations outside the record range. This deviates from the description of Durre 2010, who used global temperature and precipitation records for the test.
 
+
+Next comes the identical value streak test, which only applies to minimum and maximum temperature. It is carried out using the `get_streaks()` function. It tests if 20 or more subsequent observations of a variable have the exactly the same value. Missing values are skipped when evaluating for streaks. In such a case all values belonging to the streak are flagged. No cases of identical streak were detected for the CIMIS weather station data set.
 
 ```{r, warning=FALSE}
 
-map(weather_list,~ get_duplicated_values(weather = .x, var = 'Precip') & is.na(.x[,'Precip']) == F) %>%
-  map(sum)
+map(weather_list,~ get_streaks(weather = .x, variable = 'Tmax')) %>%
+  map_dbl(sum)
 
-which(get_duplicated_values(weather = weather_list[[1]], var = 'Precip') & is.na(weather_list[[1]]$Precip) == F)
+map(weather_list,~ get_streaks(weather = .x, variable = 'Tmin')) %>%
+  map_dbl(sum)
 
-weather[10744:10773, 'Precip']
+
 
 ```
 
+A similar test is also available for precipitation, called `frequent_value_check()`. Before the test is run, the percentiles for each day of the year is calculated using the function `get_each_day_precipitation_percentile()`. Precipitation percentiles for each day of the year is calculated using a 29-day window centered at the day of interest. All non-zero precipitation observations thorughout the observation period lying in that observation-window are used to calculate the percentiles.
+The `frequent_value_check()` test ignores missing observation or zero-preciptiation observations. For the remaining data it checks for a 10 day window, if five or more identical precipitation obserations can be found. Given the frequency of the repeated value, it is then checked if the repeated value exceeds a certain climatological precipitation percentile for that day of the year, which was calculated before. The more often the suspected values is repeated, the lower the testing threshold is. For 9 - 10 identical repeated values the threshold is the 30% percentiles, for 8 repeated values the 50% percentile, for 7 the 70% percentile and for 5-6 repeated values the 90% percentile. 
+
+```{r, warning=FALSE}
+
+  #calculate percentiles for each weather df, store in list
+  prec_percentile_list <- map(weather_list, get_each_day_precipitation_percentile)
+
+  #carry out test
+ map2(weather_list, prec_percentile_list, function(x,y){
+   frequent_value_check(weather = x, percentile_df = y )}) %>%
+   map_dbl(sum)
+ 
+```
+It seems there are several positive cases for several stations. Let's have a closer look at the test results of the second weatherstation.
+
+```{r, warning=FALSE}
+ #check for second stations which ones were marked
+ weather_list[[2]] %>%
+   mutate(flag =  frequent_value_check(weather = ., percentile_df =  prec_percentile_list[[2]]),
+          Date = as.Date(paste(Year, Month, Day, sep = '-'), format = '%Y-%m-%d')) %>%
+   filter(flag == T) %>%
+   select(Date, Tmin, Tmax, Precip, QC_Precip) %>%
+   head()
+
+```
+
+It is suspicious that there is so often the exact same observation of precipitation for these days, Furthermore, the quality flag indicates that these observations are also far outside the ususal ones for these days. So this can be probably a error in the measurement.
 
