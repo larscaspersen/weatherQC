@@ -1142,6 +1142,16 @@ helper_check_frequent_val <-  function(val, val_rep,doy, percentile_df){
 frequent_value_check <- function(weather, percentile_df, min_identical = 5, 
                                  min_non_zero_days = 20){
   
+  #incase there is no doy in weather, add it
+  if(!'doy' %in% names(weather)){
+    #in case no date in weather add it too
+    if(!'Date' %in% names(weather)){
+      weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
+                              format = '%Y-%m-%d')
+    }
+    weather$doy <- lubridate::yday(weather$Date)
+  }
+  
   #drop na values, and 0
   x <- weather %>%
     .[is.na(.$Precip) == FALSE,] %>%
