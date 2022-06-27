@@ -1772,6 +1772,16 @@ clear_flagged_data <- function(weather, variable, test_result, test_name){
 #helper function to carry out the climate percentile check for all doys
 get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7, .9)){
   
+  #incase there is no doy in weather, add it
+  if(!'doy' %in% names(weather)){
+    #in case no date in weather add it too
+    if(!'Date' %in% names(weather)){
+      weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
+                              format = '%Y-%m-%d')
+    }
+    weather$doy <- lubridate::yday(weather$Date)
+  }
+  
   names <- c('doy', paste0(probs * 100, '%'))
   
   map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
