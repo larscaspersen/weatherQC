@@ -1067,6 +1067,13 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
 
 get_streaks <- function(weather, variable, rep_threshold = 20){
   
+  #if not present, add date to weather
+  if(!('Date' %in% colnames(weather))){
+    #add Date
+    weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
+                            format = '%Y-%m-%d')
+  }
+  
   #only take variable of interest
   x <- weather[,c('Date', variable)]
   names(x) <- c('Date', 'trials')
@@ -1886,12 +1893,12 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   })
   
   #Precip
-  weather_list <- map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = get_streaks(weather = x, 
-                                                 variable = 'Precip'), 
-                       test_name = 'streaks')
-  })
+  #weather_list <- map(weather_list, function(x){
+  #  clear_flagged_data(weather = x, variable = 'Precip', 
+  #                     test_result = get_streaks(weather = x, 
+  #                                               variable = 'Precip'), 
+  #                     test_name = 'streaks')
+  #})
   
   #calculate percentiles for each weather df, store in list
   prec_percentile_list <- map(weather_list, get_each_day_precipitation_percentile)
