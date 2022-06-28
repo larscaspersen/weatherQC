@@ -2081,7 +2081,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
                                                               weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                  weather_info$Latitude[weather_info$id == id]),
                                                               aux_list = aux_data, 
-                                                              aux_info = aux_overview, 
+                                                              aux_info = aux_info, 
                                                               variable = 'Tmin'), 
                        test_name = 'spatial_regression')
   })
@@ -2093,7 +2093,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
                                                               weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                  weather_info$Latitude[weather_info$id == id]),
                                                               aux_list = aux_data, 
-                                                              aux_info = aux_overview, 
+                                                              aux_info = aux_info, 
                                                               variable = 'Tmax'), 
                        test_name = 'spatial_regression')
   })
@@ -2109,7 +2109,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
                                                               weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                  weather_info$Latitude[weather_info$id == id]),
                                                               aux_list = aux_data, 
-                                                              aux_info = aux_overview, 
+                                                              aux_info = aux_info, 
                                                               variable = 'Tmin'), 
                        test_name = 'spatial_corrobation')
   })
@@ -2125,7 +2125,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
                                                                            weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                               weather_info$Latitude[weather_info$id == id]),
                                                                            aux_list = aux_data, 
-                                                                           aux_info = aux_overview, 
+                                                                           aux_info = aux_info, 
                                                                            variable = 'Tmax'), 
                        test_name = 'spatial_corrobation')
   })
@@ -2138,7 +2138,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
                                                                            weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                               weather_info$Latitude[weather_info$id == id]),
                                                                            aux_list = aux_data, 
-                                                                           aux_info = aux_overview), 
+                                                                           aux_info = aux_info), 
                        test_name = 'spatial_corrobation')
   })
   
