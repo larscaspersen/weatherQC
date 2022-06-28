@@ -74,39 +74,39 @@ get_temp_records <- function(region = 'world'){
 
 ###fixed limits test
 
-fixed_limit_test <- function(weather, level, variable, country,  records = NULL){
+fixed_limit_test <- function(weather, region, variable, subregion,  records = NULL){
   
   #checks for input stuff
   if(is.list(weather) == F){
     stop('weather needs to be a dataframe / tibble / data.table.')
   }
   
-  if(is.null(level) & is.null(records)){
+  if(is.null(region) & is.null(records)){
     stop('either region or records for variable need to be supplied. While one')
-  } else if(is.null(level) == F & is.null(records) == F){
+  } else if(is.null(region) == F & is.null(records) == F){
     warning('region and records were supplied. in this case the values of records will be used for the test')
   } 
   
-  if(is.null(level) == F & is.null(country) == F){
+  if(is.null(region) == F & is.null(subregion) == F){
     
-    if(length(level) != 1){
+    if(length(region) != 1){
       stop('region needs to be of length 1')
     }
     
     #check if valide region is chosen
     valid_regions <- c('world', 'USA')
-    if(!level %in% valid_regions){
-      stop(paste0('unvalid name for level You can only use: ', valid_regions, ' if the level you need is not available, then you need to research the records and supply them via "records"'))
+    if(!region %in% valid_regions){
+      stop(paste0('unvalid name for region You can only use: ', valid_regions, ' if the region you need is not available, then you need to research the records and supply them via "records"'))
     } 
     
     #download record data
-    records <- get_temp_records(region = level)
+    records <- get_temp_records(region = region)
     
-    #check if the needed country / state is present
-    if(! country %in% records$Country){
-      stop(paste0('provided country name: ', country, ' could not be found in the records list. Country list contains: ', paste0(unlist(records$Country), collapse = ', ')))
+    #check if the needed subregion / state is present
+    if(! subregion %in% records$subregion){
+      stop(paste0('provided subregion name: ', subregion, ' could not be found in the records list. subregion list contains: ', paste0(unlist(records$subregion), collapse = ', ')))
     } else{
-      #extract country-specific record
+      #extract subregion-specific record
       records <-  filter(records, Country == country)
       
       if(variable %in% c('Tmin', 'Tmax')){
@@ -765,7 +765,7 @@ spatial_consistency_test <- function(weather, weather_coords, aux_list, aux_info
 #outlier test combined
 
 weather_qc_costa <- function(weather, weather_coords, variable,
-                             aux_list, aux_info, level, country, records = NULL,
+                             aux_list, aux_info, region, subregion, records = NULL,
                              probs_variable_limit = c(0.01, 0.99),
                              probs_temporal_continuity = 0.995,
                              probs_temperature_consistency = 0.99,
@@ -802,8 +802,8 @@ weather_qc_costa <- function(weather, weather_coords, variable,
   #   aux_info needs to contain coordinates and date?
   
   #call fixed limits test
-  fixed_lim <- fixed_limit_test(weather = weather, level = level, 
-                   country = country,variable = variable)
+  fixed_lim <- fixed_limit_test(weather = weather, region = region, 
+                   subregion = subregion,variable = variable)
   
   #call variable limits test
   variable_lim <- variable_limit_test(weather = weather, variable = variable,
@@ -1804,7 +1804,7 @@ get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7,
 
 durre_weather_quality_control <- function(weather_list, weather_info,
                                           aux_list, aux_info,
-                                          country, sub_region){
+                                          region, sub_region){
   
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
@@ -1864,8 +1864,8 @@ durre_weather_quality_control <- function(weather_list, weather_info,
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = fixed_limit_test(weather = x, 
                                                       variable = 'Tmin',
-                                                      level = NULL,
-                                                      country = NULL,
+                                                      region = NULL,
+                                                      subregion = NULL,
                                                       records = c(records$Tmin, records$Tmax)), 
                        test_name = 'record_exceedance')
   })
@@ -1875,8 +1875,8 @@ durre_weather_quality_control <- function(weather_list, weather_info,
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = fixed_limit_test(weather = x, 
                                                       variable = 'Tmax',
-                                                      level = NULL,
-                                                      country = NULL,
+                                                      region = NULL,
+                                                      subregion = NULL,
                                                       records = c(records$Tmin, records$Tmax)), 
                        test_name = 'record_exceedance')
   })
@@ -1886,8 +1886,8 @@ durre_weather_quality_control <- function(weather_list, weather_info,
     clear_flagged_data(weather = x, variable = 'Precip', 
                        test_result = fixed_limit_test(weather = x, 
                                                       variable = 'Precip',
-                                                      level = NULL,
-                                                      country = NULL,
+                                                      region = NULL,
+                                                      subregion = NULL,
                                                       records = c(0, records$Precip)), 
                        test_name = 'record_exceedance')
   })
