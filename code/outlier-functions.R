@@ -1804,7 +1804,7 @@ get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7,
 
 durre_weather_quality_control <- function(weather_list, weather_info,
                                           aux_list, aux_info,
-                                          region, sub_region){
+                                          region, subregion){
   
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
@@ -1857,7 +1857,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   
   #download records
   records <- get_temp_records(region = region) %>%
-    filter(Country == sub_region)
+    filter(Country == subregion)
   
   #Tmin
   weather_list <- map(weather_list, function(x){
