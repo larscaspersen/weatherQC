@@ -29,9 +29,9 @@ I realized that some cleaning is necissary before doing further analysis (like f
 
 ## Weather quality tests by Costa 2021
 
-Workin on a dataset of daily precipitation and temperature measurement in north-eastern Brazil, the authors proposed a set of 6 plausibility checks to detect suspicious data. The tests included checks on the meta data, fixed limit test, variable limit tests, consistency among variables, temporal consistency and spatial consistency tests. The main idea is, that a measurement needs to be flagged by at least two of these tests in order to be removed from the dataset. This should reduced the amount of false positive rates. 
+Working on a data set of daily precipitation and temperature measurement in north-eastern Brazil, the authors proposed a set of 6 plausibility checks to detect suspicious data. The tests included checks on the meta data, fixed limit test, variable limit tests, consistency among variables, temporal consistency and spatial consistency tests. The main idea is, that a measurement needs to be flagged by at least two of these tests in order to be removed from the data set. This should reduced the amount of false positive rates. 
 The concept of the Costa 2021 quality control tests has been written as an R function called `weather_qc_costa()`. It takes `weather`, `weather_coords`, `var`, `aux_list`, `aux_info`, `level` and `country` as mandatory inputs and returns a boolean vector of the same length as days rows in weather as an output, indicating suspicious data with TRUE and data save to keep with FALSE.
-`weather` is a dataframe, organized with the variables in the columns and daily measurenent in the rows. The quality control checks of Costa 2021 were described with a dataset containing minimum and maximum temperature, daily precipitation, relative humididty, atmospheric pressure, windspeed and insulation. However, in its current state it was written to satisfy the needs of the other functions of chillR, which only work with daily extreme temperatures and to a lesser extend with precipitation. Some of the tests require additionally the daily average temperature, so it should be supplied alongside to daily minimum and maximum temperature.Aditionally, the dataframe needs to contain columns called Day, Month and Year. An example for weather can be seen in the following.
+`weather` is a dataframe, organized with the variables in the columns and daily measurement in the rows. The quality control checks of Costa 2021 were described with a data set containing minimum and maximum temperature, daily precipitation, relative humidity, atmospheric pressure, wind speed and insulation. However, in its current state it was written to satisfy the needs of the other functions of chillR, which only work with daily extreme temperatures and to a lesser extend with precipitation. Some of the tests require additionally the daily average temperature, so it should be supplied alongside to daily minimum and maximum temperature. Additionally, the dataframe needs to contain columns called Day, Month and Year. An example for weather can be seen in the following.
 
 
 ```r
@@ -214,6 +214,9 @@ The detected cases were also pretty obvious
 
 
 ```r
+weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
+                        format = '%Y-%m-%d')
+
 weather %>%
   filter(QC_Tmin %in% c('R', 'S') & outlier == T) %>%
   select(Date, Tmax, Tmin, QC_Tmin, outlier)%>%
@@ -387,136 +390,233 @@ It can be seen that the consistency among variables and the variable limits test
 
 As we could see the testing philosophy of Costa 2021 was to use the union of very sensitive test and more specific ones to flag suspicious data. The testing philosophy of Durre 2010 quality control schemes is different. The qc-scheme uses more tests, the testing limits are however very wide and the testing order plays an important role. Each positive test leads automaically to an outlier flag and the removal of the observation. The testing ranges are wide to reduce the false positive rate. The first tests are very broad and become more and more specific with the progress of the qc-scheme. At first basic integrity tests are carried out to detect duplicated months or 'flase zeros'. Then come the outlier checks for instance for climatological outliers (similar to the variable limits test). However, the tests rely on hard threshold instead of percentiles.  The comes the temporal consistency tests like the spike and dips test (similar to the temporal consistency test of Costa 2021). Next come spatial consistency test which include linear regressions and corrobation tests. Finally megaconsistency test look for remaining incosnsistency of the data. The original testing framework of Durre 2010 included tests for snow coverage, but these were skipped in the here presented R-functions. In the following the test will be explained, for more details please refer to Durre 2010.
 
+Most of the tests require the weather data.frames to contain a column called Date and doy (day of the year). Before running the test, we make sure that these columns are present.
+
+
+```r
+weather_list <- map(weather_list, function(x){
+  x %>%
+    mutate(Date = as.Date(paste(Year, Month, Day, sep = '-'), format = '%Y-%m-%d'),
+           doy = lubridate::yday(Date))
+})
+```
+
+
+
 ### Basic integrity checks
 
 The basic integrity tests include tests which try to detect severe problems with the data. For example the  function `perform_naught_check()` investigates repetitions of false zeros in temperature data. It checks if minimum and maximum daily temperature both are either 0°C or -17.8°C (which are 0°F). In such a case both observations get removed. The naught check did yield positive results for any of the 33 target weather stations.
 
-The second function called `get_duplicated_values()` performs several checks to detect duplicated values. For precipitation data it checks if whole years are duplicated, given a year contains at least three rain events. For temperature and precipitation data the function also checks if either months of the same year are duplicated or if same months of different years contain exactly the same data (in case of precipitation there needs to be at least three rain events for a month to be included in the test). Furthermore, the test checks for months containing at least 10 cases in which minimum and maximum temperature are equal. In case one of the test finds instances of a duplicated month/year, the whole observation of that detected period gets flagged. 
+The second function called `get_duplicated_values()` performs several checks to detect duplicated values. For precipitation data it checks if whole years are duplicated, given a year contains at least three rain events. For temperature and precipitation data the function also checks if either months of the same year are duplicated or if same months of different years contain exactly the same data (in case of precipitation there needs to be at least three rain events for a month to be included in the test). Furthermore, the test checks for months containing at least 10 cases in which minimum and maximum temperature are equal. In case one of the test finds instances of a duplicated month/year, the whole observation of that detected period gets flagged. The `get_duplicated_values()` function does not return any flags for non_NA observations when applied to Tmin, Tmax or Precip. However, it returns flags for some months which have no observations at all. This behavior should be changed, because the flags are in these cases meaningless and potentially misleading.
 
-Somehow the function still returns months of Precipitation which have only zeros. Check why.
+Next comes the record exceedance test. It is implemented as described in the Costa 2021 quality control algorithm. The function `fixed_limit_test()` allows for the retrieval of country-specific temperature records and in the case of US-States also precipitation records and then flags observations outside the record range. This deviates from the description of Durre 2010, who used global temperature and precipitation records for the test.
 
+
+Next comes the identical value streak test, which only applies to minimum and maximum temperature. It is carried out using the `get_streaks()` function. It tests if 20 or more subsequent observations of a variable have the exactly the same value. Missing values are skipped when evaluating for streaks. In such a case all values belonging to the streak are flagged. No cases of identical streak were detected for the CIMIS weather station data set.
 
 
 ```r
-map(weather_list,~ get_duplicated_values(weather = .x, var = 'Precip') & is.na(.x[,'Precip']) == F) %>%
-  map(sum)
+map(weather_list,~ get_streaks(weather = .x, variable = 'Tmax')) %>%
+  map_dbl(sum)
 ```
 
 ```
-## $cimis_2
-## [1] 0
-## 
-## $cimis_5
-## [1] 0
-## 
-## $cimis_6
-## [1] 0
-## 
-## $cimis_7
-## [1] 0
-## 
-## $cimis_12
-## [1] 0
-## 
-## $cimis_13
-## [1] 0
-## 
-## $cimis_15
-## [1] 0
-## 
-## $cimis_35
-## [1] 0
-## 
-## $cimis_39
-## [1] 0
-## 
-## $cimis_41
-## [1] 0
-## 
-## $cimis_43
-## [1] 0
-## 
-## $cimis_44
-## [1] 0
-## 
-## $cimis_47
-## [1] 0
-## 
-## $cimis_52
-## [1] 0
-## 
-## $cimis_54
-## [1] 0
-## 
-## $cimis_56
-## [1] 0
-## 
-## $cimis_57
-## [1] 0
-## 
-## $cimis_62
-## [1] 0
-## 
-## $cimis_64
-## [1] 0
-## 
-## $cimis_68
-## [1] 0
-## 
-## $cimis_70
-## [1] 0
-## 
-## $cimis_71
-## [1] 0
-## 
-## $cimis_75
-## [1] 0
-## 
-## $cimis_77
-## [1] 0
-## 
-## $cimis_78
-## [1] 0
-## 
-## $cimis_80
-## [1] 0
-## 
-## $cimis_84
-## [1] 0
-## 
-## $cimis_86
-## [1] 0
-## 
-## $cimis_87
-## [1] 0
-## 
-## $cimis_88
-## [1] 0
-## 
-## $cimis_90
-## [1] 0
-## 
-## $cimis_91
-## [1] 0
-## 
-## $cimis_92
-## [1] 0
+##  cimis_2  cimis_5  cimis_6  cimis_7 cimis_12 cimis_13 cimis_15 cimis_35 
+##        0        0        0        0        0        0        0        0 
+## cimis_39 cimis_41 cimis_43 cimis_44 cimis_47 cimis_52 cimis_54 cimis_56 
+##        0        0        0        0        0        0        0        0 
+## cimis_57 cimis_62 cimis_64 cimis_68 cimis_70 cimis_71 cimis_75 cimis_77 
+##        0        0        0        0        0        0        0        0 
+## cimis_78 cimis_80 cimis_84 cimis_86 cimis_87 cimis_88 cimis_90 cimis_91 
+##        0        0        0        0        0        0        0        0 
+## cimis_92 
+##        0
 ```
 
 ```r
-which(get_duplicated_values(weather = weather_list[[1]], var = 'Precip') & is.na(weather_list[[1]]$Precip) == F)
+map(weather_list,~ get_streaks(weather = .x, variable = 'Tmin')) %>%
+  map_dbl(sum)
 ```
 
 ```
-## integer(0)
+##  cimis_2  cimis_5  cimis_6  cimis_7 cimis_12 cimis_13 cimis_15 cimis_35 
+##        0        0        0        0        0        0        0        0 
+## cimis_39 cimis_41 cimis_43 cimis_44 cimis_47 cimis_52 cimis_54 cimis_56 
+##        0        0        0        0        0        0        0        0 
+## cimis_57 cimis_62 cimis_64 cimis_68 cimis_70 cimis_71 cimis_75 cimis_77 
+##        0        0        0        0        0        0        0        0 
+## cimis_78 cimis_80 cimis_84 cimis_86 cimis_87 cimis_88 cimis_90 cimis_91 
+##        0        0        0        0        0        0        0        0 
+## cimis_92 
+##        0
 ```
+
+A similar test is also available for precipitation, called `frequent_value_check()`. Before the test is run, the percentiles for each day of the year is calculated using the function `get_each_day_precipitation_percentile()`. Precipitation percentiles for each day of the year is calculated using a 29-day window centered at the day of interest. All non-zero precipitation observations thorughout the observation period lying in that observation-window are used to calculate the percentiles.
+The `frequent_value_check()` test ignores missing observation or zero-preciptiation observations. For the remaining data it checks for a 10 day window, if five or more identical precipitation obserations can be found. Given the frequency of the repeated value, it is then checked if the repeated value exceeds a certain climatological precipitation percentile for that day of the year, which was calculated before. The more often the suspected values is repeated, the lower the testing threshold is. For 9 - 10 identical repeated values the threshold is the 30% percentiles, for 8 repeated values the 50% percentile, for 7 the 70% percentile and for 5-6 repeated values the 90% percentile. 
+
 
 ```r
-weather[10744:10773, 'Precip']
+  #calculate percentiles for each weather df, store in list
+  prec_percentile_list <- map(weather_list, get_each_day_precipitation_percentile)
+
+  #carry out test
+ map2(weather_list, prec_percentile_list, function(x,y){
+   frequent_value_check(weather = x, percentile_df = y )}) %>%
+   map_dbl(sum)
 ```
 
 ```
-##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+##  cimis_2  cimis_5  cimis_6  cimis_7 cimis_12 cimis_13 cimis_15 cimis_35 
+##        0       97       17      109       70        0        0        0 
+## cimis_39 cimis_41 cimis_43 cimis_44 cimis_47 cimis_52 cimis_54 cimis_56 
+##       57       38       14       14       26        0       44        9 
+## cimis_57 cimis_62 cimis_64 cimis_68 cimis_70 cimis_71 cimis_75 cimis_77 
+##        9       36       32       32        0      117        0       28 
+## cimis_78 cimis_80 cimis_84 cimis_86 cimis_87 cimis_88 cimis_90 cimis_91 
+##       60       88        0       68        0        0        0       50 
+## cimis_92 
+##        0
+```
+It seems there are several positive cases for several stations. Let's have a closer look at the test results of the second weatherstation.
+
+
+```r
+ #check for second stations which ones were marked
+ weather_list[[2]] %>%
+   mutate(flag =  frequent_value_check(weather = ., percentile_df =  prec_percentile_list[[2]]),
+          Date = as.Date(paste(Year, Month, Day, sep = '-'), format = '%Y-%m-%d')) %>%
+   filter(flag == T) %>%
+   select(Date, Tmin, Tmax, Precip, QC_Precip) %>%
+   head()
 ```
 
+```
+##         Date Tmin Tmax Precip QC_Precip
+## 1 1995-12-26  0.1 15.4    0.3         R
+## 2 1995-12-29  3.4 14.9    0.3         R
+## 3 1996-01-02  3.5 15.4    0.3         R
+## 4 1996-01-03  2.9 22.4    0.3         R
+## 5 1996-01-07  1.9 17.2    0.3         R
+## 6 1996-01-08  3.3 10.5    0.3         R
+```
+
+It is suspicious that there is so often the exact same observation of precipitation for these days, Furthermore, the quality flag indicates that these observations are also far outside the ususal ones for these days. So this can be probably a error in the measurement.
+
+
+### Outlier checks
+
+In the next section the daily observations are compared to the longterm observation for the same variable. 
+
+At first the so-called gap-test is carried out using the `perform_gap_check()` function. For each month of the year, the observations are tested independently. The test evaluates the ordered observations for gaps larger than 10°C in case of temperature and 300mm for precipitation. In case of temperature the search for gaps start at the median and goes to the tails of the distribution. In case of a gap, each observation to the tail side of the distribution is flagged. The search for gaps in precipitation starts at the first non-zero observation and includes only the upper tail of the distribution.
+
+
+```r
+ #check for second stations which ones were marked
+ map(weather_list, ~perform_gap_check(weather = .x, variable = 'Tmin')) %>%
+  map_dbl(sum)
+```
+
+```
+##  cimis_2  cimis_5  cimis_6  cimis_7 cimis_12 cimis_13 cimis_15 cimis_35 
+##       27        1        1        1        0        0        3        6 
+## cimis_39 cimis_41 cimis_43 cimis_44 cimis_47 cimis_52 cimis_54 cimis_56 
+##        0        3        1        4        1       22        7        2 
+## cimis_57 cimis_62 cimis_64 cimis_68 cimis_70 cimis_71 cimis_75 cimis_77 
+##        0       17        2       12       55       46        4       20 
+## cimis_78 cimis_80 cimis_84 cimis_86 cimis_87 cimis_88 cimis_90 cimis_91 
+##       24       15       27       19       15       18        1       23 
+## cimis_92 
+##        0
+```
+
+As can be seen the function detects for several weather stations outliers. Let's have a look at the flagged values.
+
+
+```r
+ #check for second stations which ones were marked
+perform_gap_check(weather = weather_list[[1]], variable = 'Tmin') %>%
+  weather_list[[1]][.,] %>%
+  select(Date, Tmin, Tmax, QC_Tmin)
+```
+
+```
+##            Date    Tmin   Tmax QC_Tmin
+## 86   1990-03-27   -35.9   27.6       R
+## 177  1990-06-26  -134.0   79.7       S
+## 182  1990-07-01    51.4   85.5       R
+## 183  1990-07-02    84.9   85.5       R
+## 184  1990-07-03  -134.0 2342.0       S
+## 186  1990-07-05   -48.8   38.7       R
+## 348  1990-12-14    36.1   85.7       R
+## 349  1990-12-15    38.7   85.7       R
+## 357  1990-12-23   -53.7    8.7       S
+## 359  1990-12-25    33.1   51.3       R
+## 360  1990-12-26    23.5   44.6       *
+## 361  1990-12-27  -118.0 2139.0       S
+## 732  1992-01-02 -6999.0   81.4       S
+## 733  1992-01-03 -6999.0   80.2       S
+## 734  1992-01-04 -6999.0   81.8       S
+## 736  1992-01-06 -6999.0   80.8       S
+## 745  1992-01-15    40.7   66.2       R
+## 746  1992-01-16    40.1   67.0       R
+## 781  1992-02-20 -6999.0   17.6       S
+## 7177 2009-08-25   -42.2   35.3       S
+## 7295 2009-12-21   -34.4   10.5       S
+## 7307 2010-01-02   -32.9    0.3       S
+## 7308 2010-01-03   -24.6   11.9       S
+## 7309 2010-01-04   -19.1    3.5       S
+## 7313 2010-01-08   -23.3    6.5       S
+## 7314 2010-01-09   -39.7   -1.5       S
+## 7316 2010-01-11   -39.8    9.7       S
+```
+
+It seems that all of the flagged data are also rightly flagged. Observations detected by a flag are (temporary) removed from the weather data.frame, so that they do not deteriorate the subsequent tests. This is done by the helper function `clear_flagged_data()`, which removes the observation in the original column and adds a note in the quality control flag which test is responsible for the removal. In the end the `durre_quality_control` function returns the list of weather data.frames with two additional, columns for each tested variable: one witht the original observations called `org_Tmin` in the example of minimum temperature and one further column indicating which test flagged the observation called `flag_Tmin` in the example of Tmin. An example how the function is called can be seen in the following. This is usually done inside the `Durre_quality_control()` function.
+
+
+```r
+  weather_list <- map(weather_list, function(x){
+    clear_flagged_data(weather = x, variable = 'Tmin', 
+                       test_result = perform_gap_check(weather = x, 
+                                                 variable = 'Tmin'), 
+                       test_name = 'gap_check')
+  })
+```
+
+
+The next test called `perform_climate_outlier_check()` evaluates, as the name already indicates, climatological outlier. The routines for temperature and precipitation data are different. For temperature data at first the long term mean and standard deviation for each day of the year is calculated. This is done using a 15-day window centered at the day of interest and using each observation in that time window throughout all observation years. There need to be at least 100 observation for the long term mean and standard deviation, otherwise the function will return only NA. In the next step the standardized residuals for each day to to long term mean of that day of the year are calculated. Normalization involves subtracting the long term mean from the observation and dividing by the standard deviation. Finally if the absolute value of standardized residuals is larger than 6°C, the value is flagged as outlier. 
+In case of precipitation the 95% percentile is used instead of long term mean and standard deviation. It is calculated in the same manner as in the frequent values test. A 29-day window centered at the day of interested is used, missing values and zero-precipitation observations were ignored. There need to be at least 20 valid observation in the time-window for the percentile calculation. In case of above zero temperature, precipitation values larger than 9 times the 95% percentile for the day of interest are flagged. In freezing conditions the threshold is lowered to 5 times the 95% percentile.
+
+
+Use the final results instead of the function call to check how many days are flagged.
+
+
+### Temporal consistency
+
+The next tests investigate the temporal integrity of the weather data. The iterative temperature consistency test called `quickker_iterat_consistency()` checks if minimum, maximum and mean temperature are line with another. This involves that minim temperature should not be larger than mean and maximum temperature at the same day, but also at the current day compared to the following day. There are in total 7 seven plausibility checks done for each day, for more details please refer to the Appendix A of Durre 2010. For each variable at each day the amount of positive tests (called violations) are summarized. The observations having the most violations are removed. Then test is run again until no more violations are detected. The iterative nature of the test should prevent excessive flagging and prevent that valid observations are 'dragged down' by faulty neighbours. For full potential of the test, also mean temperature observations are required. 
+
+test results
+
+Next comes the spike/dip test, which is run using `do_spike_dip_test()`. The test detects rapid day-to-day changes. If the absolute difference of a observation at day 0 to day -1 is larger than 25°C followed by an absolute change in the same variable to day +1 by also 25°C the observaiton at day 0 is flagged. This means that one spike or dip is not enough, there needs to be both.
+
+Lagged temperature range test. Never fully understood. Still needs to be explained.
+
+test results
+
+There were further precipitation consistency tests described by Durre 2010, however these involved the consistency between precipitation and snow data. Because snow data is not considered in this implementation of the quality control scheme, they were discarded.
+
+### Spatial consistency test
+
+The next section is about the spatial consistency of the observations. The first test in this section is a regression check of temperature observation called `spatial_consistency_test()`. At first only neighbouring stations within a 75km radius around the target station were considered. Using a three day window centered on the day of interest, a weighted mean of the pairwise regression of target and neighbour values is calculated. Target neighbour regressions needed to have correlation coefficient of 0.8 or larger in order to be considered. At least three, but never more than seven neighbouriung stations were used for the regression. Mean value of the regression is calculated based on the index of agreement. Regressions are done for each year / month independently. In order to be flagged, the residual and the standardized residual must exceed a threshold. (>= 4 and 8, respectively).
+
+Results
+
+The spatial regression has relatively high quality demands on the target - neighbour station data quality. In cases were the requirements were not met, the second test can fill a gap. The corrobation test of temperature `perform_temperature_corrobation_check()` and precipitation `precipitation_spatial_corrobation_test()` tests if the smallest difference in target - neighbour observation exceeds a certain threshold. For the lowest absolute difference calculation a three day window centered on the day of interested is used for the neighbouring station. That means if there are seven neighbpour stations having for each of the three day window a valid observaiton, the target observation of day 0 is compared to 21 neighbouring observations. The three-day time window should account for different measurement protocols. If the smallest absolute difference is larger or equal to 10°C, then the target observation is flagged. In case of precipitation, the absolute difference accompanied by the difference in climatological percentiles. Climatological percentiles are calculated following the same protocoll described for the climatological outliers. The difference is, that this time the percentile of the values of interest are caclulated and not compared to a fixed threshold. The smalles absolute difference in climatololoigical percentiles is then used to determine a testing threshold for the smalles absolute difference in precipitation. For more details please refer to the Appendix C of Durre 2010. 
+
+test results
+
+### Megaconsistency test
+
+In the end of the quality control scheme some final consistency test, labelled by Durre 2010 as megaconsistency tests are carried out. These involve again mostly plausibility on snow data (for example only snow in months were snowfall can be expected, or that snow occured in months were the lowest Tmin was larger or equal than 7°C). In case of temperature one test is carried out, called `temperature_mega_consistency_check()`. The test checks that the current Tmax is not smaller than the lowest Tmin of the month and that the current Tmin is not larger than the highest Tmax of the month. This is necissary, because the consistency tests demanding that Tmin is smaller than Tmax only work if there are both observations available for a day. For days with a 'missin partner', erroneous observation could slipe through the test and are intended to be catched with the megaconsistency test.
+
+test results
 
