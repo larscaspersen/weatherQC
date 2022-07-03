@@ -1,0 +1,37 @@
+---
+title: "Weather gap imputation"
+author: "Lars Caspersen"
+date: '2022-06-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Daily weather data is used in many different aspects, it can be used to drive crop yield models, it can be used in phenology models to predict for example the occurence of flowering in fruit trees or it can be used as a basis for weather generators which make such studies more robust and also allow the investigation of future trends, like the development of accumulated winter chill with the progress of climate change. Regardless in which field the daily weather records are used, the quality of the analysis is also dependent on the quality of the input data. Recorded daily weather data can suffer from several deficiencies: for example malfunctioning sensors can lead to erroneous or missing data, change in measurement equipment or the surrounding landscape can lead to inhomogenous weather time series. Using for example incomplete weather records to run crop yield models or weather generators is often not possible and even if so not advisable, since the results based on incomplete weather records are prone to be biased (Chaudhry 2019, Chinasow 2021). Weather gap imputation methods can be used to fill missing observations in the time series. These methods often rely on the observation of neighbouring stations. There are many different approaches tested and documented ranging from simple linear regressions to more complictated machine learning approaches, A small non-exhaustive review found around 40 different imputation methods which were documented in many different comparative, region-specific studies. However, only few of them are also available as fully fleteched functions available to interested user who can't or don't want to recreate the described functions to patch gaps in their own weather data. The performance of imputation alrgorithms depends on the complexity of the landscape, the variable of interest and the density of the auxiliary weather stations, so there is no silver bullet solution for every weather data set. A general rule of thumb can be: The more complex the landscape, the better more complex methods perform better Oriani 2021. 
+
+
+
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

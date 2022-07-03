@@ -1,45 +1,24 @@
 #run outlier analysis
 library(tidyverse)
-
-# #load CIMIS data
-# target_info <- readRDS('data/cimis-overveiw.RData')
-# weather_list <- readRDS('data/cimis_data.RData')
-# 
-# load('data/UCIPM_list_90.RData')
-# load('data/UCIPM_list_aux_1.RData')
-# 
-# #add names to the weather list
-# target_info$id <-  paste0('cimis_', target_info$Stat_num)
-# names(weather_list) <- target_info$id
-# 
-# #combine all auxiliar data to one
-# aux_data <- c(aux_data, weather_list, UCIPM_list_90)
-# rm(UCIPM_list_90)
-# 
-# #load weather station info data
-# load('data/UCIPM_overview_all.RData')
-# UCIPM_WS_51s_10s <-  rename(UCIPM_WS_51s_10s, id = chillR_code)
-# 
-# #merge info of auxiliary weather stations
-# aux_overview <- merge.data.frame(UCIPM_WS_51s_10s, target_info, 
-#                                  by = c('id', 'Name', 'Latitude', 'Longitude'), all = T) %>%
-#   dplyr::select(id, Name, Longitude, Latitude)
-# 
-# rm(UCIPM_WS_51s_10s)
-# 
-# saveRDS(aux_data, file = 'data/quality_control_aux-data.RData')
-# saveRDS(aux_overview, file = 'data/quality_control_aux-info.RData')
-# saveRDS(target_info, file = 'data/quality_control_target-info.RData')
-# saveRDS(weather_list, file = 'data/quality_control_target-data.RData')
-
+library(chillR)
 
 #load target and aux data
-aux_data <- readRDS('data/quality_control_aux-data.RData')
-aux_info <- readRDS('data/quality_control_aux-info.RData')
-weather_list <- readRDS('data/quality_control_target-data.RData')
-weather_info <- readRDS('data/quality_control_target-info.RData')
+aux_data <- chillR::load_temperature_scenarios(path = 'data/prepared_weather_data/',
+                                               prefix = 'aux-station')
+aux_info <- read.csv('data/quality_control_aux-info.csv')
+weather_list <- chillR::load_temperature_scenarios(path = 'data/prepared_weather_data/',
+                                                   prefix = 'target-station')
+weather_info <- read.csv('data/cimis_info.csv')
 
 source('code/outlier-functions.R')
+
+
+library(chillR)
+
+fixed_limit_test(weather = KA_weather, region = 'world', subregion = 'Germany', 
+                 variable = 'Tmin')
+
+chillR::KA_weather
 
 
 #run outlier detection costa 2021 on first element of weather_list for Tmin
@@ -59,13 +38,17 @@ write.csv(test_result, file = 'data/qc_costa_tmin_example.csv', row.names = FALS
 ###run durre qc
 
 start_time <- Sys.time()
-durre_weather_quality_control(weather_list = weather_list,
+weather_result <- durre_weather_quality_control(weather_list = weather_list,
                               weather_info =  weather_info,
                               aux_list = aux_data, 
                               aux_info = aux_info,
                               region = 'USA',
                               subregion = 'California')
 end_time <- Sys.time()
+
+saveRDS(weather_result, file = 'data/quality-control-durre_results-CIMIS.RData')
+
+#took roughly 4 hours
 
 
 

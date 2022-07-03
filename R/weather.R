@@ -1,0 +1,23 @@
+#' Daily weather observations Five Points (California)
+#'
+#' A dataset containing the daily observations of precipitation, minimum and 
+#' maximum temperature recorded at the weather station Five Points (California). 
+#' Data was obtained using chillR::handle_cimis() function.
+#'
+#' @format A data frame with 11688 rows and 12 variables:
+#' \describe{
+#'   \item{Weather Station}{Name of station}
+#'   \item{Year}{Year}
+#'   \item{Month}{Month}
+#'   \item{Day}{Day}
+#'   \item{Tmax}{Maximum temperature (degree C)}
+#'   \item{Tmin}{Minimum temperature (degree C)}
+#'   \item{Precip}{Daily Precipitation (mm)}
+#'   \item{QC_Tmax}{Quality flag of maximum temperature}
+#'   \item{QC_Tmin}{Quality flag of minimum temperature}
+#'   \item{QC_Precip}{Quality flag of precipitation}
+#'   \item{Tmean}{Average daily temperature (degree C)}
+#'   \item{QC_Tmean}{Quality flag of average daily temperature}
+#' }
+#' @source \url{https://cimis.water.ca.gov/}
+"weather"

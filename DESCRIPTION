@@ -1,0 +1,11 @@
+Package: weather_QC
+Type: Package
+Title: Quality Control for Daily Weather Data
+Version: 0.0.1.0
+RoxygenNote: 7.2.0
+Encoding: UTF-8
+Imports: Rdpack
+RdMacros: Rdpack
+Depends: 
+    R (>= 2.10)
+LazyData: true

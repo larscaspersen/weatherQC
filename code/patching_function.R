@@ -767,8 +767,13 @@ patch_climatol <- function(weather, target, meta_data){
   #run patching
   climatol::homogen('var', as.numeric(min_year), as.numeric(max_year), dz.max = 100, snht1 = 0, gp = 0,verb = F)
   
+  
+  ####temp
+  
   #load patched data
-  load(paste0('var_',min_year,'-',max_year,'.rda'))
+  #load(paste0('var_',min_year,'-',max_year,'.rda'))
+  
+  ####temp
   
   #adjust colnames
   dah <- as.data.frame(dah)

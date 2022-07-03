@@ -249,7 +249,7 @@ eval_list <- lapply(weather_list, function(x){
 
 
 #stopped here, restart from this point tomorrow
-load('patch_california_workspace.RData')
+#load('patch_california_workspace.RData')
 
 
 #calculation done, do plotting

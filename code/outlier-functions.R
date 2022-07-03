@@ -5,7 +5,7 @@ library(tidyverse)
 options(dplyr.summarise.inform = FALSE)
 
 #function to get temperature records
-get_temp_records <- function(region = 'world'){
+get_weather_records <- function(region = 'world'){
   
   if(region == 'world'){
     
@@ -74,7 +74,7 @@ get_temp_records <- function(region = 'world'){
 
 ###fixed limits test
 
-fixed_limit_test <- function(weather, region, variable, subregion,  records = NULL){
+test_fixed_limit <- function(weather, variable, region, subregion,  records = NULL){
   
   #checks for input stuff
   if(is.list(weather) == F){
@@ -100,14 +100,14 @@ fixed_limit_test <- function(weather, region, variable, subregion,  records = NU
     } 
     
     #download record data
-    records <- get_temp_records(region = region)
+    records <- get_weather_records(region = region)
     
     #check if the needed subregion / state is present
-    if(! subregion %in% records$subregion){
+    if(! subregion %in% records$Country){
       stop(paste0('provided subregion name: ', subregion, ' could not be found in the records list. subregion list contains: ', paste0(unlist(records$subregion), collapse = ', ')))
     } else{
       #extract subregion-specific record
-      records <-  filter(records, Country == country)
+      records <-  filter(records, Country == subregion)
       
       if(variable %in% c('Tmin', 'Tmax')){
         records <- c(records$Tmin, records$Tmax)
@@ -134,7 +134,7 @@ fixed_limit_test <- function(weather, region, variable, subregion,  records = NU
 
 ###variable limit test
 
-variable_limit_test <- function(weather, variable, probs = c(0.01, 0.99)){
+test_variable_limit <- function(weather, variable, probs = c(0.01, 0.99)){
   
   #split to monthly groups
   monthly_weather <- split(weather, f = weather$Month)
@@ -166,7 +166,7 @@ add_date <- function(x){
 #calculate absolute difference to next day
 #add doy to weather
 
-temporal_continuity_test <-  function(weather, variable, prob = 0.995){
+test_temporal_continuity <-  function(weather, variable, prob = 0.995){
   #calculate difference to next day, append one NA to keep same length
   diffs <- c(abs(diff(as.matrix(weather[,variable]))), NA)
   
@@ -178,8 +178,8 @@ temporal_continuity_test <-  function(weather, variable, prob = 0.995){
 }
 
 
-#### consitstency between variables (I ignore the mean temperature for now)
-temperature_consistency_test <- function(weather, probs = 0.99){
+#### consitstency between variables 
+test_temperature_consistency <- function(weather, probs = 0.99){
   #minimum temperature should not be higher then maximum temperature (also one day earlier or later)
   cons1 <- (weather$Tmin >= weather$Tmax) | (weather$Tmin >= dplyr::lag(weather$Tmax)) | (weather$Tmin >= dplyr::lead(weather$Tmax))
 
@@ -802,21 +802,21 @@ weather_qc_costa <- function(weather, weather_coords, variable,
   #   aux_info needs to contain coordinates and date?
   
   #call fixed limits test
-  fixed_lim <- fixed_limit_test(weather = weather, region = region, 
+  fixed_lim <- test_fixed_limit(weather = weather, region = region, 
                    subregion = subregion,variable = variable)
   
   #call variable limits test
-  variable_lim <- variable_limit_test(weather = weather, variable = variable,
+  variable_lim <- test_variable_limit(weather = weather, variable = variable,
                                       probs = probs_variable_limit)
   
   #call temporal consistency test
-  temporal_consistency <- temporal_continuity_test(weather = weather, variable = variable, 
+  temporal_consistency <- test_temporal_continuity(weather = weather, variable = variable, 
                                                    prob = probs_temporal_continuity)
   
   #call variable consistency test (only applicable for temperature data)
   #make ifelse condition for temperature and precipitation
   if(variable %in% c('Tmin', 'Tmax')){
-    variable_consistency <- temperature_consistency_test(weather = weather,
+    variable_consistency <- test_temperature_consistency(weather = weather,
                                                             probs = probs_temperature_consistency)
     
     spatial_consistency <- spatial_consistency_test(weather = weather, 
@@ -1856,13 +1856,13 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   cat('Record exceedance test', '\n')
   
   #download records
-  records <- get_temp_records(region = region) %>%
+  records <- get_weather_records(region = region) %>%
     filter(Country == subregion)
   
   #Tmin
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
-                       test_result = fixed_limit_test(weather = x, 
+                       test_result = test_fixed_limit(weather = x, 
                                                       variable = 'Tmin',
                                                       region = NULL,
                                                       subregion = NULL,
@@ -1873,7 +1873,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   #Tmax
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = fixed_limit_test(weather = x, 
+                       test_result = test_fixed_limit(weather = x, 
                                                       variable = 'Tmax',
                                                       region = NULL,
                                                       subregion = NULL,
@@ -1884,7 +1884,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   #Precipitation
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = fixed_limit_test(weather = x, 
+                       test_result = test_fixed_limit(weather = x, 
                                                       variable = 'Precip',
                                                       region = NULL,
                                                       subregion = NULL,

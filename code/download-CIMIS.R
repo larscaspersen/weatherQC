@@ -71,5 +71,20 @@ for (i in 1:length(cimis_stations$Stat_num)) {
   
 }
 
-saveRDS(CIMIS_list, file='data/cimis_data.RData')
-saveRDS(cimis_stations, file='data/cimis-overveiw.RData')
+CIMIS_list <- readRDS('data/cimis_data.RData')
+cimis_stations <- readRDS('data/cimis-overveiw.RData')
+
+#adjust the id name of the stations
+cimis_stations$id <- paste0('cimis_',cimis_stations$Stat_num)
+
+#change names of list elements to id of stations
+names(CIMIS_list) <- cimis_stations$id
+
+#save weather data  
+chillR::save_temperature_scenarios(CIMIS_list, path = 'data/CIMIS/', prefix = 'target-station')
+
+#save overview file
+write.csv(cimis_stations, file = 'data/cimis_info.csv', row.names = F)
+
+#saveRDS(CIMIS_list, file='data/cimis_data.RData')
+#saveRDS(cimis_stations, file='data/cimis-overveiw.RData')
