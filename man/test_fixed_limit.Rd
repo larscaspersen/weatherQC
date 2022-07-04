@@ -4,10 +4,16 @@
 \alias{test_fixed_limit}
 \title{Test for exceedence of world records}
 \usage{
-test_fixed_limit(weather, variable, region, subregion, records = NULL)
+test_fixed_limit(
+  weather,
+  variable,
+  region = NULL,
+  subregion = NULL,
+  records = NULL
+)
 }
 \arguments{
-\item{weather}{a data.frame containing a daily time series data set. 
+\item{weather}{data.frame containing a daily time series data set. 
 It should have columns c("Year", "Month", "Day")}
 
 \item{variable}{a character indicating the column name of the tested variable in weather}
@@ -32,10 +38,12 @@ meaning that the tested variable exceeded the limits of the test.
 Wrapper function to test for weather observations outside records of the country / region.
 }
 \details{
-This function either retrieves the highest and lowest temperature (degree C) and 
-daily precipitation (mm) for a specified country / subregion or uses user-defined 
-limits. Then it tests which days of the specified variable in the weather data.frame
-exceeds the limits and flags these.
+This function tests if observed temperature or precipitation values
+exceed the worldwide records. The function also allows for users to 
+specify region and subregion, in that case it retrieves the highest and lowest 
+temperature (degree C) and daily precipitation (mm) for a specified country / subregion. 
+Furthermore, the function also allows user-defined limits. Then it tests which days of the specified variable in the weather data.frame
+exceeds the limits and flags these. 
 
 This test is included in the weather quality control schemes \code{durre_qc()};
 and \code{costa_qc()}. For more details on the weather quality control functions either 

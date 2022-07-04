@@ -5,7 +5,7 @@
 \alias{weather}
 \title{Daily weather observations Five Points (California)}
 \format{
-A data frame with 11688 rows and 12 variables:
+A data frame with 11688 rows and 14 variables:
 \describe{
   \item{Weather Station}{Name of station}
   \item{Year}{Year}
@@ -19,6 +19,8 @@ A data frame with 11688 rows and 12 variables:
   \item{QC_Precip}{Quality flag of precipitation}
   \item{Tmean}{Average daily temperature (degree C)}
   \item{QC_Tmean}{Quality flag of average daily temperature}
+  \item{Date}
+  \item{doy}{Day of the year}
 }
 }
 \source{

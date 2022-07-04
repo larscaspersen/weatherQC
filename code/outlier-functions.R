@@ -271,6 +271,13 @@ get_clim_percentiles_prec <- function(weather, doy, probs = c(0.3,0.5,0.7,0.9),
   
 }
 
+#add date to auxlist
+aux_data <- map(aux_data, function(x){
+  x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = '%Y-%m-%d')
+  x
+})
+
+
 
 #get percentile of precipitation data
 get_prec_rank <- function(weather,min_non_zero_days = 20){
@@ -293,39 +300,56 @@ get_prec_rank <- function(weather,min_non_zero_days = 20){
   
 }
 
+#there is a problem with this function! weather and aux stations can
+#have different length, so using index isnt advicable
+#use date for subsetting instead
+
 #get absolute minimum difference either for precipitation or precipitation percentile rank
-get_abs_min_difference <- function(weather,i, variable, aux_list){
+get_abs_min_difference <- function(x, target_date, variable, aux_list){
   
-  if(is.na(weather[i, variable]) == TRUE){
+  if(is.na(x) == TRUE){
     return(NA)
   }
   
-  #extract values from aux station
-  int <- map_dbl(aux_list, function(x) x[[i, variable]])
-  if(i < nrow(weather)){
-    int <- c(int, map_dbl(aux_list, function(x) x[[i+1, variable]]))
+  
+  #extract values from aux station with +-1 day
+  int <- map(aux_list, function(x){
+    x %>%
+      filter(Date >= (target_date - 1) & Date <= (target_date + 1)) %>%
+      .[[variable]]
+  }) %>%
+    unlist() %>%
+    unname()
+  
+  #check if there is at least one value of non NA. otherwise return NA,
+  #in case no neighbouring station covered the period of interest also return NA
+  if(length(int) > 0){
+    if(all(is.na(int))){
+      return(NA)
+    }
+  } else{
+    return(NA)
   }
-  if(i != 1){
-    int <- c(int, map_dbl(aux_list, function(x) x[[i-1, variable]]))
-  }
+  
   
   #if the value is not the highest or the lowest, then there is no need to carry out 
   #the corrobation test
-
+  
   if(variable == 'Precip'){
-    if(all(weather[[variable]][i] > int, na.rm = T) | all(weather[[variable]][i] < int, na.rm = T) == F){
+    #in case x isn't the largest or the smallest, return zero
+    if(all(x > int, na.rm = T) | all(x < int, na.rm = T) == F){
       return(0)
     } else{
-      #it can happen that weather[i,variable] - int only returns NAs (because all int values are NA)
-      return(min(abs(weather[[variable]][i] - int), na.rm =T))
+      #otherwise calculate absolute minimum difference
+      return(min(abs(x - int), na.rm =T))
     }
   } else{
-    return(min(abs(weather[[variable]][i] - int), na.rm = T))
+    return(min(abs(x - int), na.rm = T))
   }
 }
 
 
-precipitation_spatial_corrobation_test <- function(weather, weather_coords, aux_info, aux_list,
+test_precipitation_spatial_corrobation <- function(weather, weather_coords, aux_info, aux_list,
                                                    max_dist = 75,
                                                    max_station = 7, min_station = 3){
   
@@ -364,9 +388,9 @@ precipitation_spatial_corrobation_test <- function(weather, weather_coords, aux_
   ####
   
   #now determine the prec rank difference  
-  prec_min_difference <- imap_dbl(weather$Precip, ~ get_abs_min_difference(weather = weather, i = .y, variable = 'Precip', aux_list = aux_list))
+  prec_min_difference <- map2_dbl(weather$Precip, weather$Date, function(x,y) get_abs_min_difference(x = x, target_date = y, variable = 'Precip', aux_list = aux_list))
   #same for precipitation percentile rank
-  prec_rank_difference <-  imap_dbl(weather$Precip, ~ get_abs_min_difference(weather = weather, i = .y, variable = 'prec_rank', aux_list = aux_list))
+  prec_rank_difference <-  map2_dbl(weather$prec_rank, weather$Date, function(x,y) get_abs_min_difference(x = x, target_date = y, variable = 'prec_rank', aux_list = aux_list))
   
   
   ###
@@ -510,7 +534,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   flag_res <- ifelse(is.na(x_res), yes = F, no = abs(x_res) >= max_res)
   flag_res_norm <-  ifelse(is.na(x_res_norm), yes = F, no = abs(x_res_norm) >= max_res_norm)
   
-  flag <- replace_na(flag_res | flag_res_norm, FALSE)
+  flag <- replace_na(flag_res & flag_res_norm, FALSE)
   
   #if either the residuals or the standardized resiudals exceed the threshold, return for that given day a true
   return(flag)
@@ -607,7 +631,7 @@ spat_consist_one_period_quick <- function(weather, aux_list, aux_info, period_st
   flag_res_norm <-  ifelse(is.na(x_res_norm), yes = F, no = abs(x_res_norm) >= max_res_norm)
   
   #if either the residuals or the standardized resiudals exceed the threshold, return for that given day a true
-  return(flag_res | flag_res_norm)
+  return(flag_res & flag_res_norm)
   
 }
 
@@ -716,7 +740,7 @@ spat_consist_one_period_old <- function(weather, aux_list, aux_info, period_star
 
 #function for spatial consistency test, extract target period from weather data
 #function prevents that if subscript is out of bounds that null is returned, instead ensures same length for all stations
-spatial_consistency_test <- function(weather, weather_coords, aux_list, aux_info, 
+test_spatial_consistency <- function(weather, weather_coords, aux_list, aux_info, 
                                      variable, max_dist = 75, window_width = 15, 
                                      min_coverage = 40, min_correlation = 0.8,
                                      min_station = 3, max_station = 7, max_res = 8, 
@@ -819,7 +843,7 @@ weather_qc_costa <- function(weather, weather_coords, variable,
     variable_consistency <- test_temperature_consistency(weather = weather,
                                                             probs = probs_temperature_consistency)
     
-    spatial_consistency <- spatial_consistency_test(weather = weather, 
+    spatial_consistency <- test_spatial_consistency(weather = weather, 
                                                     weather_coords = weather_coords, 
                                                     aux_list = aux_list, 
                                                     aux_info = aux_info, 
@@ -835,7 +859,7 @@ weather_qc_costa <- function(weather, weather_coords, variable,
   } else if(variable == 'Precip'){
     variable_consistency <- NA
     
-    spatial_consistency <- precipitation_spatial_corrobation_test(weather = weather, 
+    spatial_consistency <- test_precipitation_spatial_corrobation(weather = weather, 
                                                                   weather_coords = weather_coords,
                                                                   aux_info = aux_info,
                                                                   aux_list = aux_list,
@@ -1133,9 +1157,6 @@ helper_check_frequent_val <-  function(val, val_rep,doy, percentile_df){
   #return test result, if val is greater or equal to percentile
    return(val >= as.numeric(percentile_df[doy,col_check])) 
   }
-  
-
-  
 }
 
 #only aplicable for precipitation
@@ -1707,8 +1728,8 @@ perform_temperature_corrobation_check <- function(weather, weather_coords,
     map2(., aux_list, function(x,y) tibble(y, anomaly = x))
   
   #check if the absolute min distance of temperatre anomalies exceeds the threshold
-  flag <- imap_lgl(weather$doy, function(x,i){
-    get_abs_min_difference(weather = weather, i = i, variable = variable, 
+  flag <- map2_lgl(weather[variable], weather$Date, function(x,y){
+    get_abs_min_difference(x = x, target_date = y, variable = variable, 
                            aux_list = aux_list) >= max_diff
   })
 
@@ -2077,7 +2098,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   cat('Spatial Regression Test', '\n')
   weather_list <- imap(weather_list, function(x,id){
     clear_flagged_data(weather = x, variable = 'Tmin', 
-                       test_result = spatial_consistency_test(weather = x, 
+                       test_result = test_spatial_consistency(weather = x, 
                                                               weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                  weather_info$Latitude[weather_info$id == id]),
                                                               aux_list = aux_data, 
@@ -2089,7 +2110,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   #Tmax
   weather_list <- imap(weather_list, function(x,id){
     clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = spatial_consistency_test(weather = x, 
+                       test_result = test_spatial_consistency(weather = x, 
                                                               weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                  weather_info$Latitude[weather_info$id == id]),
                                                               aux_list = aux_data, 
@@ -2134,7 +2155,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   #Precipitation
   weather_list <- imap(weather_list, function(x,id){
     clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = precipitation_spatial_corrobation_test(weather = x, 
+                       test_result = test_precipitation_spatial_corrobation(weather = x, 
                                                                            weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                               weather_info$Latitude[weather_info$id == id]),
                                                                            aux_list = aux_data, 
