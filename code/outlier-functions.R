@@ -1245,7 +1245,7 @@ frequent_value_check <- function(weather, percentile_df, min_identical = 5,
 #####
 
 #helper function to detect median position
-which.quantile <- function (x, probs, na.rm = FALSE){
+which_quantile <- function (x, probs, na.rm = FALSE){
   if (! na.rm & any (is.na (x)))
     return (rep (NA_integer_, length (probs)))
   
@@ -1263,7 +1263,7 @@ which.quantile <- function (x, probs, na.rm = FALSE){
 }
 
 #helper function to detect gaps in monthly split data
-get_gap_monthly <- function(x, temp =TRUE, gap_threshold){
+get_gap_monthly <- function(x, temp =TRUE, gap_threshold = 10){
   
   gap_flag <- rep(FALSE, length(x))
   
@@ -1272,7 +1272,7 @@ get_gap_monthly <- function(x, temp =TRUE, gap_threshold){
   
   if(temp == TRUE){
     #detect position of median. make this the new start for the search
-    start <- which.quantile(x,probs = 0.5)
+    start <- which_quantile(x,probs = 0.5)
     
     #increment for next iteration, in case of temperature go up and go down
     step <- c(1,-1)
@@ -1439,7 +1439,7 @@ perform_climate_outlier_check <- function(weather, variable, max_temperature_z =
 
 #iterative temperature consistency
 
-quickker_iterat_consistency <- function(weather){
+test_iterative_temperature_consistency <- function(weather){
   
   #this objects determines how long the while loop goes, start value is arbetrary and just chosen, so that the while loop runs at least one time
   max_violations <- 2
@@ -1502,122 +1502,122 @@ quickker_iterat_consistency <- function(weather){
 
 }
 
-perform_iterative_temperature_consistency <- function(weather){
-  
-  #flag which is later returned
-  tmean_flag <- tmin_flag <- tmax_flag <- rep(FALSE, nrow(weather))
-  
-  #object that counts the violations
-  tmin_violations <- tmax_violations <- tmean_violations <- rep(0, nrow(weather))
-  
-  #objects used in loop
-  tmin0 <- tmin1 <- tmax0 <- tmax1 <- tmean0 <- tmean1 <- TRUE
-  
-  #this criterion is used to control the length of the while loop
-  #first value just to start while loop
-  max_violation <- 2
-  
-  while(max_violation > 1){
-    
-    #reset object that counts the violations
-    tmin_violations <- tmax_violations <- tmean_violations <- rep(0, nrow(weather))
-    
-    #iterate over each day, count the violations
-    for(i in 1:(nrow(weather)- 1)){
-      
-      #check which observations are available
-      tmin0 <- is.na(weather[i, 'Tmin']) == FALSE
-      tmin1 <- is.na(weather[i+1, 'Tmin']) == FALSE
-      tmax0 <- is.na(weather[i, 'Tmax']) == FALSE
-      tmax1 <- is.na(weather[i+1, 'Tmax']) == FALSE
-      tmean0 <- is.na(weather[i, 'Tmean']) == FALSE
-      tmean1 <- is.na(weather[i+1, 'Tmean']) == FALSE
-      
-      #1
-      if(tmax0 & tmin0){
-        if(weather[i, 'Tmax'] < (weather[i, 'Tmin'] - 1)){
-          tmin_violations[i] <- tmin_violations[i] + 1
-          tmax_violations[i] <- tmax_violations[i] + 1
-        }
-      }
-      
-      #2
-      if(tmean0 & tmax0){
-        if(weather[i, 'Tmean'] > (weather[i, 'Tmax'] + 1)){
-          tmean_violations[i] <- tmean_violations[i] + 1
-          tmax_violations[i] <- tmax_violations[i] + 1
-        }
-      }
-      
-      #3
-      if(tmean0 & tmin0){
-        if(weather[i, 'Tmean'] < (weather[i, 'Tmin'] - 1)){
-          tmean_violations[i] <- tmean_violations[i] + 1
-          tmin_violations[i] <- tmin_violations[i] + 1
-        }
-      }
-      
-      #4
-      if(tmax0 & tmin1){
-        if(weather[i, 'Tmax'] < (weather[i+1, 'Tmin'] -1)){
-          tmin_violations[i+1] <- tmin_violations[i+1] + 1
-          tmax_violations[i] <- tmax_violations[i] + 1
-        }
-      }
-      
-      #5
-      if(tmin0 & tmax1){
-        if(weather[i, 'Tmin'] > (weather[i+1, 'Tmax'] + 1)){
-          tmin_violations[i] <- tmin_violations[i] + 1
-          tmax_violations[i+1] <- tmax_violations[i+1] + 1
-        }
-      }
-      
-      #6
-      if(tmax1 & tmean0){
-        if(weather[i+1, 'Tmax'] < (weather[i, 'Tmean'] - 1)){
-          tmean_violations[i] <- tmean_violations[i] + 1
-          tmax_violations[i+1] <- tmax_violations[i+1] + 1
-        }
-      }
-      
-      #7
-      if(tmin1 & tmean0){
-        if(weather[i+1, 'Tmin'] > (weather[i, 'Tmean'] + 1)){
-          tmin_violations[i+1] <- tmin_violations[i+1] + 1
-          tmean_violations[i] <- tmean_violations[i] + 1
-        }
-      }
-    }
-    max_violation <- max(tmin_violations, tmax_violations, tmean_violations)
-    
-    if(max_violation >= 1){
-      #mark which ones violated the most in flag
-      tmin_flag[tmin_violations == max_violation] <- TRUE
-      tmax_flag[tmax_violations == max_violation] <- TRUE
-      tmean_flag[tmean_violations == max_violation] <- TRUE
-      
-      #set the valuzes which accumulated most violations to NA
-      weather[tmin_violations == max_violation, 'Tmin'] <- NA
-      weather[tmax_violations == max_violation, 'Tmax'] <- NA
-      weather[tmean_violations == max_violation, 'Tmean'] <- NA
-    }
-    
-    
-  }
-  
-  #additionally_flag any remaining days for which Tmin > Tmax
-  tmin_flag[weather$Tmin > weather$Tmax] <- TRUE
-  tmax_flag[weather$Tmin > weather$Tmax] <- TRUE
-  
-  return(data.frame('Tmin_flag' = tmin_flag, 'Tmean_flag' = tmean_flag, 
-                    'Tmax_flag' = tmax_flag))
-}
+# perform_iterative_temperature_consistency <- function(weather){
+#   
+#   #flag which is later returned
+#   tmean_flag <- tmin_flag <- tmax_flag <- rep(FALSE, nrow(weather))
+#   
+#   #object that counts the violations
+#   tmin_violations <- tmax_violations <- tmean_violations <- rep(0, nrow(weather))
+#   
+#   #objects used in loop
+#   tmin0 <- tmin1 <- tmax0 <- tmax1 <- tmean0 <- tmean1 <- TRUE
+#   
+#   #this criterion is used to control the length of the while loop
+#   #first value just to start while loop
+#   max_violation <- 2
+#   
+#   while(max_violation > 1){
+#     
+#     #reset object that counts the violations
+#     tmin_violations <- tmax_violations <- tmean_violations <- rep(0, nrow(weather))
+#     
+#     #iterate over each day, count the violations
+#     for(i in 1:(nrow(weather)- 1)){
+#       
+#       #check which observations are available
+#       tmin0 <- is.na(weather[i, 'Tmin']) == FALSE
+#       tmin1 <- is.na(weather[i+1, 'Tmin']) == FALSE
+#       tmax0 <- is.na(weather[i, 'Tmax']) == FALSE
+#       tmax1 <- is.na(weather[i+1, 'Tmax']) == FALSE
+#       tmean0 <- is.na(weather[i, 'Tmean']) == FALSE
+#       tmean1 <- is.na(weather[i+1, 'Tmean']) == FALSE
+#       
+#       #1
+#       if(tmax0 & tmin0){
+#         if(weather[i, 'Tmax'] < (weather[i, 'Tmin'] - 1)){
+#           tmin_violations[i] <- tmin_violations[i] + 1
+#           tmax_violations[i] <- tmax_violations[i] + 1
+#         }
+#       }
+#       
+#       #2
+#       if(tmean0 & tmax0){
+#         if(weather[i, 'Tmean'] > (weather[i, 'Tmax'] + 1)){
+#           tmean_violations[i] <- tmean_violations[i] + 1
+#           tmax_violations[i] <- tmax_violations[i] + 1
+#         }
+#       }
+#       
+#       #3
+#       if(tmean0 & tmin0){
+#         if(weather[i, 'Tmean'] < (weather[i, 'Tmin'] - 1)){
+#           tmean_violations[i] <- tmean_violations[i] + 1
+#           tmin_violations[i] <- tmin_violations[i] + 1
+#         }
+#       }
+#       
+#       #4
+#       if(tmax0 & tmin1){
+#         if(weather[i, 'Tmax'] < (weather[i+1, 'Tmin'] -1)){
+#           tmin_violations[i+1] <- tmin_violations[i+1] + 1
+#           tmax_violations[i] <- tmax_violations[i] + 1
+#         }
+#       }
+#       
+#       #5
+#       if(tmin0 & tmax1){
+#         if(weather[i, 'Tmin'] > (weather[i+1, 'Tmax'] + 1)){
+#           tmin_violations[i] <- tmin_violations[i] + 1
+#           tmax_violations[i+1] <- tmax_violations[i+1] + 1
+#         }
+#       }
+#       
+#       #6
+#       if(tmax1 & tmean0){
+#         if(weather[i+1, 'Tmax'] < (weather[i, 'Tmean'] - 1)){
+#           tmean_violations[i] <- tmean_violations[i] + 1
+#           tmax_violations[i+1] <- tmax_violations[i+1] + 1
+#         }
+#       }
+#       
+#       #7
+#       if(tmin1 & tmean0){
+#         if(weather[i+1, 'Tmin'] > (weather[i, 'Tmean'] + 1)){
+#           tmin_violations[i+1] <- tmin_violations[i+1] + 1
+#           tmean_violations[i] <- tmean_violations[i] + 1
+#         }
+#       }
+#     }
+#     max_violation <- max(tmin_violations, tmax_violations, tmean_violations)
+#     
+#     if(max_violation >= 1){
+#       #mark which ones violated the most in flag
+#       tmin_flag[tmin_violations == max_violation] <- TRUE
+#       tmax_flag[tmax_violations == max_violation] <- TRUE
+#       tmean_flag[tmean_violations == max_violation] <- TRUE
+#       
+#       #set the valuzes which accumulated most violations to NA
+#       weather[tmin_violations == max_violation, 'Tmin'] <- NA
+#       weather[tmax_violations == max_violation, 'Tmax'] <- NA
+#       weather[tmean_violations == max_violation, 'Tmean'] <- NA
+#     }
+#     
+#     
+#   }
+#   
+#   #additionally_flag any remaining days for which Tmin > Tmax
+#   tmin_flag[weather$Tmin > weather$Tmax] <- TRUE
+#   tmax_flag[weather$Tmin > weather$Tmax] <- TRUE
+#   
+#   return(data.frame('Tmin_flag' = tmin_flag, 'Tmean_flag' = tmean_flag, 
+#                     'Tmax_flag' = tmax_flag))
+# }
 
 #spike and dip check
 #temperature day at 0 is larger than +-25 than day -1 and 1
 
-do_spike_dip_test <- function(weather, variable, dip_threshold = 25){
+test_spike_dip <- function(weather, variable, dip_threshold = 25){
   flag <- abs(weather[,variable] - lead(weather[,variable])) >= dip_threshold & abs(weather[,variable] - lag(weather[,variable])) >= dip_threshold
   
   flag <- replace_na(flag[,1], FALSE)
@@ -1625,7 +1625,7 @@ do_spike_dip_test <- function(weather, variable, dip_threshold = 25){
 }
 
 #lagged range test
-perform_lagged_temperature_check <- function(weather, max_diff = 40){
+test_lagged_temperature_range <- function(weather, max_diff = 40){
   #get lowesr tmax for each day using a trhee day window
   lowest_tmax <- apply(matrix(c(lag(weather$Tmax), weather$Tmax, lead(weather$Tmax)),nrow = nrow(weather),
                               ncol = 3, byrow = FALSE), MARGIN = 1, function(x){
@@ -1671,7 +1671,7 @@ perform_lagged_temperature_check <- function(weather, max_diff = 40){
 ###
 #temperature corrobation check
 
-perform_temperature_corrobation_check <- function(weather, weather_coords,
+test_temperature_corrobation <- function(weather, weather_coords,
                                                   aux_list, aux_info,
                                                   variable,
                                                   max_station = 7, min_station = 3,
@@ -1737,7 +1737,7 @@ perform_temperature_corrobation_check <- function(weather, weather_coords,
 }
 
 #naught check: check for wrong zeros (of either degree Fahrenheit or degree Celsius)
-perform_naught_check <- function(weather){
+test_naught_weather <- function(weather){
   flag <- ifelse((weather$Tmin == -17.8 & weather$Tmax == -17.8) | (weather$Tmin == 0 & weather$Tmax == 0),
          yes = TRUE, no = FALSE)
   
@@ -1750,7 +1750,7 @@ perform_naught_check <- function(weather){
 #                       tmax shoudlnt be lower than lowest tmin
 #                       needed because not every tmin / tmax has a "partner", so they could have slipped through the previous tests
 #                       minimum of 140 observations required for the calendar month
-temperature_mega_consistency_check <- function(weather, min_obs = 140){
+test_temperature_megaconsistency <- function(weather, min_obs = 140){
   
   #for each month get max(tmax) and min(tmin)
   flags <- weather %>%
@@ -1823,9 +1823,35 @@ get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7,
     `colnames<-`(names)
 }
 
-durre_weather_quality_control <- function(weather_list, weather_info,
+weather_qc_durre <- function(weather_list, weather_info,
                                           aux_list, aux_info,
-                                          region, subregion){
+                                          mute = FALSE, skip_spatial_test = FALSE,
+                                          precip_min_nonzero_duplicate_test = 3,
+                                          same_temp_threshold = 10,
+                                          region = NULL, subregion = NULL,
+                                          records_temp = NULL,
+                                          records_precip = NULL,
+                                          streak_threshold = 20,
+                                          percentile_frequent_value_test = c(.3, .5, .7, .9),
+                                          min_non_zero_days = 20,
+                                          temp_gap_threshold = 10,
+                                          prec_gap_threshold = 300,
+                                          max_temperature_z = 6,
+                                          max_prec_threshold = 9,
+                                          max_prec_threshold_freezing = 5,
+                                          prec_percentile_climate_outlier = 0.95,
+                                          dip_threshold = 25,
+                                          lagged_range_max_diff = 40,
+                                          max_dist = 75,
+                                          window_width = 15,
+                                          min_coverage = 40,
+                                          min_correlation = 0.8,
+                                          min_station = 3,
+                                          max_station = 7,
+                                          max_res = 8,
+                                          max_res_norm = 4,
+                                          max_diff_temp_corrobation = 10,
+                                          min_obs_megaconsistency = 140){
   
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
@@ -1839,46 +1865,68 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   ####
   #basic integrity check
   ####
-  cat(paste0(rep('-', 10), recycle0 = FALSE), '\n')
-  cat('Basic integrity checks', '\n')
-  cat('', '\n')
-  
-  cat('Naught check', '\n')
+  if(mute == FALSE){
+    cat(paste0(rep('-', 10), recycle0 = FALSE), '\n')
+    cat('Basic integrity checks', '\n')
+    cat('', '\n')
+  }
+
+  if(mute == FALSE){
+    cat('Naught check', '\n')
+  }
   #1: naught check
   weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, 
                                            variable = 'Tmin', 
-                                           test_result = perform_naught_check(x),
+                                           test_result = test_naught_weather(weather = x),
                                            test_name = 'naught_check'))
   
   weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, 
                                                            variable = 'Tmax', 
-                                                           test_result = perform_naught_check(x),
+                                                           test_result = test_naught_weather(weather = x),
                                                            test_name = 'naught_check'))
     
   #2 duplicate check
-  cat('Duplicate Check', '\n')
+  if(mute == FALSE){
+    cat('Duplicate Check', '\n')
+  }
   #between entire years only for precipitation
   #tmin
   weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmin', 
-                                           test_result = get_duplicated_values(weather = x, variable = 'Tmin'), 
+                                           test_result = get_duplicated_values(weather = x, 
+                                                                               variable = 'Tmin', 
+                                                                               precip_min_nonzero = precip_min_nonzero_duplicate_test,
+                                                                               same_temp_threshold = same_temp_threshold), 
                                            test_name = 'duplicated'))
   
   #tmax
   weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmax', 
-                                                           test_result = get_duplicated_values(weather = x, variable = 'Tmax'), 
+                                                           test_result = get_duplicated_values(weather = x, variable = 'Tmax', 
+                                                                                               precip_min_nonzero = precip_min_nonzero_duplicate_test,
+                                                                                               same_temp_threshold = same_temp_threshold), 
                                                            test_name = 'duplicated'))
   #precipitation
   weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Precip', 
-                                                           test_result = get_duplicated_values(weather = x, variable = 'Precip'), 
+                                                           test_result = get_duplicated_values(weather = x, variable = 'Precip', 
+                                                                                               precip_min_nonzero = precip_min_nonzero_duplicate_test,
+                                                                                               same_temp_threshold = same_temp_threshold), 
                                                            test_name = 'duplicated'))
   
 
   #### record exceedance test
-  cat('Record exceedance test', '\n')
+  if(mute == FALSE){
+    cat('Record exceedance test', '\n')
+  }
   
-  #download records
-  records <- get_weather_records(region = region) %>%
-    filter(Country == subregion)
+  #if region and subregion are provided, download data
+  if(is.null(region) == FALSE & is.null(subregion) == FALSE){
+    #download records
+    records <- get_weather_records(region = region) %>%
+      filter(Country == subregion)
+    
+    records_temp <- c(records$Tmin, records$Tmax)
+    records_precip <- c(0, records$Precip)
+  } 
+
   
   #Tmin
   weather_list <- map(weather_list, function(x){
@@ -1887,7 +1935,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
                                                       variable = 'Tmin',
                                                       region = NULL,
                                                       subregion = NULL,
-                                                      records = c(records$Tmin, records$Tmax)), 
+                                                      records = records_temp), 
                        test_name = 'record_exceedance')
   })
   
@@ -1898,7 +1946,7 @@ durre_weather_quality_control <- function(weather_list, weather_info,
                                                       variable = 'Tmax',
                                                       region = NULL,
                                                       subregion = NULL,
-                                                      records = c(records$Tmin, records$Tmax)), 
+                                                      records = records_temp), 
                        test_name = 'record_exceedance')
   })
   
@@ -1909,19 +1957,22 @@ durre_weather_quality_control <- function(weather_list, weather_info,
                                                       variable = 'Precip',
                                                       region = NULL,
                                                       subregion = NULL,
-                                                      records = c(0, records$Precip)), 
+                                                      records = records_precip), 
                        test_name = 'record_exceedance')
   })
   
   
   #identical value streak test
-  cat('Value Streak Test', '\n')
+  if(mute == FALSE){
+    cat('Value Streak Test', '\n')
+  }
   
   #Tmin
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = get_streaks(weather = x, 
-                                                      variable = 'Tmin'), 
+                                                      variable = 'Tmin',
+                                                 rep_threshold = streak_threshold), 
                        test_name = 'streaks')
   })
   
@@ -1929,7 +1980,8 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = get_streaks(weather = x, 
-                                                 variable = 'Tmax'), 
+                                                 variable = 'Tmax',
+                                                 rep_threshold = streak_threshold), 
                        test_name = 'streaks')
   })
   
@@ -1942,14 +1994,20 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   #})
   
   #calculate percentiles for each weather df, store in list
-  prec_percentile_list <- map(weather_list, get_each_day_precipitation_percentile)
+  prec_percentile_list <- map(weather_list, function(x){
+    get_each_day_precipitation_percentile(weather = x, 
+                                          probs = percentile_frequent_value_test)
+    })
   
+  if(mute == FALSE){
+    cat('Frequent Identical Value Test', '\n')
+  }
   
-  cat('Frequent Identical Value Test', '\n')
   weather_list <- map2(weather_list, prec_percentile_list, function(x,y){
     clear_flagged_data(weather = x, variable = 'Precip', 
                        test_result = frequent_value_check(weather = x, 
-                                                          percentile_df = y),
+                                                          percentile_df = y,
+                                                          min_non_zero_days = min_non_zero_days),
                        test_name = 'frequent_ident_value')
   })
   
@@ -1957,18 +2015,23 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   ####
   #outlier checks
   ####
-  cat(rep('-', 10), '\n')
-  cat('Outlier checks', '\n')
-  cat('', '\n')
-  
+  if(mute == FALSE){
+    cat(rep('-', 10), '\n')
+    cat('Outlier checks', '\n')
+    cat('', '\n')
+  }
   
   #gap check
-  cat('Gap check', '\n')
+  if(mute == FALSE){
+    cat('Gap check', '\n')
+  }
   #Tmin
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = perform_gap_check(weather = x, 
-                                                 variable = 'Tmin'), 
+                                                 variable = 'Tmin', 
+                                                 temp_gap_threshold = temp_gap_threshold,
+                                                 prec_gap_thrshold = prec_gap_thrshold), 
                        test_name = 'gap_check')
   })
   
@@ -1976,7 +2039,9 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = perform_gap_check(weather = x, 
-                                                       variable = 'Tmax'), 
+                                                       variable = 'Tmax', 
+                                                       temp_gap_threshold = temp_gap_threshold,
+                                                       prec_gap_thrshold = prec_gap_thrshold), 
                        test_name = 'gap_check')
   })
   
@@ -1984,18 +2049,27 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Precip', 
                        test_result = perform_gap_check(weather = x, 
-                                                       variable = 'Precip'), 
+                                                       variable = 'Precip', 
+                                                       temp_gap_threshold = temp_gap_threshold,
+                                                       prec_gap_thrshold = prec_gap_thrshold), 
                        test_name = 'gap_check')
   })
   
 
   #climatological outlier
-  cat('Climatological Outlier Test', '\n')
+  if(mute == FALSE){
+    cat('Climatological Outlier Test', '\n')
+  }
   #Tmin
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = perform_climate_outlier_check(weather = x, 
-                                                       variable = 'Tmin'), 
+                                                       variable = 'Tmin',
+                                                       max_temperature_z = max_temperature_z,
+                                                       max_prec_threshold = max_prec_threshold,
+                                                       max_prec_threshold_freezing = max_prec_threshold_freezing,
+                                                       prec_percentile = prec_percentile_climate_outlier
+                                                       ), 
                        test_name = 'clim_outlier')
   })
   
@@ -2003,7 +2077,11 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = perform_climate_outlier_check(weather = x, 
-                                                                   variable = 'Tmax'), 
+                                                                   variable = 'Tmax',
+                                                                   max_temperature_z = max_temperature_z,
+                                                                   max_prec_threshold = max_prec_threshold,
+                                                                   max_prec_threshold_freezing = max_prec_threshold_freezing,
+                                                                   prec_percentile = prec_percentile_climate_outlier), 
                        test_name = 'clim_outlier')
   })
   
@@ -2011,7 +2089,11 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Precip', 
                        test_result = perform_climate_outlier_check(weather = x, 
-                                                                   variable = 'Precip'), 
+                                                                   variable = 'Precip',
+                                                                   max_temperature_z = max_temperature_z,
+                                                                   max_prec_threshold = max_prec_threshold,
+                                                                   max_prec_threshold_freezing = max_prec_threshold_freezing,
+                                                                   prec_percentile = prec_percentile_climate_outlier), 
                        test_name = 'clim_outlier')
   })
   
@@ -2019,15 +2101,21 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   ######
   #Temporal consistency checks
   ######
-  cat(rep('-', 10), '\n')
-  cat('Temporal Consistency checks', '\n')
-  cat('', '\n')
+  if(mute == FALSE){
+    cat(rep('-', 10), '\n')
+    cat('Temporal Consistency checks', '\n')
+    cat('', '\n')
+  }
   
   #iterative temperature consistency
-  cat('Iterative Consistency Check', '\n')
+  if(mute == FALSE){
+    cat('Iterative Consistency Check', '\n')
+  }
   
   #run the temporal temperature consistency test only once
-  test_list <- map(weather_list, quickker_iterat_consistency)
+  test_list <- map(weather_list, function(x){
+    test_iterative_temperature_consistency(weather = x)
+  })
   
   #apply resulst to tmin
   weather_list <- map2(weather_list, test_list, function(x,y){
@@ -2042,27 +2130,36 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   })
  
   #spike - dip check
-  cat('Spike/Dip Test', '\n')
+  if(mute == FALSE){
+    cat('Spike/Dip Test', '\n')
+  }
   #tmin
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
-                       test_result = do_spike_dip_test(weather = x, 
-                                                                   variable = 'Tmin'), 
+                       test_result = test_spike_dip(weather = x, 
+                                                   variable = 'Tmin',
+                                                   dip_threshold = dip_threshold), 
                        test_name = 'spike-dip')
   })
   
   #tmax
   weather_list <- map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = do_spike_dip_test(weather = x, 
-                                                       variable = 'Tmax'), 
+                       test_result = test_spike_dip(weather = x, 
+                                                    variable = 'Tmax',
+                                                    dip_threshold = dip_threshold), 
                        test_name = 'spike-dip')
   })
 
   
   #lagged temperature range check
-  cat('Lagged Temperature Range Test', '\n')
-  test_list <- map(weather_list, perform_lagged_temperature_check)
+  if(mute == FALSE){
+    cat('Lagged Temperature Range Test', '\n')
+  }
+  test_list <- map(weather_list, function(x){
+    test_lagged_temperature_range(weather = x, 
+                                  max_diff = lagged_range_max_diff)
+  })
   
   weather_list <- map2(weather_list, test_list, function(x,y){
     clear_flagged_data(weather = x, variable = 'Tmin', 
@@ -2080,100 +2177,145 @@ durre_weather_quality_control <- function(weather_list, weather_info,
   #####
   #spatial consistency check
   #####
-  cat(rep('-', 10), '\n')
-  cat('Spatial Consistency checks', '\n')
-  cat('(these usually take a little bit longer)', '\n')
-  cat('', '\n')
   
-  #make sure weather_info is of same order as weather_list
-  weather_info <- weather_info[match(weather_info$id, names(weather_list)), ]
-  
-  #add cleaned weather_list to aux_list and make sure there are no duplicates
-  aux_list[weather_info$id] <- weather_list
-  
-  #make sure that each element of aux_data is a tibble
-  aux_data <- map(aux_data, tibble)
-  
-  #Tmin
-  cat('Spatial Regression Test', '\n')
-  weather_list <- imap(weather_list, function(x,id){
-    clear_flagged_data(weather = x, variable = 'Tmin', 
-                       test_result = test_spatial_consistency(weather = x, 
-                                                              weather_coords = c(weather_info$Longitude[weather_info$id == id], 
-                                                                                 weather_info$Latitude[weather_info$id == id]),
-                                                              aux_list = aux_data, 
-                                                              aux_info = aux_info, 
-                                                              variable = 'Tmin'), 
-                       test_name = 'spatial_regression')
-  })
-
-  #Tmax
-  weather_list <- imap(weather_list, function(x,id){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = test_spatial_consistency(weather = x, 
-                                                              weather_coords = c(weather_info$Longitude[weather_info$id == id], 
-                                                                                 weather_info$Latitude[weather_info$id == id]),
-                                                              aux_list = aux_data, 
-                                                              aux_info = aux_info, 
-                                                              variable = 'Tmax'), 
-                       test_name = 'spatial_regression')
-  })
-  
-  
-  #temperature corrobation
-  cat('Spatial Corrobation Test', '\n')
-  #Tmin
-  weather_list <- imap(weather_list, function(x,id){
-    print(id)
-    clear_flagged_data(weather = x, variable = 'Tmin', 
-                       test_result = perform_temperature_corrobation_check(weather = x, 
-                                                              weather_coords = c(weather_info$Longitude[weather_info$id == id], 
-                                                                                 weather_info$Latitude[weather_info$id == id]),
-                                                              aux_list = aux_data, 
-                                                              aux_info = aux_info, 
-                                                              variable = 'Tmin'), 
-                       test_name = 'spatial_corrobation')
-  })
-  
-  
-
-  
-  
-  #Tmax
-  weather_list <- imap(weather_list, function(x,id){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = perform_temperature_corrobation_check(weather = x, 
-                                                                           weather_coords = c(weather_info$Longitude[weather_info$id == id], 
-                                                                                              weather_info$Latitude[weather_info$id == id]),
-                                                                           aux_list = aux_data, 
-                                                                           aux_info = aux_info, 
-                                                                           variable = 'Tmax'), 
-                       test_name = 'spatial_corrobation')
-  })
-  
-  
-  #Precipitation
-  weather_list <- imap(weather_list, function(x,id){
-    clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = test_precipitation_spatial_corrobation(weather = x, 
-                                                                           weather_coords = c(weather_info$Longitude[weather_info$id == id], 
-                                                                                              weather_info$Latitude[weather_info$id == id]),
-                                                                           aux_list = aux_data, 
-                                                                           aux_info = aux_info), 
-                       test_name = 'spatial_corrobation')
-  })
+  #this switch allows to skip spatial consistency tests, because they can
+  #be quite slow
+  if(skip_spatial_test == FALSE){
+    if(mute == FALSE){
+      cat(rep('-', 10), '\n')
+      cat('Spatial Consistency checks', '\n')
+      cat('(these usually take a little bit longer)', '\n')
+      cat('', '\n')
+    }
+    
+    #make sure weather_info is of same order as weather_list
+    weather_info <- weather_info[match(weather_info$id, names(weather_list)), ]
+    
+    #add cleaned weather_list to aux_list and make sure there are no duplicates
+    aux_list[weather_info$id] <- weather_list
+    
+    #make sure that each element of aux_data is a tibble
+    aux_data <- map(aux_data, tibble)
+    
+    #Tmin
+    if(mute == FALSE){
+      cat('Spatial Regression Test', '\n')
+    }
+    weather_list <- imap(weather_list, function(x,id){
+      clear_flagged_data(weather = x, variable = 'Tmin', 
+                         test_result = test_spatial_consistency(weather = x, 
+                                                                weather_coords = c(weather_info$Longitude[weather_info$id == id], 
+                                                                                   weather_info$Latitude[weather_info$id == id]),
+                                                                aux_list = aux_data, 
+                                                                aux_info = aux_info, 
+                                                                variable = 'Tmin',
+                                                                max_dist = max_dist,
+                                                                window_width = window_width,
+                                                                min_coverage = min_coverage,
+                                                                min_correlation = min_correlation,
+                                                                min_station = min_station,
+                                                                max_station = max_station,
+                                                                max_res = max_res,
+                                                                max_res_norm = max_res_norm), 
+                         test_name = 'spatial_regression')
+    })
+    
+    #Tmax
+    weather_list <- imap(weather_list, function(x,id){
+      clear_flagged_data(weather = x, variable = 'Tmax', 
+                         test_result = test_spatial_consistency(weather = x, 
+                                                                weather_coords = c(weather_info$Longitude[weather_info$id == id], 
+                                                                                   weather_info$Latitude[weather_info$id == id]),
+                                                                aux_list = aux_data, 
+                                                                aux_info = aux_info, 
+                                                                variable = 'Tmax',
+                                                                max_dist = max_dist,
+                                                                window_width = window_width,
+                                                                min_coverage = min_coverage,
+                                                                min_correlation = min_correlation,
+                                                                min_station = min_station,
+                                                                max_station = max_station,
+                                                                max_res = max_res,
+                                                                max_res_norm = max_res_norm), 
+                         test_name = 'spatial_regression')
+    })
+    
+    
+    #temperature corrobation
+    if(mute == FALSE){
+      cat('Spatial Corrobation Test', '\n')
+    }
+    #Tmin
+    weather_list <- imap(weather_list, function(x,id){
+      clear_flagged_data(weather = x, variable = 'Tmin', 
+                         test_result = test_temperature_corrobation(weather = x, 
+                                                                    weather_coords = c(weather_info$Longitude[weather_info$id == id], 
+                                                                                       weather_info$Latitude[weather_info$id == id]),
+                                                                    aux_list = aux_data, 
+                                                                    aux_info = aux_info, 
+                                                                    variable = 'Tmin',
+                                                                    max_station = max_station,
+                                                                    min_station = min_station,
+                                                                    max_dist = max_dist,
+                                                                    max_diff = max_diff_temp_corrobation), 
+                         test_name = 'spatial_corrobation')
+    })
+    
+    
+    
+    
+    
+    #Tmax
+    weather_list <- imap(weather_list, function(x,id){
+      clear_flagged_data(weather = x, variable = 'Tmax', 
+                         test_result = test_temperature_corrobation(weather = x, 
+                                                                    weather_coords = c(weather_info$Longitude[weather_info$id == id], 
+                                                                                       weather_info$Latitude[weather_info$id == id]),
+                                                                    aux_list = aux_data, 
+                                                                    aux_info = aux_info, 
+                                                                    variable = 'Tmax',
+                                                                    max_station = max_station,
+                                                                    min_station = min_station,
+                                                                    max_dist = max_dist,
+                                                                    max_diff = max_diff_temp_corrobation), 
+                         test_name = 'spatial_corrobation')
+    })
+    
+    
+    #Precipitation
+    weather_list <- imap(weather_list, function(x,id){
+      clear_flagged_data(weather = x, variable = 'Precip', 
+                         test_result = test_precipitation_spatial_corrobation(weather = x, 
+                                                                              weather_coords = c(weather_info$Longitude[weather_info$id == id], 
+                                                                                                 weather_info$Latitude[weather_info$id == id]),
+                                                                              aux_list = aux_data, 
+                                                                              aux_info = aux_info,
+                                                                              max_dist = max_dist,
+                                                                              max_station = max_station,
+                                                                              min_station = min_station), 
+                         test_name = 'spatial_corrobation')
+    })
+    
+  }
   
 
   ####
   #mega consistency check
   ####
-  cat(rep('-', 10), '\n')
-  cat('Megaconsistency checks', '\n')
-  cat('', '\n')
+  if(mute == FALSE){
+    cat(rep('-', 10), '\n')
+    cat('Megaconsistency checks', '\n')
+    cat('', '\n')
+  }
   
   #extremes mega consistency check
-  cat('Temperature Megaconsistency Test')
-  test <- map(weather_list, temperature_mega_consistency_check)
+  if(mute == FALSE){
+    cat('Temperature Megaconsistency Test')
+  }
+  test <- map(weather_list, function(x){
+    test_temperature_megaconsistency(weather = x,
+                                     min_obs = min_obs_megaconsistency)
+    })
   
   weather_list <- map2(weather_list, test, function(x,y){
     clear_flagged_data(weather = x, variable = 'Tmin', 

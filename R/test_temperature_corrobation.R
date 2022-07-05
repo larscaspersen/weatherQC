@@ -1,0 +1,127 @@
+#' Spatial corrobation test of temperature
+#' 
+#' Function to test if the target temperature is spatial coherent with neighbour
+#' observations.
+#' 
+#' The function compares the temperature observation of the target station to the
+#' observations of neighbouring stations. This function is a companion test to
+#' \code{\link{test_spatial_consistency}}. While the aim is similar (identify
+#' observations which are not in line with neighbouring observations) the testing 
+#' principle is different. While \code{test_spatial_consistency} compares the weighted
+#' output of linear regression to the target value, the \code{test_temperature_corrobation}
+#' compares the target observation to the temperature anomaly of the station to the 
+#' long term mean. The testing tolerance of \code{test_temperature_corrobation} is wider, so it is
+#' less strict, but it also makes fewer demands on the shared observation of 
+#' target and auxiliary weather stations, so it can be applicable where the demands
+#' of \code{test_spatial_consistency} do not permit any test result at all. 
+#' 
+#' The testing procedure is a follows: The target observation is compared with at
+#' least 3 but never more than 7 neighbourijng stations within a 75 km radius.
+#' Neighbouring values of the targe variable of the same day, but also the previous and
+#' following day are included in the test to account for differences in the recording
+#' protocoll. For each observation and station the temperature anomaly is calculated,
+#' meaning the standardized residuals of observation to the long term mean of the day of the year
+#' of the respective weather station. Long term mean and standard deviation are 
+#' calculated using the same principle as in \code{\link{get_longterm_mean_and_sd}}.
+#' If the minimum absolute difference of the target to neighbour anomaly is larger than 
+#' the default threshold of 10 degree C, then the target value is flagged by the 
+#' test.
+#' 
+#' For a detailed description of the test please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weather_QC}
+#' section 6 "Spatial consistency checks". 
+#' @param weather data.frame containing a daily time series data set. 
+#' It should have columns c("Year", "Month", "Day")
+#' @param weather_coords numerical vector of length two. Should contain longitude and 
+#' latitude (in that order) of target station in decimal format
+#' @param aux_info data.frame listing the auxiliary weather stations. Should at least contain
+#' the columns c("id", "Longitude", "Latitude")
+#' @param aux_list named list of data.frames with daily weather obsrvations of auxiliary
+#' weather stations. Names should be identical to \code{aux_info$id}. Strucuture of 
+#' data.frames should be identical of \code{weather}. Data.frames do not necissarily
+#' need to cover excat same time period as \code{weather}
+#' @param variable a character indicating the column name of the tested variable 
+#' in weathe
+#' @param max_dist maximum distance in kilometers of neighbouring stations to target station to be 
+#' included in the spatial corrobation test
+#' @param max_station maximum number of neighbouring stations included in the test.
+#' If more auxiliary stations available than \code{max_station}, then closest ones
+#' are taken
+#' @param min_station minimum amount of neighbouring stations for the test. If less
+#' is available, then test is not carried out and automatically returns \code{FALSE}
+#' for every observation
+#' @param max_diff maximum difference of the lowest minimum difference of target observation
+#' to neighbouring observations for temperature anomalies
+#' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
+#' meaning that the tested variable exceeded the limits of the test and is flagged
+#' as suspicious
+#' @examples test_temperature_corrobation(weather = weather,
+#' weather_coords = c(weather_info$Longitude, weather_info$Latidue),
+#' aux_info = aux_info, aux_list = aux_list, variable = "Tmin")
+#' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
+#' @importFrom Rdpack reprompt
+#' @references
+#' \insertAllCited{}
+test_temperature_corrobation <- function(weather, weather_coords,
+                                         aux_list, aux_info,
+                                         variable,
+                                         max_station = 7, min_station = 3,
+                                         max_dist = 75, max_diff = 10){
+  #get climate mean and sd for each day of target station
+  #and add it to weather data frame
+  weather <- map(unique(weather$doy), ~get_longterm_mean_and_sd(weather = weather, variable = variable,
+                                                                doy = .x)) %>%
+    bind_rows() %>%
+    merge(weather, by = 'doy', all.y = TRUE) %>%
+    arrange(Date)
+  
+  #calculate climate anomaly
+  weather$anomaly <- (weather[,variable] - weather$mean) / weather$sd
+  
+  #calculate temperature anomalies for a subset of closest stations of a three day window
+  #take anomaly closest to target anomaly
+  #if difference is greater than 10°C, then target value is flagged
+  
+  #this should be done ONCE, it happens also in the temperature spatial consistency test
+  
+  #calculate distance to aux_stations
+  aux_info$dist <-  round(sp::spDistsN1(pts = as.matrix(aux_info[, c("Longitude", "Latitude")]),
+                                        pt = weather_coords, longlat = TRUE), 2)
+  
+  #select stations within the max distance, which are not the target station
+  aux_info <- aux_info %>%
+    filter(dist > 0 & dist <= max_dist) %>%
+    arrange(dist)
+  
+  #if too few neighbouring values, then the test can't be carried out
+  if(nrow(aux_info) < min_station){
+    return(rep(FALSE, nrow(weather)))
+  }  else if(nrow(aux_info) > max_station){
+    aux_info <- aux_info[1:max_station,]
+  } 
+  aux_list <- aux_list[aux_info$id]
+  
+  aux_list <- map(aux_list, function(x){
+    
+    #add date and doy to aux data
+    x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")
+    x$doy <- lubridate::yday(x$Date)
+    #calculate climate mean and sd of aux data
+    climate_df <- map(unique(x$doy), ~get_longterm_mean_and_sd(weather = x, variable = variable,
+                                                               doy = .x)) %>%
+      bind_rows() %>%
+      merge(x, by = 'doy', all.y = TRUE) %>%
+      arrange(Date)
+    
+    #calculate climate anomaly of aux data
+    return((x[,variable] - climate_df$mean) / climate_df$sd)
+  }) %>%
+    map2(., aux_list, function(x,y) tibble(y, anomaly = x))
+  
+  #check if the absolute min distance of temperatre anomalies exceeds the threshold
+  flag <- map2_lgl(weather[variable], weather$Date, function(x,y){
+    get_abs_min_difference(x = x, target_date = y, variable = variable, 
+                           aux_list = aux_list) >= max_diff
+  })
+  
+  return(replace_na(flag, FALSE))
+}
