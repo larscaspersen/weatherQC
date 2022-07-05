@@ -73,8 +73,8 @@
 #' while the test runs
 #' @param skip_spatial_test flag, which allows to skip the spatial tests because
 #' they can be computationally demanding and may require several hours of runtime
-#' 
-#' 
+#' @param duplicate_test_min_obs
+#' @param same_temp_threshold
 #' @param region a character indicating the region for which the records should be downloaded. 
 #' Valid options are `world` and `USA`. Can be also set as \code{NULL} in case user-defined 
 #' limits are supplied
@@ -82,14 +82,35 @@
 #' \code{region = "world"} it should indicate the country the weather data is from. 
 #' In case of \code{region = "USA"} it should be the state's name the weather is obtained from.
 #' If user-defined limits are used, should be set to \code{NULL}
-#' @param records by default set to \code{NULL}. In case of user-defined limits, it should
-#' be a numeric vector of length two, containing lower and upper limits of tested variable.
-#' Needs to of length 2, first value indicates lower limit and second the upper limit
-#' @param probs_variable_limit percentile used as a testing threshold for variable limit test
-#' @param probs_temporal_continuity percentile uded as a testing threshold for 
-#' temporal conitnuity test
-#' @param probs_temperature_consistency percentile used as a testing threshold
-#' for temperature consistency test
+#' @param records_temp minimum and maximum temperature in degree Celsius limits for the fixed
+#' limit test. If left NULL, either the function scraps records from the web if
+#' \code{region} and \code{subregion} are supplied, otherwise global temperature
+#' records are used
+#' @param records_precip lower and upper limits of daily precipitation sum (mm) 
+#' for the fixed limit test. If left NULL, either the function scraps records 
+#' from the web if \code{region} and \code{subregion} are supplied, otherwise 
+#' global daily precipitation sum records are used
+#' @param streak_threshold test limit, if streaks this length or greater are found, 
+#' then test returns positive flag
+#' @param percentile_frequent_value_test precipitation percentile which will be 
+#' used to to judge if frequently repeated values are to be flagged or not
+#' @param min_non_zero_days minimum amount of non-zero precipitation observation need 
+#' to be present for ecdf calculation, otherwise NA returned
+#' @param temp_gap_threshold testing threshold for temperature data, if gaps are equal
+#' or larger, then function flags data. By default 10 degree C
+#' @param prec_gap_threshold testing threshold for precipitation data, if gaps are equal
+#' or larger, then function flags data. By default 300 mm
+#' @param max_temperature_z maximum size of standardized resiudla of temperature value
+#' to climatological mean for the day of interest
+#' @param max_prec_threshold factor for test: \code{precipitation >= max_prec_threshold *
+#' precipitation percentile} under non-freezing conditions
+#' @param max_prec_threshold_freezing factor for test: \code{precipitation >= max_prec_threshold *
+#' precipitation percentile}  under freezing-conditions
+#' @param prec_percentile_climate_outlier precipitation percentile used for the comparison
+#' @param dip_threshold threshold for the test, spike and dips lower than this value
+#' are ignored
+#' @param lagged_range_max_diff threshold for the test, spike and dips lower than this value
+#' are ignored
 #' @param max_dist maximum distance in kilometers of neighbouring stations to target station to be 
 #' included in the spatial corrobation test
 #' @param window_width amount of extra days added to the target and auxiliary
@@ -110,15 +131,28 @@
 #' @param max_res_norm testing threshold, highest standardized residual tolerated
 #' by the test. Note: both thresholds need to be exceeded in order for the 
 #' test to yield a flag
-#' @return data.frame with \code{nrow(weather)} rows and six columns. The first
-#' five columns are the individual test results and the sixth column is the
-#' aggregated test resuls, which is positive if at least two tests yielded
-#' positive results for an observation. All columns contain logicals, where 
-#' values of \code{TRUE} indicate successful test, meaning that the tested 
-#' variable exceeded the limits of the test and is flagged as suspicious
-#' @examples weather_qc_costa(weather = weather, 
-#' weather_coords = c(weather_info$Longitude, weather_info$Latidue),
-#' variable = "Tmin", aux_list = aux_list, aux_info = aux_info)
+#' @param probs_variable_limit percentile used as a testing threshold for variable limit test
+#' @param probs_temporal_continuity percentile uded as a testing threshold for 
+#' temporal conitnuity test
+#' @param probs_temperature_consistency percentile used as a testing threshold
+#' for temperature consistency test
+#' @param window_width amount of extra days added to the target and auxiliary
+#' weather station for the linear regression. Extra days only part of the model
+#' construction, not the testing
+#' @param max_diff_temp_corrobation maximum difference of the lowest minimum difference of target observation
+#' to neighbouring observations for temperature anomalies
+#' @param min_obs_megaconsistency minimum amount of observation per calendar month in order 
+#' to be considered in the test, otherwise for the calendar month all observations
+#' automatically get flagged as FALSE
+#' @return data.frame with \code{nrow(weather)} rows and the same columns as
+#' in weather, but with six extra columns called c("org_Tmin","org_Tmax", "org_Precip",
+#' "flag_Tmin", "flag_Tmax", "flag_Precip"). In the columns called "org_" plus variable
+#' name the exact copies of observations as in weather can be found, completely unaltered.
+#' In the original column flagged values were replaced with NA. In the same row as where
+#' the original value was removed, a comemnt indicating which test let to the removal
+#' can be found in the "flag_" plus variable name column.
+#' @examples weather_qc_durre(weather_list = list(weather), 
+#' weather_info = weather_info, skip_spatial_test = TRUE)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
@@ -129,7 +163,7 @@ weather_qc_durre <- function(weather_list,
                              aux_info = NULL,
                              mute = FALSE, 
                              skip_spatial_test = FALSE,
-                             precip_min_nonzero_duplicate_test = 3,
+                             duplicate_test_min_obs = 3,
                              same_temp_threshold = 10,
                              region = NULL, 
                              subregion = NULL,
@@ -206,20 +240,20 @@ weather_qc_durre <- function(weather_list,
   weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmin', 
                                                                    test_result = get_duplicated_values(weather = x, 
                                                                                                        variable = 'Tmin', 
-                                                                                                       precip_min_nonzero = precip_min_nonzero_duplicate_test,
+                                                                                                       precip_min_nonzero = duplicate_test_min_obs,
                                                                                                        same_temp_threshold = same_temp_threshold), 
                                                                    test_name = 'duplicated'))
   
   #tmax
   weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmax', 
                                                                    test_result = get_duplicated_values(weather = x, variable = 'Tmax', 
-                                                                                                       precip_min_nonzero = precip_min_nonzero_duplicate_test,
+                                                                                                       precip_min_nonzero = duplicate_test_min_obs,
                                                                                                        same_temp_threshold = same_temp_threshold), 
                                                                    test_name = 'duplicated'))
   #precipitation
   weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Precip', 
                                                                    test_result = get_duplicated_values(weather = x, variable = 'Precip', 
-                                                                                                       precip_min_nonzero = precip_min_nonzero_duplicate_test,
+                                                                                                       precip_min_nonzero = duplicate_test_min_obs,
                                                                                                        same_temp_threshold = same_temp_threshold), 
                                                                    test_name = 'duplicated'))
   

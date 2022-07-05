@@ -25,10 +25,10 @@ then the temperature data of that day are flagged as suspicious.
 
 
 \itemize{
- \item{"Test 1"}{Minimum temperature of day 0 should not be higher than maximum temperature of days -1, 0 and 1}
- \item{"Test 2"}{Minimum temperature of day 0 should not be higher than mean temperature of day -1, 0, or 1}
- \item{"Test 3"}{Maximum temperature of day 0 should not be higher than mean temperature of day -1, 0, or 1}
- \item{"Test 4"}{The absolute difference of reported mean temperautre and computed 
+ \item{Test 1: Minimum temperature of day 0 should not be higher than maximum temperature of days -1, 0 and 1}
+ \item{Test 2: Minimum temperature of day 0 should not be higher than mean temperature of day -1, 0, or 1}
+ \item{Test 3: Maximum temperature of day 0 should not be higher than mean temperature of day -1, 0, or 1}
+ \item{Test 4: The absolute difference of reported mean temperautre and computed 
  mean temperautre (Tmin + Tmax)/2 exceeding the 99\% percentile of all observed values.}
 }
 }
