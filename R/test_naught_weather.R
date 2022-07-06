@@ -20,6 +20,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_naught_weather <- function(weather){
   flag <- ifelse((weather$Tmin == -17.8 & weather$Tmax == -17.8) | (weather$Tmin == 0 & weather$Tmax == 0),
                  yes = TRUE, no = FALSE)

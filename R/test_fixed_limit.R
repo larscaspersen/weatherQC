@@ -36,7 +36,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
-
+#' @export
 test_fixed_limit <- function(weather, variable, region = NULL, subregion = NULL,  records = NULL){
   
   #checks for input stuff

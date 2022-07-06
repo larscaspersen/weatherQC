@@ -37,6 +37,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_lagged_temperature_range <- function(weather, max_diff = 40){
   #get lowesr tmax for each day using a trhee day window
   lowest_tmax <- apply(matrix(c(lag(weather$Tmax), weather$Tmax, lead(weather$Tmax)),nrow = nrow(weather),

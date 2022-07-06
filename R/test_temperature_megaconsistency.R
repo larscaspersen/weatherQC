@@ -26,6 +26,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_temperature_megaconsistency <- function(weather, min_obs = 140){
   
   #for each month get max(tmax) and min(tmin)

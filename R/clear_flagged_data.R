@@ -46,6 +46,8 @@
 #' weather <- clear_flagged_data(weather = weather, variable = "Tmin",
 #'                               test_result = test_result,
 #'                               test_name = "spike_dip")
+#'
+#' @export                               
 clear_flagged_data <- function(weather, variable, test_result, test_name){
   #set values to NA for positive test results
   weather[test_result, variable] <- NA

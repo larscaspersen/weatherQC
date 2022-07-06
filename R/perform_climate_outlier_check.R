@@ -34,6 +34,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 perform_climate_outlier_check <- function(weather, variable, 
                                           max_temperature_z = 6, 
                                           max_prec_threshold = 9, 

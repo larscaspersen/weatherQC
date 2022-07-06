@@ -26,6 +26,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_spike_dip <- function(weather, variable, dip_threshold = 25){
   flag <- abs(weather[,variable] - lead(weather[,variable])) >= dip_threshold & abs(weather[,variable] - lag(weather[,variable])) >= dip_threshold
   

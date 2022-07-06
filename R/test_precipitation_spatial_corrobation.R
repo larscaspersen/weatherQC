@@ -40,6 +40,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_precipitation_spatial_corrobation <- function(weather, weather_coords, aux_info, 
                                                    aux_list, max_dist = 75,
                                                    max_station = 7, min_station = 3){

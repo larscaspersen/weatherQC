@@ -160,6 +160,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 weather_qc_durre <- function(weather_list, 
                              weather_info,
                              aux_list = NULL, 

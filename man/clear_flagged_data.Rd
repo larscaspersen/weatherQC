@@ -57,6 +57,7 @@ test_result <- test_spike_dip(weather = weather, variable = "Tmin")
 weather <- clear_flagged_data(weather = weather, variable = "Tmin",
                               test_result = test_result,
                               test_name = "spike_dip")
+
 }
 \references{
 \insertAllCited{}

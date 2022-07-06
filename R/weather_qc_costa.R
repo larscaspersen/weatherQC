@@ -7,11 +7,11 @@
 #' It consists of five consistency tests, namely:
 #' 
 #' \itemize{
-#'  \item{Test 1: Fixed limit test; see also \code{link{test_fixed_limit}}}
-#'  \item{Test 2: Variable limit test; see also \code{link{test_variable_limit}}}
-#'  \item{Test 3: Temporal consistency test; see also \code{link{test_temporal_continuity}}}
+#'  \item{Test 1: Fixed limit test; see also \code{\link{test_fixed_limit}}}
+#'  \item{Test 2: Variable limit test; see also \code{\link{test_variable_limit}}}
+#'  \item{Test 3: Temporal consistency test; see also \code{\link{test_temporal_continuity}}}
 #'  \item{Test 4: Test for consistency among variables; see also \code{link{test_temperature_consistency}}}
-#'  \item{Test 5: Spatial consistency test; see also \code{link{test_spatial_consistency}} and \code{\link{test_precipitation_spatial_corrobation}}}
+#'  \item{Test 5: Spatial consistency test; see also \code{\link{test_spatial_consistency}} and \code{\link{test_precipitation_spatial_corrobation}}}
 #' }
 #' 
 #' The function can be applied to temperature and precipitation data, though the 
@@ -87,6 +87,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 weather_qc_costa <- function(weather, weather_coords, variable,
                              aux_list, aux_info, region = NULL, subregion = NULL, 
                              records = NULL,

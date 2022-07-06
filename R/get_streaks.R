@@ -27,6 +27,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 get_streaks <- function(weather, variable, rep_threshold = 20){
   
   #if not present, add date to weather

@@ -61,6 +61,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_temperature_corrobation <- function(weather, weather_coords,
                                          aux_list, aux_info,
                                          variable,

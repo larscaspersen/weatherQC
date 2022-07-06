@@ -20,6 +20,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_variable_limit <- function(weather, variable, probs = c(0.01, 0.99)){
   
   #split to monthly groups

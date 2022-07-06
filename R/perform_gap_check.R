@@ -27,6 +27,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 perform_gap_check <- function(weather, variable, temp_gap_threshold = 10, 
                               prec_gap_thrshold = 300){
   

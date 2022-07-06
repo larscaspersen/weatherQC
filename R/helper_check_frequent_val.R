@@ -22,6 +22,7 @@
 #' percentile_df <- get_each_day_precipitation_percentile(weather = weather)
 #' helper_check_frequent_val(val = weather$Precip[2], val_rep = 5,
 #' doy = 2, percentile_df = percentile_df)
+#' @export
 helper_check_frequent_val <-  function(val, val_rep,doy, percentile_df){
 
   if(val_rep >= 9){

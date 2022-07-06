@@ -43,6 +43,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 check_frequent_value <- function(weather, percentile_df, min_non_zero_days = 20){
   
   #incase there is no doy in weather, add it

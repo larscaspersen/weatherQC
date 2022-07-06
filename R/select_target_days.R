@@ -17,6 +17,7 @@
 #' period_start = as.Date("1991-12-17", format = "%Y-%m-%d"), 
 #' period_end = as.Date("1991-02-15", format = "%y-%m-%d"))
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
+#' @export
 select_target_days <- function(df, variable, period_start, period_end){
   
   #if not present, add Date column

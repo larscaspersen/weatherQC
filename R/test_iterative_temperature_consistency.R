@@ -36,6 +36,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_iterative_temperature_consistency <- function(weather){
   
   #this objects determines how long the while loop goes, start value is arbetrary and just chosen, so that the while loop runs at least one time

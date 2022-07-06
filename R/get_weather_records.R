@@ -13,6 +13,7 @@
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
 #' get_weather_records <- function(region = "world")
+#' @export
 get_weather_records <- function(region = "world"){
   
   if(region == 'world'){

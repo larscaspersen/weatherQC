@@ -21,6 +21,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_temporal_continuity <-  function(weather, variable, prob = 0.995){
   #calculate difference to next day, append one NA to keep same length
   diffs <- c(abs(diff(as.matrix(weather[,variable]))), NA)

@@ -23,6 +23,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 get_clim_percentiles_prec <- function(weather, doy, probs = c(0.3,0.5,0.7,0.9),
                                       min_non_zero_days = 20){
   #get doys of target days

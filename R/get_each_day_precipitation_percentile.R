@@ -24,6 +24,7 @@
 #' @references
 #' \insertAllCited{}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
+#' @export
 get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7, .9),
                                                   min_non_zero_days = 20){
   

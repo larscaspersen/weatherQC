@@ -27,3 +27,6 @@ sensitive to extreme values.
 \examples{
 calc_index_agreement(x = 1:10, y = 2:11)
 }
+\author{
+Lars Caspersen, \email{lars.caspersen@uni-bonn.de}
+}

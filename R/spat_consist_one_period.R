@@ -69,6 +69,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, variable,
                                     max_res = 8, max_res_norm = 4, min_station = 3,
                                     max_station = 7, window_width = 15, 

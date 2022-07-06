@@ -25,6 +25,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_temperature_consistency <- function(weather, probs = 0.99){
   #minimum temperature should not be higher than maximum temperature (also one day earlier or later)
   cons1 <- (weather$Tmin >= weather$Tmax) | (weather$Tmin >= dplyr::lag(weather$Tmax)) | (weather$Tmin >= dplyr::lead(weather$Tmax))

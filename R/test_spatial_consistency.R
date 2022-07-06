@@ -71,6 +71,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 test_spatial_consistency <- function(weather, weather_coords, aux_list, aux_info, 
                                      variable, max_dist = 75, window_width = 15, 
                                      min_coverage = 40, min_correlation = 0.8,

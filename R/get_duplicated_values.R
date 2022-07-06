@@ -31,6 +31,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
+#' @export
 get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
                                   same_temp_threshold = 10){
   
