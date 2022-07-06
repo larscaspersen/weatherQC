@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_abs_min_difference.R
 \name{get_abs_min_difference}
 \alias{get_abs_min_difference}
-\title{Calculate absolute minimum difference of target value to neighbouring stations}
+\title{Calculate absolute minimum difference of target value to neighboring stations}
 \usage{
 get_abs_min_difference(x, target_date, variable, aux_list)
 }
@@ -15,29 +15,29 @@ calculated}
 \item{variable}{column name, x was taken from. Should be the same name the
 corresponding observations in aux_list are stored}
 
-\item{aux_list}{list of data.frames with neighbouring weather station observations.
+\item{aux_list}{list of data.frames with neighboring weather station observations.
 Need contain columns \code("Date") and a column with the same name is indicated
 in parameter \code{variable}}
 }
 \value{
-numeric value with minimum absolute difference of target and neighbouring 
+numeric value with minimum absolute difference of target and neighboring 
 stations
 }
 \description{
-This function is a simple helper function for the spatial corrobation test.
+This function is a simple helper function for the spatial corroboration test.
 }
 \details{
 The function takes a value of the weather variable of interest and calculates
 the absolute minimum difference of the target value to the observations
-of the neighbouring stations in a time window of three days centered at the
+of the neighboring stations in a time window of three days centered at the
 day of interest. Special case of precipitation: if x is not strictly smaller or
-larger than all of the neighbouring values within the three day window, then 
+larger than all of the neighboring values within the three day window, then 
 0 is returned instead of the minimum absolute difference. In case x is NA, all the
-neighbouring values are NA or if the target_date is not covered by any of the neighbouring
+neighboring values are NA or if the target_date is not covered by any of the neighboring
 stations NA is returned instead of the minimum absolute difference
 }
 \examples{
-minimum_absolute_difference(x = weather$Precip[1], target_date = weather$Date[1],
+get_abs_min_difference(x = weather$Precip[1], target_date = weather$Date[1],
 variable = "Precip", aux_list = aux_list)
 }
 \author{
