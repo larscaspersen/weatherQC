@@ -16,7 +16,7 @@
 #' is larger than that, then all values towards the tail of the gap are flagged
 #' @return logical vector of the size of x, TRUE indicates that the data was
 #' flagged because of a gap in the ordered data larger than the gap_threshold
-#' @example get_gap_monthly(x = weather[weather$Month == 1, "Tmin"])
+#' @examples get_gap_monthly(x = weather[weather$Month == 1, "Tmin"])
 #' @seealso \code{link{perform_gap_check}}
 #' @importFrom Rdpack reprompt
 #' @references

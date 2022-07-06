@@ -25,3 +25,6 @@ or \code{\link{which.min}}.
 The function was not written by me but I found it on stakexchange, but I can't find
 the respective link anymore.
 }
+\examples{
+which.quantile(x = c(1:4), probs = 0.5)
+}

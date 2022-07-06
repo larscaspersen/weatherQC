@@ -11,7 +11,7 @@
 #' @param probs percentile, which is searched for
 #' @param na.rm flag, to remove NA values from x
 #' @return value in x which is closest to the requested percentile
-#' @example 
+#' @examples 
 #' which.quantile(x = c(1:4), probs = 0.5)
 which_quantile <- function (x, probs, na.rm = FALSE){
   if (! na.rm & any (is.na (x)))

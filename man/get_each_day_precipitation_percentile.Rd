@@ -38,6 +38,9 @@ zer-precipitation observations are discarded. If there are fewer observations th
 \code{min_non_zero_days}, then NA is returned instead of the empirical cumulative
 density function.
 }
+\examples{
+get_each_day_precipitation_percentile(weather = weather)
+}
 \references{
 \insertAllCited{}
 }

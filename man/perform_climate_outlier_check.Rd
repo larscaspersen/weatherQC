@@ -51,9 +51,11 @@ threshold (by default 6). Precipitation flags are raised if the observation
 exceeds the a factor (which changes for freezing conditions) times the percentile 
 (by default the 95\% percentile is used).
 
-This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 4 "Outlier checks".
+}
+\examples{
+perform_climate_outlier_check(weather = weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

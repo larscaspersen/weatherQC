@@ -30,6 +30,9 @@ upper tail is evaluated.
 
 This is a helper function for the higher-level \code{link{perform_gap_check}}
 }
+\examples{
+get_gap_monthly(x = weather[weather$Month == 1, "Tmin"])
+}
 \references{
 \insertAllCited{}
 }

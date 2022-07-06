@@ -14,8 +14,7 @@
 #' exceeds the a factor (which changes for freezing conditions) times the percentile 
 #' (by default the 95\% percentile is used).
 #' 
-#' This function is part of the weather quality control scheme after Durre et al.
-#' (2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+#' This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 #' please refer to section 4 "Outlier checks".
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")
@@ -30,7 +29,7 @@
 #' @param prec_percentile precipitation percentile used for the comparison
 #' @return Logical vector of same length as rows in \code{weather}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test.
-#' @example perform_climate_outlier_check(weather = weather, variable = "Tmin")
+#' @examples perform_climate_outlier_check(weather = weather, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references

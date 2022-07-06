@@ -34,8 +34,11 @@ thresholds defined by percentiles of the weather data. In general \code{test_spi
 is a much more restictive test than \code{test_temporal_continuity}.
 
 This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+(2010) \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 5 "Internal and temporal consistency checks".
+}
+\examples{
+test_spike_dip(weather = weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

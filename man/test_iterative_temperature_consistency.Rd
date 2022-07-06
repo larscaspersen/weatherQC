@@ -41,9 +41,11 @@ mean temperature (Tmean) of the current day (0) and following day(1) are as foll
 The + / - 1 tolerance is added for tolerance if different thermometers are used
 for the measurement of the variables.
 
-This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 5 "Internal and temporal consistency checks" and "Appendix A".
+}
+\examples{
+test_iterative_temperature_consistency(weather = weather)
 }
 \references{
 \insertAllCited{}

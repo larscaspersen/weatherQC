@@ -44,9 +44,11 @@ day (1). The tests are as followed:
 }
 
 
-This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 5 "Internal and temporal consistency checks".
+}
+\examples{
+test_lagged_temperature_range(weather = weather)
 }
 \references{
 \insertAllCited{}

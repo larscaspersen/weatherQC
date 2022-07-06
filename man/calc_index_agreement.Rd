@@ -9,10 +9,10 @@ calc_index_agreement(x, y)
 \arguments{
 \item{x}{= target observation}
 
-\item{y}{= neighbour observation}
+\item{y}{= neighbor observation}
 }
 \value{
-index of agreemenmt
+index of agreement
 }
 \description{
 Function to calculate index of agreement
@@ -23,4 +23,7 @@ It expresses both the covariation and the absolute difference of target and auxi
 weather station. The index of agreement can range from 0 to 1, the higher the value
 the better the agreement of the compared objects. The index of agreement is 
 sensitive to extreme values.
+}
+\examples{
+calc_index_agreement(x = 1:10, y = 2:11)
 }

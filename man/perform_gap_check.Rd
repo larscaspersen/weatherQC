@@ -40,9 +40,11 @@ coming after the gap towards the end of the tail are flagged. In case of precipi
 only the upper tail is investigated and the start is the first non-zero preciptiation
 observation. 
 
-This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 4 "Outlier checks".
+}
+\examples{
+perform_gap_check(weather = weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

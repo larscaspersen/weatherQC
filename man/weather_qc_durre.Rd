@@ -51,9 +51,9 @@ be the same as the \code{weather_info$id}}
 weather_list. Latitude and longitude should be in decimal format. Number of rows of 
 data.frame should be same as number of elements in weather_list}
 
-\item{aux_list}{named list of data.frames with daily weather obsrvations of auxiliary
-weather stations. Names should be identical to \code{aux_info$id}. Strucuture of 
-data.frames should be identical of \code{weather}. Data.frames do not necissarily
+\item{aux_list}{named list of data.frames with daily weather observations of auxiliary
+weather stations. Names should be identical to \code{aux_info$id}. Structure of 
+data.frames should be identical of \code{weather}. Data.frames do not necessarily
 need to cover excat same time period as \code{weather}. Can also be set to NULL, in that
 case spatial tests are automatically skipped}
 
@@ -66,6 +66,13 @@ while the test runs}
 
 \item{skip_spatial_test}{flag, which allows to skip the spatial tests because
 they can be computationally demanding and may require several hours of runtime}
+
+\item{duplicate_test_min_obs}{minimum amount of non-zero precipitation events
+to be considered in the duplicate test. By default it is at least three non-zero
+precipitation observations per tested time period (month or year)}
+
+\item{same_temp_threshold}{threhsold for the detection of duplicated temperature
+observations}
 
 \item{region}{a character indicating the region for which the records should be downloaded. 
 Valid options are `world` and `USA`. Can be also set as \code{NULL} in case user-defined 

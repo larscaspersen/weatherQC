@@ -23,8 +23,7 @@
 #' The + / - 1 tolerance is added for tolerance if different thermometers are used
 #' for the measurement of the variables.
 #' 
-#' This function is part of the weather quality control scheme after Durre et al.
-#' (2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+#' This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 #' please refer to section 5 "Internal and temporal consistency checks" and "Appendix A".
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")
@@ -32,7 +31,7 @@
 #' One column is for the flag of minimum temperature, the other for maximum temperature.
 #' Values of \code{TRUE} indicate successful test, meaning that the tested 
 #' variable exceeded the limits of the test.
-#' @example test_iterative_temperature_consistency(weather = weather)
+#' @examples test_iterative_temperature_consistency(weather = weather)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references

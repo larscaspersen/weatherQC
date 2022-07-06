@@ -34,9 +34,11 @@ the default threshold) subsequent days of the remaining data the exact same
 value of the variable of interest is noted, then the whole streak is marked by
 a flag.
 
-This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 3 "Basic integrity tests".
+}
+\examples{
+get_streaks(weather = weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

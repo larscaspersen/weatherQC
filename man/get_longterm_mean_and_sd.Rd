@@ -27,6 +27,9 @@ and standard deviation.
 
 This is a helper function for the higher-level function \code{\link{perform_climate_outlier_check}}
 }
+\examples{
+get_longterm_mean_and_sd(weather = weather, variable = "Tmin", doy = 1)
+}
 \seealso{
 \code{\link{perform_climate_outlier_check}}
 }

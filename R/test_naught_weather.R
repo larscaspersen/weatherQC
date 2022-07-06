@@ -8,15 +8,14 @@
 #' more likely intended to record missing data instead. Both variables need to
 #' have 0 or -17.8 as a value for the test to return a flag.
 #' 
-#' This function is part of the weather quality control scheme after Durre et al.
-#' (2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+#' This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 #' please refer to section 3 "Basic integrity tests".
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @example test_naught_weather(weather = weather)
+#' @examples test_naught_weather(weather = weather)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references

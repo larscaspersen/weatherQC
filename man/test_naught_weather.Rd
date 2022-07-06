@@ -25,9 +25,11 @@ received values of 0 degre C or -17.8 degree C (= 0 degree F) but the authors
 more likely intended to record missing data instead. Both variables need to
 have 0 or -17.8 as a value for the test to return a flag.
 
-This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 3 "Basic integrity tests".
+}
+\examples{
+test_naught_weather(weather = weather)
 }
 \references{
 \insertAllCited{}
