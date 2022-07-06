@@ -157,7 +157,7 @@
 #' @examples weather_qc_durre(weather_list = list(weather), 
 #' weather_info = weather_info, skip_spatial_test = TRUE)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
-#' @importFrom Rdpack reprompt purrr rvest readr rlang data.table dplyr reshape2 lubridate sp
+#' @importFrom Rdpack reprompt 
 #' @references
 #' \insertAllCited{}
 #' @export
