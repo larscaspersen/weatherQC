@@ -11,8 +11,8 @@
 #' 
 #' This test is included in the weather quality control schemes \code{durre_qc()};
 #' and \code{costa_qc()}. For more details on the weather quality control functions either 
-#' refer to the help pages of the functions or see Costa et al. (2021) \insertCite{costa_gap_2021}{weather_QC}
-#' or Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weather_QC}.
+#' refer to the help pages of the functions or see Costa et al. (2021) \insertCite{costa_gap_2021}{weatherQC}
+#' or Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}.
 #'
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")

@@ -26,7 +26,7 @@ Checks if daily weather observations or outside the usual climatological ranges 
 The function calculates monthly and annual percentiles of Tmin and Tmax and 
 then tests if the observation exceed the upper and lower percentile.
 This function is part of the weather quality control tests of Costa et al. (2021)
-\insertCite{costa_gap_2021}{weather_QC} and is contained by the function 
+\insertCite{costa_gap_2021}{weatherQC} and is contained by the function 
 \code{costa_qc()}
 }
 \examples{

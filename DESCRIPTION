@@ -1,4 +1,4 @@
-Package: weather_QC
+Package: weatherQC
 Type: Package
 Title: Quality Control for Daily Weather Data
 Version: 0.0.1.0

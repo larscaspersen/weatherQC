@@ -4,7 +4,7 @@
 #' daily weather data.
 #' 
 #' This weather quality control function was written following a the guidlines of a 
-#' weather control algorithm proposed by Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weather_QC}.
+#' weather control algorithm proposed by Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}.
 #' In total it consists of 6 groups of tests which contain several independent 
 #' tests:
 #' 

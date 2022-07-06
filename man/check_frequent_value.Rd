@@ -49,7 +49,7 @@ will be discarded. By default there need to be at least 20 non-zero observation
 for the percentile calculation, otherwise there will be NA instead of percentiles.
 
 This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weather_QC}. For more details 
+(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
 please refer to section 3 "Basic integrity tests".
 }
 \examples{

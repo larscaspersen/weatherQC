@@ -9,7 +9,7 @@
 #' have 0 or -17.8 as a value for the test to return a flag.
 #' 
 #' This function is part of the weather quality control scheme after Durre et al.
-#' (2010) \insertCite{durre_comprehensive_2010}{weather_QC}. For more details 
+#' (2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
 #' please refer to section 3 "Basic integrity tests".
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")

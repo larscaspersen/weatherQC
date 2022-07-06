@@ -45,7 +45,7 @@ events in order to be included in the duplication tests. Otherwise these periods
 are skipped.
 
 This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weather_QC}. For more details 
+(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
 please refer to section 3 "Basic integrity tests".
 }
 \references{

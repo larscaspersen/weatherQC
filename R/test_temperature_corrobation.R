@@ -27,7 +27,7 @@
 #' the default threshold of 10 degree C, then the target value is flagged by the 
 #' test.
 #' 
-#' For a detailed description of the test please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weather_QC}
+#' For a detailed description of the test please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}
 #' section 6 "Spatial consistency checks". 
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")

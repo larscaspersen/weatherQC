@@ -32,7 +32,7 @@ a temperature observation to have the other "patnering" temperature observation
 and thus fill the gap.
 
 This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weather_QC}. For more details 
+(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
 please refer to section 7 "Megaconsistency tests".
 }
 \references{

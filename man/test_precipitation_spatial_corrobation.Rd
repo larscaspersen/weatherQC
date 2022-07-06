@@ -53,7 +53,7 @@ observations
 The function compares the precipitation observation of the target station to the
 observations of neighbouring stations. Test limit depends on the absolute difference
 in climatological percentile ranks of precipitation observation. For a detailed
-description of the test please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weather_QC}
+description of the test please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}
 section 6 "Spatial consistency checks" and "Appendix C". 
 
 Climatological percentile ranks of precipitation is calculated using \code{\link{get_prec_rank}}

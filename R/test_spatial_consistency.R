@@ -24,7 +24,7 @@
 #' \code{max_res_norm}. Observations for which the regular residual and the 
 #' standardized resiudual both exceed their respective threhsolds are flagged.
 #' 
-#' For more information please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weather_QC}
+#' For more information please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}
 #' section 6 "Spatial consistency checks" and "Appendix B".
 #' 
 #' @param weather data.frame containing a daily time series data set. 

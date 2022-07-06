@@ -35,7 +35,7 @@ value of the variable of interest is noted, then the whole streak is marked by
 a flag.
 
 This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weather_QC}. For more details 
+(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
 please refer to section 3 "Basic integrity tests".
 }
 \references{
