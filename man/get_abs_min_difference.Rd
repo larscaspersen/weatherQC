@@ -16,7 +16,7 @@ calculated}
 corresponding observations in aux_list are stored}
 
 \item{aux_list}{list of data.frames with neighboring weather station observations.
-Need contain columns \code("Date") and a column with the same name is indicated
+Requires columns \code(Date) and a column with the same name is indicated
 in parameter \code{variable}}
 }
 \value{
