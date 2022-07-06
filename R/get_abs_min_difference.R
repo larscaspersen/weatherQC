@@ -17,7 +17,7 @@
 #' @param variable column name, x was taken from. Should be the same name the
 #' corresponding observations in aux_list are stored
 #' @param aux_list list of data.frames with neighboring weather station observations.
-#' Requires columns \code(Date) and a column with the same name is indicated
+#' Requires columns \code{Date} and a column with the same name is indicated
 #' in parameter \code{variable}
 #' @return numeric value with minimum absolute difference of target and neighboring 
 #' stations
