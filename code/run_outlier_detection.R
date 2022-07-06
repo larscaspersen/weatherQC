@@ -50,6 +50,18 @@ saveRDS(weather_result, file = 'data/quality-control-durre_results-CIMIS.RData')
 
 #took roughly 4 hours
 
+library(weatherQC)
+start_time <- Sys.time()
+weather_result <- weather_qc_durre(weather_list = weather_list,
+                                   weather_info =  weather_info,
+                                   skip_spatial_test = T,
+                                   region = 'USA',
+                                   subregion = 'California')
+end_time <- Sys.time()
+
+
+weather_list[[1]] dplyr::`%>%`
+  dplyr::summarise(mean_tmin = mean(Tmin, na.rm))
 
 
 

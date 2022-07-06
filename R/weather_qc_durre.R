@@ -158,6 +158,7 @@
 #' weather_info = weather_info, skip_spatial_test = TRUE)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt 
+#' @import magrittr
 #' @references
 #' \insertAllCited{}
 #' @export
