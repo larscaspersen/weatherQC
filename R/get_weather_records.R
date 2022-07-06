@@ -67,19 +67,19 @@ get_weather_records <- function(region = "world"){
     #take min and max temperature, change from fahrenheit to degree celsius
     records <- records %>%
       dplyr::select(State, Element, Value) %>%
-      filter(Element %in% c('All-Time Maximum Temperature', 'All-Time Minimum Temperature', 'All-Time Greatest 24-Hour Precipitation')) %>%
-      mutate(Element = as.factor(Element)) %>%
-      mutate(Element = recode_factor(Element, 'All-Time Minimum Temperature' = 'Tmin', 
+      dplyr::filter(Element %in% c('All-Time Maximum Temperature', 'All-Time Minimum Temperature', 'All-Time Greatest 24-Hour Precipitation')) %>%
+      dplyr::mutate(Element = as.factor(Element)) %>%
+      dplyr::mutate(Element = recode_factor(Element, 'All-Time Minimum Temperature' = 'Tmin', 
                                      'All-Time Maximum Temperature' = 'Tmax',
                                      'All-Time Greatest 24-Hour Precipitation' = 'Precip')) %>%
       .[!duplicated(.),] %>%
       reshape2::dcast(State ~ Element, value.variable = 'Value', value.var = 'Value') %>%
-      mutate(Tmin = round((as.numeric(Tmin) - 32) * (5/9), digits = 1),
+      dplyr::mutate(Tmin = round((as.numeric(Tmin) - 32) * (5/9), digits = 1),
              Tmax = round((as.numeric(Tmax) - 32) * (5/9), digits = 1),
              Precip = Precip * 25.4)
     
     
-    records <- as_tibble(records)
+    records <- tibble::as_tibble(records)
   }
   
   names(records) <- c('Country', 'Tmin', 'Tmax', 'Precip')

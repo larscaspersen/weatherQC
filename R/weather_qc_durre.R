@@ -203,7 +203,7 @@ weather_qc_durre <- function(weather_list,
                                                        'Tmax_org' = x$Tmax, 'Precip_org' = x$Precip,
                                                        'flag_Tmin' = NA, 'flag_Tmax' = NA, 
                                                        'flag_Precip' = NA) %>%
-                        mutate(doy = lubridate::yday(Date)))
+                        dplyr::mutate(doy = lubridate::yday(Date)))
   
   #if the user does not provide any information on auxilliary weather stations, 
   #then spatial consistency tests are skipped
@@ -272,7 +272,7 @@ weather_qc_durre <- function(weather_list,
   if(is.null(region) == FALSE & is.null(subregion) == FALSE){
     #download records
     records <- get_weather_records(region = region) %>%
-      filter(Country == subregion)
+      dplyr::filter(Country == subregion)
     
     records_temp <- c(records$Tmin, records$Tmax)
     records_precip <- c(0, records$Precip)

@@ -143,7 +143,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   #problem: nas are not returned here, I need to match it with x
   x_res <- purrr::map2(models, y_closest, .f = function(x,y){
     x$coefficients[1] +  x$coefficients[2] * y}) %>%
-    bind_cols() %>%
+    dplyr::bind_cols() %>%
     as.matrix() %>%
     helper_func(aux_info$ind_agreement, x) %>%
     round(digits = 2)

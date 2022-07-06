@@ -31,26 +31,26 @@ test_temperature_megaconsistency <- function(weather, min_obs = 140){
   
   #for each month get max(tmax) and min(tmin)
   flags <- weather %>%
-    group_by(Month) %>%
-    mutate(flag_tmin = Tmin > max(Tmax, na.rm = T),
+    dplyr::group_by(Month) %>%
+    dplyr::mutate(flag_tmin = Tmin > max(Tmax, na.rm = T),
            flag_tmax = Tmax < min(Tmin, na.rm = T)) %>%
-    ungroup() %>%
-    select(Month, flag_tmin, flag_tmax) %>%
-    mutate(flag_tmin = replace_na(flag_tmin, FALSE),
+    dplyr::ungroup() %>%
+    dplyr::select(Month, flag_tmin, flag_tmax) %>%
+    dplyr::mutate(flag_tmin = replace_na(flag_tmin, FALSE),
            flag_tmax = replace_na(flag_tmax, FALSE))
   
   #check if each month has enough observations, otherwise replace flags with FALSE
   obs_tmax <- weather %>%
-    group_by(Month) %>%
-    select(Tmax) %>%
+    dplyr::group_by(Month) %>%
+    dplyr::select(Tmax) %>%
     na.omit() %>%
-    summarise(n = n())
+    dplyr::summarise(n = n())
   
   obs_tmin <- weather %>%
-    group_by(Month) %>%
-    select(Tmin) %>%
+    dplyr::group_by(Month) %>%
+    dplyr::select(Tmin) %>%
     na.omit() %>%
-    summarise(n = n())
+    dplyr::summarise(n = n())
   
   too_few_obs <- which((obs_tmin$n >= min_obs) & (obs_tmax$n >= min_obs) == FALSE)
   

@@ -48,8 +48,9 @@ get_streaks <- function(weather, variable, rep_threshold = 20){
     x <- x[x$trials != 0,]
   }
   
-  x <- x %>%  mutate(lagged=lag(trials)) %>% #note: that's dplyr::lag, not stats::lag
-    mutate(start=(trials != lagged))
+  x <- x %>%  
+    dplyr::mutate(lagged=lag(trials)) %>% #note: that's dplyr::lag, not stats::lag
+    dplyr::mutate(start=(trials != lagged))
   x[1, "start"] <- TRUE
   x <- x %>% mutate(streak_id=cumsum(start))
   x <- x %>% group_by(streak_id) %>% mutate(streak=row_number()) %>%
@@ -57,7 +58,7 @@ get_streaks <- function(weather, variable, rep_threshold = 20){
   
   #filter days which exceed the streak id
   sub <- x %>%
-    filter(streak >= rep_threshold)
+    dplyr::filter(streak >= rep_threshold)
   
   #get all days belonging to the streaks, mark those days as suspicious
   sus_days <- x[x$streak_id %in% sub$streak_id,'Date']
