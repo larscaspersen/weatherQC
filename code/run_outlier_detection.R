@@ -50,6 +50,7 @@ saveRDS(weather_result, file = 'data/quality-control-durre_results-CIMIS.RData')
 
 #took roughly 4 hours
 
+devtools::install_github('larscaspersen/weather_patching')
 library(weatherQC)
 start_time <- Sys.time()
 weather_result <- weather_qc_durre(weather_list = weather_list,

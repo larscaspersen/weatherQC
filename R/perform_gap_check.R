@@ -18,7 +18,7 @@
 #' in weather
 #' @param temp_gap_threshold testing threshold for temperature data, if gaps are equal
 #' or larger, then function flags data. By default 10 degree C
-#' @param prec_gap_thrshold testing threshold for precipitation data, if gaps are equal
+#' @param prec_gap_threshold testing threshold for precipitation data, if gaps are equal
 #' or larger, then function flags data. By default 300 mm
 #' @return Logical vector of same length as rows in \code{weather}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test.
@@ -29,13 +29,13 @@
 #' \insertAllCited{}
 #' @export
 perform_gap_check <- function(weather, variable, temp_gap_threshold = 10, 
-                              prec_gap_thrshold = 300){
+                              prec_gap_threshold = 300){
   
   #set the threshold for the variable accordingly
   if(variable %in% c('Tmin', 'Tmax')){
     gap_threshold <- temp_gap_threshold
   } else if(variable == 'Precip'){
-    gap_threshold <- prec_gap_thrshold
+    gap_threshold <- prec_gap_threshold
   }
   
   #split data per month

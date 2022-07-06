@@ -8,7 +8,7 @@ perform_gap_check(
   weather,
   variable,
   temp_gap_threshold = 10,
-  prec_gap_thrshold = 300
+  prec_gap_threshold = 300
 )
 }
 \arguments{
@@ -21,7 +21,7 @@ in weather}
 \item{temp_gap_threshold}{testing threshold for temperature data, if gaps are equal
 or larger, then function flags data. By default 10 degree C}
 
-\item{prec_gap_thrshold}{testing threshold for precipitation data, if gaps are equal
+\item{prec_gap_threshold}{testing threshold for precipitation data, if gaps are equal
 or larger, then function flags data. By default 300 mm}
 }
 \value{

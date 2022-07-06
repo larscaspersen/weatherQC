@@ -382,7 +382,7 @@ weather_qc_durre <- function(weather_list,
                        test_result = perform_gap_check(weather = x, 
                                                        variable = 'Tmin', 
                                                        temp_gap_threshold = temp_gap_threshold,
-                                                       prec_gap_thrshold = prec_gap_thrshold), 
+                                                       prec_gap_threshold = prec_gap_threshold), 
                        test_name = 'gap_check')
   })
   
@@ -392,7 +392,7 @@ weather_qc_durre <- function(weather_list,
                        test_result = perform_gap_check(weather = x, 
                                                        variable = 'Tmax', 
                                                        temp_gap_threshold = temp_gap_threshold,
-                                                       prec_gap_thrshold = prec_gap_thrshold), 
+                                                       prec_gap_threshold = prec_gap_threshold), 
                        test_name = 'gap_check')
   })
   
@@ -402,7 +402,7 @@ weather_qc_durre <- function(weather_list,
                        test_result = perform_gap_check(weather = x, 
                                                        variable = 'Precip', 
                                                        temp_gap_threshold = temp_gap_threshold,
-                                                       prec_gap_thrshold = prec_gap_thrshold), 
+                                                       prec_gap_threshold = prec_gap_threshold), 
                        test_name = 'gap_check')
   })
   
