@@ -1,14 +1,14 @@
-#' Calculate absolute minimum difference of target value to neighbouring stations
+#' Calculate absolute minimum difference of target value to neighboring stations
 #' 
-#' This function is a simple helper function for the spatial corrobation test.
+#' This function is a simple helper function for the spatial corroboration test.
 #' 
 #' The function takes a value of the weather variable of interest and calculates
 #' the absolute minimum difference of the target value to the observations
-#' of the neighbouring stations in a time window of three days centered at the
+#' of the neighboring stations in a time window of three days centered at the
 #' day of interest. Special case of precipitation: if x is not strictly smaller or
-#' larger than all of the neighbouring values within the three day window, then 
+#' larger than all of the neighboring values within the three day window, then 
 #' 0 is returned instead of the minimum absolute difference. In case x is NA, all the
-#' neighbouring values are NA or if the target_date is not covered by any of the neighbouring
+#' neighboring values are NA or if the target_date is not covered by any of the neighboring
 #' stations NA is returned instead of the minimum absolute difference
 #' 
 #' @param x numeric value for which the minimum absolute difference should be 
@@ -16,14 +16,14 @@
 #' @param target_date Date when x was observed
 #' @param variable column name, x was taken from. Should be the same name the
 #' corresponding observations in aux_list are stored
-#' @param aux_list list of data.frames with neighbouring weather station observations.
+#' @param aux_list list of data.frames with neighboring weather station observations.
 #' Need contain columns \code("Date") and a column with the same name is indicated
 #' in parameter \code{variable}
-#' @return numeric value with minimum absolute difference of target and neighbouring 
+#' @return numeric value with minimum absolute difference of target and neighboring 
 #' stations
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' minimum_absolute_difference(x = weather$Precip[1], target_date = weather$Date[1],
+#' get_abs_min_difference(x = weather$Precip[1], target_date = weather$Date[1],
 #' variable = "Precip", aux_list = aux_list)
 get_abs_min_difference <- function(x, target_date, variable, aux_list){
   
