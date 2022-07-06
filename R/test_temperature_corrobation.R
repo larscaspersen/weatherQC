@@ -116,7 +116,7 @@ test_temperature_corrobation <- function(weather, weather_coords,
     #calculate climate anomaly of aux data
     return((x[,variable] - climate_df$mean) / climate_df$sd)
   }) %>%
-    map2(., aux_list, function(x,y) tibble(y, anomaly = x))
+    map2(., aux_list, function(x,y) tibble::tibble(y, anomaly = x))
   
   #check if the absolute min distance of temperatre anomalies exceeds the threshold
   flag <- map2_lgl(weather[variable], weather$Date, function(x,y){
