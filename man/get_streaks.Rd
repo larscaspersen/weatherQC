@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_streaks.R
 \name{get_streaks}
 \alias{get_streaks}
-\title{Identify unusual repititions in weather data}
+\title{Identify unusual repetitions in weather data}
 \usage{
 get_streaks(weather, variable, rep_threshold = 20)
 }
@@ -24,11 +24,11 @@ as suspicious. Data which was dropped in the process of the analysis receives
 automatically a FALSE
 }
 \description{
-Function to detect unusual amount of repititions in daily temperature and precipitation
+Function to detect unusual amount of repetitions in daily temperature and precipitation
 data.
 }
 \details{
-Bevor the function searches for streaks, missing data are dropped and in
+Befor the function searches for streaks, missing data are dropped and in
 case of precipitation observations of no precipitation as well. If in 20 (that is 
 the default threshold) subsequent days of the remaining data the exact same
 value of the variable of interest is noted, then the whole streak is marked by

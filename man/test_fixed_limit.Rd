@@ -2,7 +2,7 @@
 % Please edit documentation in R/test_fixed_limit.R
 \name{test_fixed_limit}
 \alias{test_fixed_limit}
-\title{Test for exceedence of world records}
+\title{Test for exceedance of world records}
 \usage{
 test_fixed_limit(
   weather,

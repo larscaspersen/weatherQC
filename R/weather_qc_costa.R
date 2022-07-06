@@ -3,7 +3,7 @@
 #' Performs a series of consistency tests and returns flags of suspicious data.
 #' 
 #' This weather quality control function was written following a the guidlines of a 
-#' weather control algorithm proposed by Costa et al. (2021) \insertCite{costa_gap_2021}{weatherQC}.
+#' weather control algorithm proposed by \insertCite{costa_gap_2021;textual}{weatherQC}.
 #' It consists of five consistency tests, namely:
 #' 
 #' \itemize{
@@ -15,12 +15,12 @@
 #' }
 #' 
 #' The function can be applied to temperature and precipitation data, though the 
-#' test concering consistency amon variables only works for minimum and maximum temperature.
+#' test concerning consistency among variables only works for minimum and maximum temperature.
 #' Parts of the test were also described for other weather variables like
 #' relative humidity or wind speed, but this implementation allows only the test
-#' to be used for minimum and maximzm temperaturte and daily precipitation sum. Because
+#' to be used for minimum and maximum temperature and daily precipitation sum. Because
 #' the section regarding spatial consistency was poorly described in the original 
-#' article the spatial consistency test were taken from Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}.
+#' article the spatial consistency test were taken from \insertCite{durre_comprehensive_2010;textual}{weatherQC}.
 #' 
 #' The main principle of this quality control scheme is, that at least two
 #' positive tests are required for an observation to be flagged. This is intended 

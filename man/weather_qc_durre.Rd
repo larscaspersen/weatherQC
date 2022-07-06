@@ -187,7 +187,7 @@ daily weather data.
 }
 \details{
 This weather quality control function was written following a the guidlines of a 
-weather control algorithm proposed by Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}.
+weather control algorithm proposed by \insertCite{durre_comprehensive_2010;textual}{weatherQC}.
 In total it consists of 6 groups of tests which contain several independent 
 tests:
 
@@ -230,7 +230,7 @@ tests. This in contrast to \code{\link{weather_qc_costa}} where at least
 two tests are needed for an observation to be flagged. The rationale behind the 
 testing design in \code{\link{weather_qc_durre}} is that the first tests are
 less restrictive but remove the strong outlier (like let's say -9999), which
-could reduce the testing quality of more restictive tests like climatological outlier
+could reduce the testing quality of more restrictive tests like climatological outlier
 test.
 }
 \examples{

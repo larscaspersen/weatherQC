@@ -1,4 +1,4 @@
-#' Test for exceedence of world records
+#' Test for exceedance of world records
 #' 
 #' Wrapper function to test for weather observations outside records of the country / region.
 #' 

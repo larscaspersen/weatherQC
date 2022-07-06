@@ -1,9 +1,9 @@
-#' Identify unusual repititions in weather data
+#' Identify unusual repetitions in weather data
 #' 
-#' Function to detect unusual amount of repititions in daily temperature and precipitation
+#' Function to detect unusual amount of repetitions in daily temperature and precipitation
 #' data.
 #' 
-#' Bevor the function searches for streaks, missing data are dropped and in
+#' Befor the function searches for streaks, missing data are dropped and in
 #' case of precipitation observations of no precipitation as well. If in 20 (that is 
 #' the default threshold) subsequent days of the remaining data the exact same
 #' value of the variable of interest is noted, then the whole streak is marked by
