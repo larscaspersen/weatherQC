@@ -356,7 +356,7 @@ weather_qc_durre <- function(weather_list,
   
   weather_list <- map2(weather_list, prec_percentile_list, function(x,y){
     clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = frequent_value_check(weather = x, 
+                       test_result = check_frequent_value(weather = x, 
                                                           percentile_df = y,
                                                           min_non_zero_days = min_non_zero_days),
                        test_name = 'frequent_ident_value')
