@@ -157,7 +157,7 @@
 #' @examples weather_qc_durre(weather_list = list(weather), 
 #' weather_info = weather_info, skip_spatial_test = TRUE)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
-#' @importFrom Rdpack reprompt
+#' @importFrom Rdpack reprompt purrr rvest readr rlang data.table dplyr reshape2 lubridate sp
 #' @references
 #' \insertAllCited{}
 #' @export
@@ -197,7 +197,7 @@ weather_qc_durre <- function(weather_list,
   
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
-  weather_list <- map(weather_list, function(x) tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d"),
+  weather_list <- purrr::map(weather_list, function(x) tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d"),
                                                        'Tmin_org' = x$Tmin, 
                                                        'Tmax_org' = x$Tmax, 'Precip_org' = x$Precip,
                                                        'flag_Tmin' = NA, 'flag_Tmax' = NA, 
@@ -225,12 +225,12 @@ weather_qc_durre <- function(weather_list,
     cat('Naught check', '\n')
   }
   #1: naught check
-  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, 
+  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, 
                                                                    variable = 'Tmin', 
                                                                    test_result = test_naught_weather(weather = x),
                                                                    test_name = 'naught_check'))
   
-  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, 
+  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, 
                                                                    variable = 'Tmax', 
                                                                    test_result = test_naught_weather(weather = x),
                                                                    test_name = 'naught_check'))
@@ -241,7 +241,7 @@ weather_qc_durre <- function(weather_list,
   }
   #between entire years only for precipitation
   #tmin
-  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmin', 
+  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmin', 
                                                                    test_result = get_duplicated_values(weather = x, 
                                                                                                        variable = 'Tmin', 
                                                                                                        precip_min_nonzero = duplicate_test_min_obs,
@@ -249,13 +249,13 @@ weather_qc_durre <- function(weather_list,
                                                                    test_name = 'duplicated'))
   
   #tmax
-  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmax', 
+  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmax', 
                                                                    test_result = get_duplicated_values(weather = x, variable = 'Tmax', 
                                                                                                        precip_min_nonzero = duplicate_test_min_obs,
                                                                                                        same_temp_threshold = same_temp_threshold), 
                                                                    test_name = 'duplicated'))
   #precipitation
-  weather_list <- map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Precip', 
+  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Precip', 
                                                                    test_result = get_duplicated_values(weather = x, variable = 'Precip', 
                                                                                                        precip_min_nonzero = duplicate_test_min_obs,
                                                                                                        same_temp_threshold = same_temp_threshold), 
@@ -279,7 +279,7 @@ weather_qc_durre <- function(weather_list,
   
   
   #Tmin
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = test_fixed_limit(weather = x, 
                                                       variable = 'Tmin',
@@ -290,7 +290,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #Tmax
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = test_fixed_limit(weather = x, 
                                                       variable = 'Tmax',
@@ -301,7 +301,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #Precipitation
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Precip', 
                        test_result = test_fixed_limit(weather = x, 
                                                       variable = 'Precip',
@@ -318,7 +318,7 @@ weather_qc_durre <- function(weather_list,
   }
   
   #Tmin
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = get_streaks(weather = x, 
                                                  variable = 'Tmin',
@@ -327,7 +327,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #Tmax
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = get_streaks(weather = x, 
                                                  variable = 'Tmax',
@@ -336,7 +336,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #Precip
-  #weather_list <- map(weather_list, function(x){
+  #weather_list <- purrr::map(weather_list, function(x){
   #  clear_flagged_data(weather = x, variable = 'Precip', 
   #                     test_result = get_streaks(weather = x, 
   #                                               variable = 'Precip'), 
@@ -344,7 +344,7 @@ weather_qc_durre <- function(weather_list,
   #})
   
   #calculate percentiles for each weather df, store in list
-  prec_percentile_list <- map(weather_list, function(x){
+  prec_percentile_list <- purrr::map(weather_list, function(x){
     get_each_day_precipitation_percentile(weather = x, 
                                           probs = percentile_frequent_value_test)
   })
@@ -376,7 +376,7 @@ weather_qc_durre <- function(weather_list,
     cat('Gap check', '\n')
   }
   #Tmin
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = perform_gap_check(weather = x, 
                                                        variable = 'Tmin', 
@@ -386,7 +386,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #Tmax
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = perform_gap_check(weather = x, 
                                                        variable = 'Tmax', 
@@ -396,7 +396,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #Precip
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Precip', 
                        test_result = perform_gap_check(weather = x, 
                                                        variable = 'Precip', 
@@ -411,7 +411,7 @@ weather_qc_durre <- function(weather_list,
     cat('Climatological Outlier Test', '\n')
   }
   #Tmin
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = perform_climate_outlier_check(weather = x, 
                                                                    variable = 'Tmin',
@@ -424,7 +424,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #Tmax
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = perform_climate_outlier_check(weather = x, 
                                                                    variable = 'Tmax',
@@ -436,7 +436,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #Precip
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Precip', 
                        test_result = perform_climate_outlier_check(weather = x, 
                                                                    variable = 'Precip',
@@ -463,7 +463,7 @@ weather_qc_durre <- function(weather_list,
   }
   
   #run the temporal temperature consistency test only once
-  test_list <- map(weather_list, function(x){
+  test_list <- purrr::map(weather_list, function(x){
     test_iterative_temperature_consistency(weather = x)
   })
   
@@ -484,7 +484,7 @@ weather_qc_durre <- function(weather_list,
     cat('Spike/Dip Test', '\n')
   }
   #tmin
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = test_spike_dip(weather = x, 
                                                     variable = 'Tmin',
@@ -493,7 +493,7 @@ weather_qc_durre <- function(weather_list,
   })
   
   #tmax
-  weather_list <- map(weather_list, function(x){
+  weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = test_spike_dip(weather = x, 
                                                     variable = 'Tmax',
@@ -506,7 +506,7 @@ weather_qc_durre <- function(weather_list,
   if(mute == FALSE){
     cat('Lagged Temperature Range Test', '\n')
   }
-  test_list <- map(weather_list, function(x){
+  test_list <- purrr::map(weather_list, function(x){
     test_lagged_temperature_range(weather = x, 
                                   max_diff = lagged_range_max_diff)
   })
@@ -545,7 +545,7 @@ weather_qc_durre <- function(weather_list,
     aux_list[weather_info$id] <- weather_list
     
     #make sure that each element of aux_data is a tibble
-    aux_data <- map(aux_data, tibble)
+    aux_data <- purrr::map(aux_data, tibble)
     
     #Tmin
     if(mute == FALSE){
@@ -662,7 +662,7 @@ weather_qc_durre <- function(weather_list,
   if(mute == FALSE){
     cat('Temperature Megaconsistency Test')
   }
-  test <- map(weather_list, function(x){
+  test <- purrr::map(weather_list, function(x){
     test_temperature_megaconsistency(weather = x,
                                      min_obs = min_obs_megaconsistency)
   })
