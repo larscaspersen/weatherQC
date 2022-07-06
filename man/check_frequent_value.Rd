@@ -34,12 +34,12 @@ be evaluates as c(10, 5, 5) in the test. Within a sliding 10-day window frequent
 values are screened for. If the frequently duplicated precipitation value is
 repeated 5 or more times within that time-window it will be compared to a 
 climatological precipitation percentile for the first day of the time window.
-The more repititions found, the lower the compared precipitation percentile will be.
+The more repetitions found, the lower the compared precipitation percentile will be.
 If the frequently repeated value exceeds the percentile, each of the repeated
 precipitation values will be flagged.
 
-For 5 or 6 repitions the 90\% percentile will be used, for 7 the 70\% percentile,
-for 8 repititions the 50\% percentile and for 9 or 10 repititions the 30\% percentile.
+For 5 or 6 repetitions the 90\% percentile will be used, for 7 the 70\% percentile,
+for 8 repetitions the 50\% percentile and for 9 or 10 repetitions the 30\% percentile.
 
 Climatological precipitation percentiles are calculated for each day of the year,
 using a 29-day window centered at the day of interest. All precipitation observation
@@ -48,8 +48,7 @@ the percentile calculation. Missing values and zero-precipitation observations
 will be discarded. By default there need to be at least 20 non-zero observation
 for the percentile calculation, otherwise there will be NA instead of percentiles.
 
-This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010}{weatherQC}. For more details 
+This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 3 "Basic integrity tests".
 }
 \examples{

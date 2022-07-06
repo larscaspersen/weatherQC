@@ -20,7 +20,7 @@ It should have columns c("Year", "Month", "Day")}
 numerical vector of the same length as \code{period_start:period_end}
 }
 \description{
-Selects observations of neighbouring weather stations to be included in target - 
+Selects observations of neighboring weather stations to be included in target - 
 neighbour weather station linear regression calculation.
 }
 \details{

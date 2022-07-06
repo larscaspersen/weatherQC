@@ -4,7 +4,7 @@
 #' value of the requested percentile. It is the equivalent of \code{\link{which.max}}
 #' or \code{\link{which.min}}.
 #' 
-#' The function was not written by me but I found it on stakexchange, but I can't find
+#' The function was not written by me but I found it on stackexchange, but I can't find
 #' the respective link anymore. 
 #' 
 #' @param x numeric vector

@@ -2,7 +2,7 @@
 % Please edit documentation in R/test_precipitation_spatial_corrobation.R
 \name{test_precipitation_spatial_corrobation}
 \alias{test_precipitation_spatial_corrobation}
-\title{Spatial corrobation test of precipitation}
+\title{Spatial corroboration test of precipitation}
 \usage{
 test_precipitation_spatial_corrobation(
   weather,
@@ -46,14 +46,14 @@ meaning that the tested variable exceeded the limits of the test and is flagged
 as suspicious
 }
 \description{
-Function to test if the target precipitation is spatial coherent with neighbour
+Function to test if the target precipitation is spatial coherent with neighbor
 observations
 }
 \details{
 The function compares the precipitation observation of the target station to the
-observations of neighbouring stations. Test limit depends on the absolute difference
+observations of neighboring stations. Test limit depends on the absolute difference
 in climatological percentile ranks of precipitation observation. For a detailed
-description of the test please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}
+description of the test please refer to \insertCite{durre_comprehensive_2010;textual}{weatherQC}
 section 6 "Spatial consistency checks" and "Appendix C". 
 
 Climatological percentile ranks of precipitation is calculated using \code{\link{get_prec_rank}}

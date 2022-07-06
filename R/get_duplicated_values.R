@@ -5,9 +5,9 @@
 #' 
 #' The function tests there are instances of duplicated years (Precipitation),
 #' duplicated months within the same year (Temperature and precipitation),
-#' duplicated months among the same month of differen years (temperature and precipitation)
+#' duplicated months among the same month of different years (temperature and precipitation)
 #' and cases of Tmin = Tmax. In case of detected duplicates, all observation
-#' of the tested variable belonging to the duplicted period are flagged. In case of
+#' of the tested variable belonging to the duplicated period are flagged. In case of
 #' precipitation a period needs to contain at least three non-zero precipitation
 #' events in order to be included in the duplication tests. Otherwise these periods
 #' are skipped.

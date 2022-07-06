@@ -20,7 +20,7 @@ flagged because of a gap in the ordered data larger than the gap_threshold
 }
 \description{
 The function takes weather data (usually all the observations for a certain month
-throughout all years) and checks if there are suspcious large gaps towards the tails
+throughout all years) and checks if there are suspicious large gaps towards the tails
 of the distribution.
 }
 \details{

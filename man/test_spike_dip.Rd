@@ -26,15 +26,14 @@ temperature data.
 }
 \details{
 The concept of the function is similar to \code{\link{test_temporal_continuity}},
-but there are some important differnces. This function requires a spike immediatly
+but there are some important differences. This function requires a spike immediately
 followed by a dip (or vice versa), while \code{test_temporal_continuity} or 
 requires one of the two for a positive test result. Furthermore, \code{test_spike_dip}
 works with hard thresholds, while \code{test_temporal_continuity} works with 
 thresholds defined by percentiles of the weather data. In general \code{test_spike_dip}
-is a much more restictive test than \code{test_temporal_continuity}.
+is a much more restrictive test than \code{test_temporal_continuity}.
 
-This function is part of the weather quality control scheme after Durre et al.
-(2010) \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
+This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 
 please refer to section 5 "Internal and temporal consistency checks".
 }
 \examples{

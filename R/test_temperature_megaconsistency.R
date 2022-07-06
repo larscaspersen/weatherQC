@@ -1,13 +1,13 @@
 #' Identify temperature inconsistency within calendar months
 #' 
-#' The function checks if minimum temperature exceeds the highes maximum temperature
+#' The function checks if minimum temperature exceeds the highest maximum temperature
 #' of a calendar month or vice versa.
 #' 
 #' The test is similar to the test regarding internal consistency of temperature.
 #' In the regular consistency test, minimum or maximum observations which did not 
 #' have the accompanying other extreme temperature observation may have slipped
 #' the regular consistency test. The megaconsistency test does not require for
-#' a temperature observation to have the other "patnering" temperature observation 
+#' a temperature observation to have the other "partnering" temperature observation 
 #' and thus fill the gap.
 #' 
 #' This function is part of the weather quality control scheme after Durre et al.

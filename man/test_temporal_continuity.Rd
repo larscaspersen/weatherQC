@@ -26,9 +26,8 @@ The function checks for sudden day-to-day jumps or drops in daily weather data.
 The decision criterion when strong day-to-day changes in the weather variable 
 become suspicious is for this test based on the 99.5\% percentile of all day-to-day
 changes in the variable. Every absolute day-to-day change above the percentile
-is flagged as suspicious. The function is part of the Costa et al. (2021) 
-\insertCite{costa_gap_2021}{weatherQC} quality control algorithm which can be
-called via \code{costa_qc()}.
+is flagged as suspicious. The function is part of the \insertCite{costa_gap_2021;textual}{weatherQC} quality control algorithm which can be
+called via \code{weather_qc_costa}.
 }
 \examples{
 test_temporal_continuity(weather = KA_weather, variable = "Tmin")

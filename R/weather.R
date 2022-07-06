@@ -1,6 +1,6 @@
 #' Daily weather observations Five Points (California)
 #'
-#' A dataset containing the daily observations of precipitation, minimum and 
+#' A data set containing the daily observations of precipitation, minimum and 
 #' maximum temperature recorded at the weather station Five Points (California). 
 #' Data was obtained using chillR::handle_cimis() function.
 #'

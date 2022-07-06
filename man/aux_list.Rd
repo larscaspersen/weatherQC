@@ -3,7 +3,7 @@
 \docType{data}
 \name{aux_list}
 \alias{aux_list}
-\title{List of neighbouring stations weather data}
+\title{List of neighboring stations weather data}
 \format{
 A list of 12 data.frames with varying amount rows and 8 variables:
 \describe{
@@ -26,7 +26,7 @@ aux_list
 \description{
 List of data.frames with weather data of weather stations withing a 75 km of 
 target weather station Five Points (California). The individual data.frames contain
-daily weather observations similarly strucutred as in \code{\link{weather}}.
+daily weather observations similarly structured as in \code{\link{weather}}.
 Data was downloaded using using \code{chillR::handle_cimis()} and
 \code{chillR::handle_ucipm()} functions.
 }

@@ -3,11 +3,11 @@
 #' Takes daily temperature or precipitation data and looks for unusual large gaps in 
 #' ordered data.
 #' 
-#' The function splits the weahter data by month and orders it. In case of temperature
+#' The function splits the weather data by month and orders it. In case of temperature
 #' it starts from the median towards both tails of the distribution and searches
 #' for gaps larger than temp_gap_threshold. If such a gap is found, then all the data
 #' coming after the gap towards the end of the tail are flagged. In case of precipitation
-#' only the upper tail is investigated and the start is the first non-zero preciptiation
+#' only the upper tail is investigated and the start is the first non-zero precipitation
 #' observation. 
 #' 
 #' This function is part of the weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. For more details 

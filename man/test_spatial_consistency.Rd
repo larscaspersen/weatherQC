@@ -73,7 +73,7 @@ meaning that the tested variable exceeded the limits of the test and is flagged
 as suspicious
 }
 \description{
-Function checks if target temperature data is in line of neighbouring 
+Function checks if target temperature data is in line of neighboring 
 weather stations by linear regression.
 }
 \details{
@@ -81,24 +81,24 @@ The function takes temperature data of the target and auxiliary weather station 
 certain month of a certain year plus further observations prior and after the month defined
 by the parameter \code{window_width}. By default, target - auxiliary weather stations need to have 
 at least \code{min_coverage = 40} shared observations to be considered for linear 
-regression. In the next step the index of agreement betwen target and auxiliar weather
+regression. In the next step the index of agreement between target and auxiliary weather
 stations is calculated. For each value in the target station the closest value of the
-each neighbouring series is retrieved using a three day window centered at the
-day of interest. The so obtained timeseries of each neighbour station, called
+each neighboring series is retrieved using a three day window centered at the
+day of interest. The so obtained time series of each neighbor station, called
 closest_y, is then used for the linear regressions. Weather stations, which 
 model linear regression output yielded a correlation score of 0.8 or lower
 with actual observations in the target station are dropped. Furthermore,
 if more than \code{max_station} auxiliary weather stations are available,
 then the ones with the lowest index of agreement are dropped. Weighted mean
-of regression output is calculted using the index of agreement as weights. Regular 
-and standardized (by subtracting mean residual and deviding by standard
-deviation of resiudlas) model residuals are calculated. Model results
-within the extrat window period are dropped. Remainin residuals are checked
+of regression output is calculated using the index of agreement as weights. Regular 
+and standardized (by subtracting mean residual and dividing by standard
+deviation of residuals) model residuals are calculated. Model results
+within the extra window period are dropped. Remaining residuals are checked
 if they are larger than thresholds defined in \code{max_res} and 
 \code{max_res_norm}. Observations for which the regular residual and the 
-standardized resiudual both exceed their respective threhsolds are flagged.
+standardized residual both exceed their respective thresholds are flagged.
 
-For more information please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}
+For more information please refer to \insertCite{durre_comprehensive_2010;textual}{weatherQC}
 section 6 "Spatial consistency checks" and "Appendix B".
 }
 \examples{

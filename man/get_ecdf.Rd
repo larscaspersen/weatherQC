@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_ecdf.R
 \name{get_ecdf}
 \alias{get_ecdf}
-\title{Helper function for spatial corrobation test}
+\title{Helper function for spatial corroboration test}
 \usage{
 get_ecdf(weather, doy, min_non_zero_days = 20)
 }
@@ -10,7 +10,7 @@ get_ecdf(weather, doy, min_non_zero_days = 20)
 \item{weather}{data.frame containing a daily time series data set. 
 It should have columns c("Year", "Month", "Day")}
 
-\item{doy}{Day of the year for which the empricial cumulative density function of precipitatio should be calculated}
+\item{doy}{Day of the year for which the empirical cumulative density function of precipitatio should be calculated}
 
 \item{min_non_zero_days}{minimum amount of non-zero precipitation observation need 
 to be present for ecdf calculation, otherwise NA returned}
@@ -23,7 +23,7 @@ Function calculates for a specified day of the year the empirical cumulative den
 function of non-zero precipitation events.
 }
 \details{
-This is a helper function which is mainly used for the spatial corrobation test
+This is a helper function which is mainly used for the spatial corroboration test
 of precipitation. The function includes precipitation data of a 29 day window centered at
 the day of interest throughout all observed years. Missing observations and 
 zer-precipitation observations are discarded. If there are fewer observations than 

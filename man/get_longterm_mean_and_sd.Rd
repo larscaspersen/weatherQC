@@ -21,7 +21,7 @@ This function calculates longterm mean and standard deviation of temperature dat
 for a certain day of interest.
 }
 \details{
-The function usesa a 15-day window centered at the day of interest and uses
+The function uses a a 15-day window centered at the day of interest and uses
 each observation throughout all years within that time-window to calculate mean
 and standard deviation.
 

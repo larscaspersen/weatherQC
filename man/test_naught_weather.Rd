@@ -21,7 +21,7 @@ data.
 }
 \details{
 The function tests for instances in which both minimum and maximum temperature
-received values of 0 degre C or -17.8 degree C (= 0 degree F) but the authors 
+received values of 0 degree C or -17.8 degree C (= 0 degree F) but the authors 
 more likely intended to record missing data instead. Both variables need to
 have 0 or -17.8 as a value for the test to return a flag.
 

@@ -28,7 +28,7 @@ Function to detect unusual amount of repetitions in daily temperature and precip
 data.
 }
 \details{
-Befor the function searches for streaks, missing data are dropped and in
+Before the function searches for streaks, missing data are dropped and in
 case of precipitation observations of no precipitation as well. If in 20 (that is 
 the default threshold) subsequent days of the remaining data the exact same
 value of the variable of interest is noted, then the whole streak is marked by

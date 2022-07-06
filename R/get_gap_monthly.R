@@ -1,7 +1,7 @@
 #' helper function: detects climatological gaps in monthly weather data
 #' 
 #' The function takes weather data (usually all the observations for a certain month
-#' throughout all years) and checks if there are suspcious large gaps towards the tails
+#' throughout all years) and checks if there are suspicious large gaps towards the tails
 #' of the distribution.
 #' 
 #' In case of temperature data both tails of the distribution are evaluated,

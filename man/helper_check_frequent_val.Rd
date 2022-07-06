@@ -21,7 +21,7 @@ logical, if the frequent value is larger than the corresponding value in
 \code{percentile_df}, then it returns TRUE, otherwise FALSE
 }
 \description{
-Depending on the amount of repititions the function compares the frequent 
+Depending on the amount of repetitions the function compares the frequent 
 precipitation value with a corresponding climatological percentile of precipitation
 for that day of interest.
 }

@@ -1,6 +1,6 @@
 #' Select auxiliary weather station observation for spatial consistency test
 #' 
-#' Selects observations of neighbouring weather stations to be included in target - 
+#' Selects observations of neighboring weather stations to be included in target - 
 #' neighbour weather station linear regression calculation.
 #' 
 #' Retrieves observations of weather station based on defined time period. In case

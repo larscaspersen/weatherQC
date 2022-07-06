@@ -2,7 +2,7 @@
 % Please edit documentation in R/clear_flagged_data.R
 \name{clear_flagged_data}
 \alias{clear_flagged_data}
-\title{Helper function for the weather quality control after Durre et al. (2010)}
+\title{Helper function for the weather quality control after \insertCite{durre_comprehensive_2010;textual}{weatherQC}}
 \usage{
 clear_flagged_data(weather, variable, test_result, test_name)
 }
@@ -32,7 +32,7 @@ test led to the flagging of the observation.
 }
 \details{
 This function is needed because of the iterative testing framework of the 
-weather quality control scheme after Durre et al. (2010). At the beginning
+weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. At the beginning
 robust tests are carried out, which are not affected by strong outliers,
 like a -9999 for example. But following test which take the long term mean or 
 long-term percentiles into account can be rendered useless if such strong
@@ -57,6 +57,9 @@ test_result <- test_spike_dip(weather = weather, variable = "Tmin")
 weather <- clear_flagged_data(weather = weather, variable = "Tmin",
                               test_result = test_result,
                               test_name = "spike_dip")
+}
+\references{
+\insertAllCited{}
 }
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}

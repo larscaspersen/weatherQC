@@ -29,7 +29,7 @@ then the temperature data of that day are flagged as suspicious.
  \item{Test 2: Minimum temperature of day 0 should not be higher than mean temperature of day -1, 0, or 1}
  \item{Test 3: Maximum temperature of day 0 should not be higher than mean temperature of day -1, 0, or 1}
  \item{Test 4: The absolute difference of reported mean temperature and computed 
- mean temperautre (Tmin + Tmax)/2 exceeding the 99\% percentile of all observed values.}
+ mean temperature (Tmin + Tmax)/2 exceeding the 99\% percentile of all observed values.}
 }
 }
 \examples{

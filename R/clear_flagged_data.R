@@ -1,10 +1,10 @@
-#' Helper function for the weather quality control after Durre et al. (2010)
+#' Helper function for the weather quality control after \insertCite{durre_comprehensive_2010;textual}{weatherQC}
 #' 
 #' The function adds quality flags to the weather data and adds a note which
 #' test led to the flagging of the observation.
 #' 
 #' This function is needed because of the iterative testing framework of the 
-#' weather quality control scheme after Durre et al. (2010). At the beginning
+#' weather quality control scheme after \insertCite{durre_comprehensive_2010;textual}{weatherQC}. At the beginning
 #' robust tests are carried out, which are not affected by strong outliers,
 #' like a -9999 for example. But following test which take the long term mean or 
 #' long-term percentiles into account can be rendered useless if such strong
@@ -26,6 +26,9 @@
 #' to the removal is added in a seperate column.
 #' \code{percentile_df}, then it returns TRUE, otherwise FALSE 
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
+#' @importFrom Rdpack reprompt
+#' @references
+#' \insertAllCited{}
 #' @examples 
 #' #add needed columns to weather
 #' weather <- tibble::tibble(weather, 

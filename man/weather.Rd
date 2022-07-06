@@ -30,7 +30,7 @@ A data frame with 11688 rows and 14 variables:
 weather
 }
 \description{
-A dataset containing the daily observations of precipitation, minimum and 
+A data set containing the daily observations of precipitation, minimum and 
 maximum temperature recorded at the weather station Five Points (California). 
 Data was obtained using chillR::handle_cimis() function.
 }

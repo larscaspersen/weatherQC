@@ -2,7 +2,7 @@
 % Please edit documentation in R/test_temperature_corrobation.R
 \name{test_temperature_corrobation}
 \alias{test_temperature_corrobation}
-\title{Spatial corrobation test of temperature}
+\title{Spatial corroboration test of temperature}
 \usage{
 test_temperature_corrobation(
   weather,
@@ -59,9 +59,9 @@ observations.
 }
 \details{
 The function compares the temperature observation of the target station to the
-observations of neighbouring stations. This function is a companion test to
+observations of neighboring stations. This function is a companion test to
 \code{\link{test_spatial_consistency}}. While the aim is similar (identify
-observations which are not in line with neighbouring observations) the testing 
+observations which are not in line with neighboring observations) the testing 
 principle is different. While \code{test_spatial_consistency} compares the weighted
 output of linear regression to the target value, the \code{test_temperature_corrobation}
 compares the target observation to the temperature anomaly of the station to the 
@@ -71,18 +71,18 @@ target and auxiliary weather stations, so it can be applicable where the demands
 of \code{test_spatial_consistency} do not permit any test result at all. 
 
 The testing procedure is a follows: The target observation is compared with at
-least 3 but never more than 7 neighbourijng stations within a 75 km radius.
-Neighbouring values of the targe variable of the same day, but also the previous and
+least 3 but never more than 7 neighborliness stations within a 75 km radius.
+Neighboring values of the target variable of the same day, but also the previous and
 following day are included in the test to account for differences in the recording
-protocoll. For each observation and station the temperature anomaly is calculated,
+protocol. For each observation and station the temperature anomaly is calculated,
 meaning the standardized residuals of observation to the long term mean of the day of the year
 of the respective weather station. Long term mean and standard deviation are 
 calculated using the same principle as in \code{\link{get_longterm_mean_and_sd}}.
-If the minimum absolute difference of the target to neighbour anomaly is larger than 
+If the minimum absolute difference of the target to neighbor anomaly is larger than 
 the default threshold of 10 degree C, then the target value is flagged by the 
 test.
 
-For a detailed description of the test please refer to Durre et al. (2010) \insertCite{durre_comprehensive_2010}{weatherQC}
+For a detailed description of the test please refer to \insertCite{durre_comprehensive_2010;textual}{weatherQC}
 section 6 "Spatial consistency checks".
 }
 \examples{

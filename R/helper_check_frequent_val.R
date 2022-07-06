@@ -1,6 +1,6 @@
 #' Intermediate function for frequent value test
 #' 
-#' Depending on the amount of repititions the function compares the frequent 
+#' Depending on the amount of repetitions the function compares the frequent 
 #' precipitation value with a corresponding climatological percentile of precipitation
 #' for that day of interest.
 #' 

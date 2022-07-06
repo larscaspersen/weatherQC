@@ -15,7 +15,7 @@ get_clim_percentiles_prec(
 \item{weather}{data.frame containing a daily time series data set. 
 It should have columns c("Year", "Month", "Day")}
 
-\item{doy}{Day of the year for which the empricial cumulative density function of precipitatio should be calculated}
+\item{doy}{Day of the year for which the empirical cumulative density function of precipitatio should be calculated}
 
 \item{probs}{numeric vector, indicating the percent percentiles that sould be calculated}
 
@@ -30,7 +30,7 @@ the supplied percentiles
 Function calculates percentile of non-zero precipitation for a certain day of the year.
 }
 \details{
-This is a helper function which is mainly used for the spatial corrobation test
+This is a helper function which is mainly used for the spatial corroboration test
 of precipitation. The function includes precipitation data of a 29 day window centered at
 the day of interest throughout all observed years. Missing observations and 
 zer-precipitation observations are discarded. If there are fewer observations than 

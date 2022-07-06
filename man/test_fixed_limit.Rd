@@ -45,8 +45,8 @@ temperature (degree C) and daily precipitation (mm) for a specified country / su
 Furthermore, the function also allows user-defined limits. Then it tests which days of the specified variable in the weather data.frame
 exceeds the limits and flags these. 
 
-This test is included in the weather quality control schemes \code{durre_qc()};
-and \code{costa_qc()}. For more details on the weather quality control functions either 
+This test is included in the weather quality control schemes \code{weather_qc_durre};
+and \code{weather_qc_costa}. For more details on the weather quality control functions either 
 refer to the help pages of the functions or see \insertCite{costa_gap_2021;textual}{weatherQC}
 or \insertCite{durre_comprehensive_2010;textual}{weatherQC}.
 }

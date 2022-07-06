@@ -3,7 +3,7 @@
 #' Performs a series of consistency tests and returns flags of suspicious 
 #' daily weather data.
 #' 
-#' This weather quality control function was written following a the guidlines of a 
+#' This weather quality control function was written following a the guidelines of a 
 #' weather control algorithm proposed by \insertCite{durre_comprehensive_2010;textual}{weatherQC}.
 #' In total it consists of 6 groups of tests which contain several independent 
 #' tests:

@@ -18,18 +18,18 @@ vector of same length as rows in weather with percent percentile calculated
 as: \code{floor(percentile * 100)}
 }
 \description{
-Function caluclates for a given precipitation event the corresponding climatological
+Function calculates for a given precipitation event the corresponding climatological
 (floored) percentile rank.
 }
 \details{
-This is a helper function which is mainly used for the spatial corrobation test
+This is a helper function which is mainly used for the spatial corroboration test
 of precipitation. The function is wrapper of the \code{get_ecdf()} function. 
 It includes precipitation data of a 29 day window centered at
-the day of interest throughout all observed years and calculates the empiricial
+the day of interest throughout all observed years and calculates the empirical
 cumulative density function (ecdf). Missing observations and 
 zer-precipitation observations are discarded. If there are fewer observations than 
 \code{min_non_zero_days}, then NA is returned instead of the ecdf. Then the 
-precipitation event of interest is incerted in the ecdf and the corresponding 
+precipitation event of interest is inserted in the ecdf and the corresponding 
 percentile rank is calculated. This is done for each precipitation event.
 }
 \examples{

@@ -37,13 +37,13 @@ meaning that the tested variable exceeded the limits of the test.
 }
 \description{
 The function takes weather data, calculates long term mean (temperature) or 
-percentiles (precipitation) and compares daily weahther observations with it.
+percentiles (precipitation) and compares daily weather observations with it.
 }
 \details{
 In case of temperature long-term mean and standard deviation are calculated using
 a 15 day-window centered at the day of interest. All values throughout the observed
 years withing that time-window are included in the calculation. In case of precipitation
-the percentiles of non-zero preciptiation events are calculated using the function
+the percentiles of non-zero precipitation events are calculated using the function
 \code{\link{get_each_day_precipitation_percentile}}
 
 Flags are raised if the standardized residual of temperature exceeds a pre-defined

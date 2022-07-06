@@ -2,7 +2,7 @@
 #' 
 #' Performs a series of consistency tests and returns flags of suspicious data.
 #' 
-#' This weather quality control function was written following a the guidlines of a 
+#' This weather quality control function was written following a the guidelines of a 
 #' weather control algorithm proposed by \insertCite{costa_gap_2021;textual}{weatherQC}.
 #' It consists of five consistency tests, namely:
 #' 
