@@ -31,7 +31,7 @@ zer-precipitation observations are discarded. If there are fewer observations th
 density function.
 }
 \examples{
-get_ecdf(weather = weather, doy = 1)
+get_ecdf(weather = target_weather, doy = 1)
 }
 \references{
 \insertAllCited{}

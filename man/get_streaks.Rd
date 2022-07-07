@@ -38,7 +38,7 @@ This function is part of the weather quality control scheme after \insertCite{du
 please refer to section 3 "Basic integrity tests".
 }
 \examples{
-get_streaks(weather = weather, variable = "Tmin")
+get_streaks(weather = target_weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

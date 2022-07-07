@@ -37,8 +37,8 @@ neighboring values are NA or if the target_date is not covered by any of the nei
 stations NA is returned instead of the minimum absolute difference
 }
 \examples{
-get_abs_min_difference(x = weather$Precip[1], target_date = weather$Date[1],
-variable = "Precip", aux_list = aux_list)
+get_abs_min_difference(x = target_weather$Precip[1], target_date = target_weather$Date[1],
+variable = "Precip", aux_list = neighbour_weather)
 }
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}

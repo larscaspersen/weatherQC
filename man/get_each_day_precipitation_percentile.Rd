@@ -39,7 +39,7 @@ zer-precipitation observations are discarded. If there are fewer observations th
 density function.
 }
 \examples{
-get_each_day_precipitation_percentile(weather = weather)
+get_each_day_precipitation_percentile(weather = target_weather)
 }
 \references{
 \insertAllCited{}

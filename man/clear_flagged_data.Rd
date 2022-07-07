@@ -51,10 +51,10 @@ weather <- tibble::tibble(weather,
                           'flag_Precip' = NA)
                           
 #perform test
-test_result <- test_spike_dip(weather = weather, variable = "Tmin")
+test_result <- test_spike_dip(weather = target_weather, variable = "Tmin")
 
 #add test result to weather
-weather <- clear_flagged_data(weather = weather, variable = "Tmin",
+weather <- clear_flagged_data(weather = target_weather, variable = "Tmin",
                               test_result = test_result,
                               test_name = "spike_dip")
 

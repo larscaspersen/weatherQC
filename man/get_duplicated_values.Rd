@@ -48,7 +48,7 @@ This function is part of the weather quality control scheme after \insertCite{du
 please refer to section 3 "Basic integrity tests".
 }
 \examples{
-get_duplicated_values(weather = weather, variable = "Tmin")
+get_duplicated_values(weather = target_weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

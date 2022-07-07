@@ -33,7 +33,7 @@ precipitation event of interest is inserted in the ecdf and the corresponding
 percentile rank is calculated. This is done for each precipitation event.
 }
 \examples{
-get_prec_rank(weather = weather)
+get_prec_rank(weather = target_weather)
 }
 \references{
 \insertAllCited{}

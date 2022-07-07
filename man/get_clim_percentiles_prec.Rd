@@ -38,7 +38,7 @@ zer-precipitation observations are discarded. If there are fewer observations th
 density function.
 }
 \examples{
-get_clim_percentiles_prec(weather = weather, doy = 1)
+get_clim_percentiles_prec(weather = target_weather, doy = 1)
 }
 \references{
 \insertAllCited{}

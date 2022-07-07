@@ -52,8 +52,8 @@ This function is part of the weather quality control scheme after \insertCite{du
 please refer to section 3 "Basic integrity tests".
 }
 \examples{
-percentile_df <- get_each_day_precipitation_percentile(weather = weather)
-check_frequent_value(weather = weather, percentile_df = percentile_df)
+percentile_df <- get_each_day_precipitation_percentile(weather = target_weather)
+check_frequent_value(weather = target_weather, percentile_df = percentile_df)
 }
 \references{
 \insertAllCited{}
