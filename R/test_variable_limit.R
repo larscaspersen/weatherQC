@@ -16,7 +16,7 @@
 #' meaning that the tested variable exceeded the limits of the test.
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' test_variable_limit(weather = weather, variable = "Tmin")
+#' test_variable_limit(weather = target_weather, variable = "Tmin")
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}

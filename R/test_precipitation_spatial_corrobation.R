@@ -32,9 +32,9 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples test_precipitation_spatial_corrobation(weather = weather,
-#' weather_coords = c(weather_info$Longitude, weather_info$Latidue),
-#' aux_info = aux_info, aux_list = aux_list)
+#' @examples test_precipitation_spatial_corrobation(weather = target_weather,
+#' weather_coords = c(target_info$Longitude, target_info$Latidue),
+#' aux_info = neighbour_info, aux_list = neighbour_weather)
 #' @seealso \code{\link{get_prec_rank}}, \code{\link{get_abs_min_difference}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt

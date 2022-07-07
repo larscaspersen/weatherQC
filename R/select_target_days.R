@@ -13,7 +13,7 @@
 #' @param period_start in date format, indicates start of the period of interest
 #' @param period_end in date format, indicates end of the period of interest
 #' @return numerical vector of the same length as \code{period_start:period_end}
-#' @examples select_target_days(weather = weather, variable = "Tmin", 
+#' @examples select_target_days(weather = target_weather, variable = "Tmin", 
 #' period_start = as.Date("1991-12-17", format = "%Y-%m-%d"), 
 #' period_end = as.Date("1991-02-15", format = "%y-%m-%d"))
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}

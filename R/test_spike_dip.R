@@ -21,7 +21,7 @@
 #' are ignored
 #' @return Logical vector of same length as rows in \code{weather}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test.
-#' @examples test_spike_dip(weather = weather, variable = "Tmin")
+#' @examples test_spike_dip(weather = target_weather, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references

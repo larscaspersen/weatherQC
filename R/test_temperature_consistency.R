@@ -21,7 +21,7 @@
 #' meaning that the tested variable exceeded the limits of the test.
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' test_temperature_consistency(weather = KA_weather)
+#' test_temperature_consistency(weather = target_weather)
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}

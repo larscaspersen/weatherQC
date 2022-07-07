@@ -17,7 +17,7 @@
 #' meaning that the tested variable exceeded the limits of the test.
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' test_temporal_continuity(weather = KA_weather, variable = "Tmin")
+#' test_temporal_continuity(weather = target_weather, variable = "Tmin")
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}

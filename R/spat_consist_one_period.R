@@ -61,8 +61,8 @@
 #' @return logical vector of same length as target month has days. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples spat_consist_one_period(weather = weather,
-#' aux_info = aux_info, aux_list = aux_list, 
+#' @examples spat_consist_one_period(weather = target_weather,
+#' aux_info = neighbour_info, aux_list = neighbour_weather, 
 #' period_start = as.Date("1992-01-01", format = "%Y-%m-%d"), variable = "Tmin")
 #' @seealso \code{\link{get_abs_min_difference}}, \code{\link{get_closest_y}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}

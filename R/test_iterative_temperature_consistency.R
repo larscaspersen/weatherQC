@@ -31,7 +31,7 @@
 #' One column is for the flag of minimum temperature, the other for maximum temperature.
 #' Values of \code{TRUE} indicate successful test, meaning that the tested 
 #' variable exceeded the limits of the test.
-#' @examples test_iterative_temperature_consistency(weather = weather)
+#' @examples test_iterative_temperature_consistency(weather = target_weather)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references

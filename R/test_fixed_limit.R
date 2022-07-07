@@ -31,7 +31,7 @@
 #' @seealso \code{\link{get_weather_records}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' test_fixed_limit(weather = KA_weather, region = 'world', subregion = 'Germany', 
+#' test_fixed_limit(weather = target_weather, region = 'USA', subregion = 'California', 
 #' variable = "Tmin")
 #' @importFrom Rdpack reprompt
 #' @references

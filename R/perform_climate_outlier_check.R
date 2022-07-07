@@ -29,7 +29,7 @@
 #' @param prec_percentile precipitation percentile used for the comparison
 #' @return Logical vector of same length as rows in \code{weather}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test.
-#' @examples perform_climate_outlier_check(weather = weather, variable = "Tmin")
+#' @examples perform_climate_outlier_check(weather = target_weather, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
