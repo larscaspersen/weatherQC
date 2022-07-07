@@ -20,38 +20,98 @@ You can install the development version of weatherQC from
 devtools::install_github("larscaspersen/weatherQC")
 ```
 
-## Example
+## How to use the package
 
-This is a basic example which shows you how to solve a common problem:
+weatherQC allows the user to perform standardized quality checks on the
+daily weather data. The goal is to fish out as many not-trustworthy
+observation and to keep the invasiveness of the operation as low as
+possible. The functions `weather_qc_durre()` and `weather_qc_costa()`
+are the work horses of the package. Both contain sets of plausibility
+checks for the weather data including basic tests (for example does the
+observation exceed existing temperature and rainfall records?), temporal
+plausibility tests (for example erradic day-to-day changes) to spatial
+plausibility tests (does the observation make sense in the context of
+neighbouring weather station observations?).
+
+``` r
+## how to use the function
+weatherQC::weather_qc_costa(weather =  target_weather, 
+                 weather_coords = c(target_info$Longitude, target_info$Latitude),
+                 variable = "Tmin", 
+                 aux_list = neighbour_weather,
+                 aux_info = neighbour_info)
+
+weatherQC::weather_qc_durre(weather =  target_weather, 
+                 weather_coords = c(target_info$Longitude, target_info$Latitude),
+                 aux_list = neighbour_weather,
+                 aux_info = neighbour_info)
+```
+
+Explain the different objects in more detail
 
 ``` r
 library(weatherQC)
-## basic example code
+target_info
+#>        id             Name Longitude Latitude Start_date   End_date
+#> 1 cimis_7 Firebaugh/Telles  -120.591 36.85125 1982-09-22 2022-06-13
 ```
-
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+head(neighbour_info)
+#>         id                                  Name Longitude Latitude Start_date
+#> 1  cimis_7                      Firebaugh/Telles -120.5910 36.85125 1982-09-22
+#> 2 cimis_15                             Stratford -119.8514 36.15814 1982-10-29
+#> 3 cimis_39                               Parlier -119.5041 36.59748 1983-05-23
+#> 4 cimis_80                          Fresno State -119.7423 36.82083 1988-10-03
+#> 5 MADERA.C                                Madera -120.0333 36.95000 1951-01-01
+#> 6 FRESNO.C Fresno Yosemite International Airport -119.7167 36.76667 1951-01-01
+#>     End_date
+#> 1 2022-06-13
+#> 2 2022-06-13
+#> 3 2022-06-13
+#> 4 2022-06-13
+#> 5 2021-09-21
+#> 6 2021-09-21
 ```
 
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this. You could also
-use GitHub Actions to re-render `README.Rmd` every time you push. An
-example workflow can be found here:
-<https://github.com/r-lib/actions/tree/v1/examples>.
+``` r
+head(target_weather)
+#>    Weather_Station Year Month Day Tmax Tmin Precip QC_Tmax QC_Tmin QC_Precip
+#> 1 Firebaugh/Telles 1990     1   1   NA   NA     NA    <NA>    <NA>      <NA>
+#> 2 Firebaugh/Telles 1990     1   2 11.2  1.6     NA       *       *         C
+#> 3 Firebaugh/Telles 1990     1   3 10.3 -2.2     NA       *       *         C
+#> 4 Firebaugh/Telles 1990     1   4 12.4 -2.9     NA       *       *         C
+#> 5 Firebaugh/Telles 1990     1   5 12.9 -2.5     NA       *       *         C
+#> 6 Firebaugh/Telles 1990     1   6 14.2 -2.5     NA       *       *         C
+#>   Tmean QC_Tmean
+#> 1    NA     <NA>
+#> 2   6.9        *
+#> 3   3.5        *
+#> 4   3.5        *
+#> 5   4.0        *
+#> 6   4.7        *
+```
 
-You can also embed plots, for example:
+``` r
+head(neighbour_weather[[1]])
+#>    Weather_Station Year Month Day Tmax Tmin Precip QC_Tmax QC_Tmin QC_Precip
+#> 1 Firebaugh/Telles 1990     1   1   NA   NA     NA    <NA>    <NA>      <NA>
+#> 2 Firebaugh/Telles 1990     1   2 11.2  1.6     NA       *       *         C
+#> 3 Firebaugh/Telles 1990     1   3 10.3 -2.2     NA       *       *         C
+#> 4 Firebaugh/Telles 1990     1   4 12.4 -2.9     NA       *       *         C
+#> 5 Firebaugh/Telles 1990     1   5 12.9 -2.5     NA       *       *         C
+#> 6 Firebaugh/Telles 1990     1   6 14.2 -2.5     NA       *       *         C
+#>   Tmean QC_Tmean
+#> 1    NA     <NA>
+#> 2   6.9        *
+#> 3   3.5        *
+#> 4   3.5        *
+#> 5   4.0        *
+#> 6   4.7        *
+```
 
-<img src="man/figures/README-pressure-1.png" width="100%" />
+show output of the function
 
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.
+## details on weather_qc_durre and weather_qc_costa
+
+show the functions in more details

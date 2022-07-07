@@ -31,27 +31,58 @@ You can install the development version of weatherQC from [GitHub](https://githu
 devtools::install_github("larscaspersen/weatherQC")
 ```
 
-## Example
+## How to use the package
 
-This is a basic example which shows you how to solve a common problem:
+weatherQC allows the user to perform standardized quality checks on the 
+daily weather data. The goal is to fish out as many not-trustworthy observation
+and to keep the invasiveness of the operation as low as possible. The functions
+`weather_qc_durre()` and `weather_qc_costa()` are the work horses of the 
+package. Both contain sets of plausibility checks for the weather data including
+basic tests (for example does the observation exceed existing temperature and
+rainfall records?), temporal plausibility tests (for example erradic day-to-day changes) to spatial plausibility tests (does the observation make sense in the 
+context of neighbouring weather station observations?).
 
-```{r example}
+```{r  eval = F}
+
+## how to use the function
+weatherQC::weather_qc_costa(weather =  target_weather, 
+                 weather_coords = c(target_info$Longitude, target_info$Latitude),
+                 variable = "Tmin", 
+                 aux_list = neighbour_weather,
+                 aux_info = neighbour_info)
+
+weatherQC::weather_qc_durre(weather =  target_weather, 
+                 weather_coords = c(target_info$Longitude, target_info$Latitude),
+                 aux_list = neighbour_weather,
+                 aux_info = neighbour_info)
+```
+
+Explain the different objects in more detail
+
+```{r }
 library(weatherQC)
-## basic example code
+target_info
+
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+```{r }
+head(neighbour_info)
 
-```{r cars}
-summary(cars)
 ```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/v1/examples>.
+```{r }
+head(target_weather)
 
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
 ```
 
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
+```{r }
+head(neighbour_weather[[1]])
+
+```
+
+
+show output of the function
+
+
+## details on weather_qc_durre and weather_qc_costa
+ show the functions in more details
