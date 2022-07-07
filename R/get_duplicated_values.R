@@ -26,7 +26,7 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples get_duplicated_values(weather = weather, variable = "Tmin")
+#' @examples get_duplicated_values(weather = target_weather, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references

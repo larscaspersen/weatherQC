@@ -19,7 +19,7 @@
 #' day of the year (leap years are included). In the columns of probs the
 #' respective percentiles are included. If the percentile calculation failed
 #' because of the lack of non-zero data, then the row will contain NA instead
-#' @examples get_each_day_precipitation_percentile(weather = weather)
+#' @examples get_each_day_precipitation_percentile(weather = target_weather)
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}

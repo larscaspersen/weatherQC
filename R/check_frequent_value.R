@@ -37,8 +37,8 @@
 #' as suspicious. Data which was dropped in the process of the analysis receives
 #' automatically a FALSE
 #' @examples 
-#' percentile_df <- get_each_day_precipitation_percentile(weather = weather)
-#' check_frequent_value(weather = weather, percentile_df = percentile_df)
+#' percentile_df <- get_each_day_precipitation_percentile(weather = target_weather)
+#' check_frequent_value(weather = target_weather, percentile_df = percentile_df)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references

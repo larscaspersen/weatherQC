@@ -22,7 +22,7 @@
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious. Data which was dropped in the process of the analysis receives
 #' automatically a FALSE
-#' @examples get_streaks(weather = weather, variable = "Tmin")
+#' @examples get_streaks(weather = target_weather, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references

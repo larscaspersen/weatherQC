@@ -22,7 +22,7 @@
 #' @seealso \code{\link{ecdf}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' get_prec_rank(weather = weather)
+#' get_prec_rank(weather = target_weather)
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}

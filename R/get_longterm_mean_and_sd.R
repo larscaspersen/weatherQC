@@ -14,7 +14,7 @@
 #' in weather
 #' @return data.frame with columns c(doy, mean, sd)
 #' @seealso \code{\link{perform_climate_outlier_check}}
-#' @examples get_longterm_mean_and_sd(weather = weather, variable = "Tmin", doy = 1)
+#' @examples get_longterm_mean_and_sd(weather = target_weather, variable = "Tmin", doy = 1)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 get_longterm_mean_and_sd <- function(weather, variable, doy){

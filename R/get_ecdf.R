@@ -19,7 +19,7 @@
 #' @seealso \code{\link{ecdf}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' get_ecdf(weather = weather, doy = 1)
+#' get_ecdf(weather = target_weather, doy = 1)
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}

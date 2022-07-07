@@ -19,8 +19,8 @@
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
 #' #this example is just hypothetical
-#' percentile_df <- get_each_day_precipitation_percentile(weather = weather)
-#' helper_check_frequent_val(val = weather$Precip[2], val_rep = 5,
+#' percentile_df <- get_each_day_precipitation_percentile(weather = target_weather)
+#' helper_check_frequent_val(val = target_weather$Precip[2], val_rep = 5,
 #' doy = 2, percentile_df = percentile_df)
 #' @export
 helper_check_frequent_val <-  function(val, val_rep,doy, percentile_df){

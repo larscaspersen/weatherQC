@@ -19,7 +19,7 @@
 #' the supplied percentiles
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' get_clim_percentiles_prec(weather = weather, doy = 1)
+#' get_clim_percentiles_prec(weather = target_weather, doy = 1)
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
