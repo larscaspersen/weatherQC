@@ -154,8 +154,8 @@
 #' In the original column flagged values were replaced with NA. In the same row as where
 #' the original value was removed, a comemnt indicating which test let to the removal
 #' can be found in the "flag_" plus variable name column.
-#' @examples weather_qc_durre(weather_list = list(weather), 
-#' weather_info = weather_info, skip_spatial_test = TRUE)
+#' @examples weather_qc_durre(weather_list = list(target_weather), 
+#' weather_info = target_info, skip_spatial_test = TRUE)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt 
 #' @import magrittr

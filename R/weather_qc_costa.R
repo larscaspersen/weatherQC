@@ -80,9 +80,9 @@
 #' positive results for an observation. All columns contain logicals, where 
 #' values of \code{TRUE} indicate successful test, meaning that the tested 
 #' variable exceeded the limits of the test and is flagged as suspicious
-#' @examples weather_qc_costa(weather = weather, 
-#' weather_coords = c(weather_info$Longitude, weather_info$Latidue),
-#' variable = "Tmin", aux_list = aux_list, aux_info = aux_info)
+#' @examples weather_qc_costa(weather = target_weather, 
+#' weather_coords = c(target_info$Longitude, target_info$Latidue),
+#' variable = "Tmin", aux_list = neighbour_weather, aux_info = neighbour_info)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
