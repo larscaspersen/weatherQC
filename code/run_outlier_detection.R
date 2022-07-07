@@ -50,7 +50,7 @@ saveRDS(weather_result, file = 'data/quality-control-durre_results-CIMIS.RData')
 
 #took roughly 4 hours
 
-devtools::install_github('larscaspersen/weather_patching')
+devtools::load_all()
 library(weatherQC)
 start_time <- Sys.time()
 weather_result <- weather_qc_durre(weather_list = weather_list,
@@ -59,10 +59,10 @@ weather_result <- weather_qc_durre(weather_list = weather_list,
                                    region = 'USA',
                                    subregion = 'California')
 end_time <- Sys.time()
+end_time - start_time
+#without spatial coherence test takes about 2 minutes
 
 
-weather_list[[1]] dplyr::`%>%`
-  dplyr::summarise(mean_tmin = mean(Tmin, na.rm))
 
 
 

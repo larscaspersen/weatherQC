@@ -801,57 +801,57 @@ patch_climatol <- function(weather, target, meta_data){
 #patching method
 
 
-patch_several_stations <- function(weather, target, meta_data, 
-                                   method = 'mean_closest_stations'){
-  
-  if(method == 'mean_closest_stations'){
-    patched_stations <- lapply(target, function(x){
-      patch_mean(weather = weather, target = x, meta_data = meta_data, n_donors = 5)
-    } )
-    
-    
-    #bind list of data frames to one by column
-    weather_patched <- do.call(cbind, patched_stations)
-    #add Date
-    weather_patched <- cbind.data.frame(weather$Date, weather_patched)
-    #adjust colnames
-    colnames(weather_patched) <- c('Date', target)
-    
-    
-  } else if(method == 'ordinary_normal_ratio'){
-    
-    patched_stations <- lapply(target, function(x){
-      patch_normal_ratio(weather = weather, target_station = x, 
-                                  meta_data = meta_data, n_donors = 5, 
-                         weight = 'ordinary')
-    })
-    
-    #bind list of data frames to one by column
-    weather_patched <- do.call(cbind, patched_stations)
-    #add Date
-    weather_patched <- cbind.data.frame(weather$Date, weather_patched)
-    #adjust colnames
-    colnames(weather_patched) <- c('Date', target)
-    
-  } else if(method == 'correlation_normal_ratio'){
-    
-    patched_stations <- lapply(target, function(x){
-      patch_normal_ratio(weather = weather, target_station = x, 
-                         meta_data = meta_data, n_donors = 5, 
-                         weight = 'correlation')
-    })
-    
-    #bind list of data frames to one by column
-    weather_patched <- do.call(cbind, patched_stations)
-    #add Date
-    weather_patched <- cbind.data.frame(weather$Date, weather_patched)
-    #adjust colnames
-    colnames(weather_patched) <- c('Date', target)
-  }
-  
-  return(weather_patched)
-  
-}
+# patch_several_stations <- function(weather, target, meta_data, 
+#                                    method = 'mean_closest_stations'){
+#   
+#   if(method == 'mean_closest_stations'){
+#     patched_stations <- lapply(target, function(x){
+#       patch_mean(weather = weather, target = x, meta_data = meta_data, n_donors = 5)
+#     } )
+#     
+#     
+#     #bind list of data frames to one by column
+#     weather_patched <- do.call(cbind, patched_stations)
+#     #add Date
+#     weather_patched <- cbind.data.frame(weather$Date, weather_patched)
+#     #adjust colnames
+#     colnames(weather_patched) <- c('Date', target)
+#     
+#     
+#   } else if(method == 'ordinary_normal_ratio'){
+#     
+#     patched_stations <- lapply(target, function(x){
+#       patch_normal_ratio(weather = weather, target_station = x, 
+#                                   meta_data = meta_data, n_donors = 5, 
+#                          weight = 'ordinary')
+#     })
+#     
+#     #bind list of data frames to one by column
+#     weather_patched <- do.call(cbind, patched_stations)
+#     #add Date
+#     weather_patched <- cbind.data.frame(weather$Date, weather_patched)
+#     #adjust colnames
+#     colnames(weather_patched) <- c('Date', target)
+#     
+#   } else if(method == 'correlation_normal_ratio'){
+#     
+#     patched_stations <- lapply(target, function(x){
+#       patch_normal_ratio(weather = weather, target_station = x, 
+#                          meta_data = meta_data, n_donors = 5, 
+#                          weight = 'correlation')
+#     })
+#     
+#     #bind list of data frames to one by column
+#     weather_patched <- do.call(cbind, patched_stations)
+#     #add Date
+#     weather_patched <- cbind.data.frame(weather$Date, weather_patched)
+#     #adjust colnames
+#     colnames(weather_patched) <- c('Date', target)
+#   }
+#   
+#   return(weather_patched)
+#   
+# }
 
 
 
@@ -1305,7 +1305,7 @@ get_eval_one_station <- function(weather, meta_data, target, patch_methods, p_mi
 #####
 
 
-get_MAE <- function(predicted, observed, na.rm = FALSE){
+calc_MAE <- function(predicted, observed, na.rm = FALSE){
   if (!na.rm) 
     if (!(length(which(is.na(predicted))) + length(which(is.na(observed)))) == 
         0) 
@@ -1315,25 +1315,25 @@ get_MAE <- function(predicted, observed, na.rm = FALSE){
   return(mae)
 }
 
-get_NSE <- function(predicted, observed){
+calc_NSE <- function(predicted, observed){
   
   return(1-(sum((observed - predicted)^2) / (sum((observed - mean(observed, na.rm = T))^2))))
 }
 
 
-get_KS_test <- function(predicted, observed){
+calc_KS_test <- function(predicted, observed){
   res <- ks.test(observed, predicted)
   return(res$p.value)
 }
 
-get_S_index <- function(predicted, observed){
+calc_S_index <- function(predicted, observed){
   pred_mean <- mean(predicted, na.rm = T)
   obs_mean <- mean(observed, na.rm = T)
   
   return((sum((predicted - pred_mean) * (observed - obs_mean)) / sqrt(sum((predicted - pred_mean)^2) * sum((observed - obs_mean)^2)))^2)
 }
 
-get_skill_score <- function(predicted, observed){
+calc_skill_score <- function(predicted, observed){
   
   mse_1 <- sum((predicted - observed)^2) / length(which(!is.na(observed - predicted)))
   mse_2 <- sum((mean(observed, na.rm = T) - observed)^2) / length(which(!is.na(observed - predicted)))
@@ -1341,13 +1341,13 @@ get_skill_score <- function(predicted, observed){
   return(1 - (mse_1 / mse_2))
 }
 
-get_coef_of_efficiency <- function(observed, predicted){
+calc_coef_of_efficiency <- function(observed, predicted){
   return(1 - (sum((observed - predicted)^2) / sum((observed - mean(observed, na.rm = T))^2)))
 }
 
 
 #this score expresses: if the model makes a prediction on a state, how often do is the model right about it (assuming we have equal distribution in our labels)
-get_hit_score <- function(observed, predicted){
+calc_hit_score <- function(observed, predicted){
   
   #transform precipitation data to occurence data
   observed_occ <-  observed > 0
@@ -1377,7 +1377,7 @@ get_hit_score <- function(observed, predicted){
 #this gives us only info about the recall: how many relevant items were retrieved?
 
 #mathews correlation coefficient
-get_MCC <- function(observed, predicted){
+calc_MCC <- function(observed, predicted){
   
   #transform precipitation data to occurence data
   observed_occ <-  observed > 0
@@ -1399,7 +1399,7 @@ get_MCC <- function(observed, predicted){
   return(((TP * TN) - (FP * FN)) / sqrt(share_dry_obs * share_wet_obs * share_dry_pred * share_wet_pred))
 }
 
-get_hanssen_kuipers <- function(observed, predicted){
+calc_hanssen_kuipers <- function(observed, predicted){
   
   #transform precipitation data to occurence data
   observed_occ <-  observed > 0
@@ -1416,7 +1416,7 @@ get_hanssen_kuipers <- function(observed, predicted){
 #value of 0 indicates no skill in prediction
 #value of 1 is the best
 
-get_d_index <- function(predicted, observed){
+calc_d_index <- function(predicted, observed){
   
   mean_obs <- mean(observed)
   n <- length(predicted)

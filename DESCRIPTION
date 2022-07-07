@@ -2,6 +2,9 @@ Package: weatherQC
 Type: Package
 Title: Quality Control for Daily Weather Data
 Version: 0.0.1.0
+Authors@R: person("Lars", "Caspersen", email = "lars.caspersen@uni-bonn.de",
+                  role = c("aut", "cre"))
+Description: This package contains two daily weather quality control algorithms
 RoxygenNote: 7.2.0
 Encoding: UTF-8
 Imports: Rdpack, rvest, readr, rlang, data.table, dplyr, reshape2, purrr, lubridate, sp, magrittr
