@@ -30,7 +30,7 @@ is flagged as suspicious. The function is part of the \insertCite{costa_gap_2021
 called via \code{weather_qc_costa}.
 }
 \examples{
-test_temporal_continuity(weather = KA_weather, variable = "Tmin")
+test_temporal_continuity(weather = target_weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

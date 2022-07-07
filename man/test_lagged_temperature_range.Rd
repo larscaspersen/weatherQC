@@ -48,7 +48,7 @@ This function is part of the weather quality control scheme after \insertCite{du
 please refer to section 5 "Internal and temporal consistency checks".
 }
 \examples{
-test_lagged_temperature_range(weather = weather)
+test_lagged_temperature_range(weather = target_weather)
 }
 \references{
 \insertAllCited{}

@@ -29,7 +29,7 @@ This function is part of the weather quality control scheme after \insertCite{du
 please refer to section 3 "Basic integrity tests".
 }
 \examples{
-test_naught_weather(weather = weather)
+test_naught_weather(weather = target_weather)
 }
 \references{
 \insertAllCited{}

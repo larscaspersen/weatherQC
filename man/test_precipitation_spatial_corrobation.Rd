@@ -59,9 +59,9 @@ section 6 "Spatial consistency checks" and "Appendix C".
 Climatological percentile ranks of precipitation is calculated using \code{\link{get_prec_rank}}
 }
 \examples{
-test_precipitation_spatial_corrobation(weather = weather,
-weather_coords = c(weather_info$Longitude, weather_info$Latidue),
-aux_info = aux_info, aux_list = aux_list)
+test_precipitation_spatial_corrobation(weather = target_weather,
+weather_coords = c(target_info$Longitude, target_info$Latidue),
+aux_info = neighbour_info, aux_list = neighbour_weather)
 }
 \references{
 \insertAllCited{}

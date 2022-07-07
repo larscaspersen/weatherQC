@@ -98,8 +98,8 @@ For more information please refer to \insertCite{durre_comprehensive_2010;textua
 section 6 "Spatial consistency checks" and "Appendix B".
 }
 \examples{
-spat_consist_one_period(weather = weather,
-aux_info = aux_info, aux_list = aux_list, 
+spat_consist_one_period(weather = target_weather,
+aux_info = neighbour_info, aux_list = neighbour_weather, 
 period_start = as.Date("1992-01-01", format = "\%Y-\%m-\%d"), variable = "Tmin")
 }
 \references{

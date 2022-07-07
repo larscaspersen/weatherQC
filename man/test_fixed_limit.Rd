@@ -51,7 +51,7 @@ refer to the help pages of the functions or see \insertCite{costa_gap_2021;textu
 or \insertCite{durre_comprehensive_2010;textual}{weatherQC}.
 }
 \examples{
-test_fixed_limit(weather = KA_weather, region = 'world', subregion = 'Germany', 
+test_fixed_limit(weather = target_weather, region = 'USA', subregion = 'California', 
 variable = "Tmin")
 }
 \references{

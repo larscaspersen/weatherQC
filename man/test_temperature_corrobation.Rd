@@ -86,9 +86,9 @@ For a detailed description of the test please refer to \insertCite{durre_compreh
 section 6 "Spatial consistency checks".
 }
 \examples{
-test_temperature_corrobation(weather = weather,
-weather_coords = c(weather_info$Longitude, weather_info$Latidue),
-aux_info = aux_info, aux_list = aux_list, variable = "Tmin")
+test_temperature_corrobation(weather = target_weather,
+weather_coords = c(target_info$Longitude, target_info$Latidue),
+aux_info = neighbour_info, aux_list = neighbour_list, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

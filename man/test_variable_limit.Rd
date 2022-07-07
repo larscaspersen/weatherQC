@@ -29,7 +29,7 @@ This function is part of the weather quality control tests of \insertCite{costa_
 \code{costa_qc()}
 }
 \examples{
-test_variable_limit(weather = weather, variable = "Tmin")
+test_variable_limit(weather = target_weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}

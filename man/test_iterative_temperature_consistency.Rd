@@ -45,7 +45,7 @@ This function is part of the weather quality control scheme after \insertCite{du
 please refer to section 5 "Internal and temporal consistency checks" and "Appendix A".
 }
 \examples{
-test_iterative_temperature_consistency(weather = weather)
+test_iterative_temperature_consistency(weather = target_weather)
 }
 \references{
 \insertAllCited{}

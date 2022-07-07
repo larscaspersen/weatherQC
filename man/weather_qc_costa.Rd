@@ -131,9 +131,9 @@ positive tests are required for an observation to be flagged. This is intended
 to reduce the amount of false-positive flags.
 }
 \examples{
-weather_qc_costa(weather = weather, 
-weather_coords = c(weather_info$Longitude, weather_info$Latidue),
-variable = "Tmin", aux_list = aux_list, aux_info = aux_info)
+weather_qc_costa(weather = target_weather, 
+weather_coords = c(target_info$Longitude, target_info$Latidue),
+variable = "Tmin", aux_list = neighbour_weather, aux_info = neighbour_info)
 }
 \references{
 \insertAllCited{}

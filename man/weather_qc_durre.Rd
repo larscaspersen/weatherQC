@@ -234,8 +234,8 @@ could reduce the testing quality of more restrictive tests like climatological o
 test.
 }
 \examples{
-weather_qc_durre(weather_list = list(weather), 
-weather_info = weather_info, skip_spatial_test = TRUE)
+weather_qc_durre(weather_list = list(target_weather), 
+weather_info = target_info, skip_spatial_test = TRUE)
 }
 \references{
 \insertAllCited{}

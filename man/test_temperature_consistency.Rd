@@ -33,7 +33,7 @@ then the temperature data of that day are flagged as suspicious.
 }
 }
 \examples{
-test_temperature_consistency(weather = KA_weather)
+test_temperature_consistency(weather = target_weather)
 }
 \references{
 \insertAllCited{}

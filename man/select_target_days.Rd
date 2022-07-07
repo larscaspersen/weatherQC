@@ -30,7 +30,7 @@ NA for these days. This function is a helper function for the spatial consistenc
 test of temperature data.
 }
 \examples{
-select_target_days(weather = weather, variable = "Tmin", 
+select_target_days(weather = target_weather, variable = "Tmin", 
 period_start = as.Date("1991-12-17", format = "\%Y-\%m-\%d"), 
 period_end = as.Date("1991-02-15", format = "\%y-\%m-\%d"))
 }

@@ -37,7 +37,7 @@ This function is part of the weather quality control scheme after \insertCite{du
 please refer to section 5 "Internal and temporal consistency checks".
 }
 \examples{
-test_spike_dip(weather = weather, variable = "Tmin")
+test_spike_dip(weather = target_weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}
