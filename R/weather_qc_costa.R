@@ -26,19 +26,24 @@
 #' positive tests are required for an observation to be flagged. This is intended 
 #' to reduce the amount of false-positive flags. 
 #' 
-#' @param weather data.frame containing a daily time series data set. 
-#' It should have columns c("Year", "Month", "Day")
-#' @param weather_coords numerical vector of length two. Should contain longitude and 
-#' latitude (in that order) of target station in decimal format
-#' @param variable column name in \code{weather} for which the test is performed. Should
-#' be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
-#' name
+#' @param weather_list list of data.frames containing a daily time series data set. 
+#' It should have columns c("Year", "Month", "Day", "Tmin", "Tmax", "Precip") and
+#' ideally also "Tmean" for full testing power. weather_list elements names should
+#' be the same as the \code{weather_info$id}
+#' @param weather_info data.frame at least the columns c("id", "Longtitude",
+#' "Latitude"). The column "id" should contain the same names as the named elements of
+#' weather_list. Latitude and longitude should be in decimal format. Number of rows of 
+#' data.frame should be same as number of elements in weather_list
 #' @param aux_info data.frame listing the auxiliary weather stations. Should at least contain
 #' the columns c("id", "Longitude", "Latitude")
 #' @param aux_list named list of data.frames with daily weather obsrvations of auxiliary
 #' weather stations. Names should be identical to \code{aux_info$id}. Strucuture of 
 #' data.frames should be identical of \code{weather}. Data.frames do not necissarily
 #' need to cover excat same time period as \code{weather}
+#' @param mute flag to allow function to communicate testing progress in console
+#' while the test runs
+#' @param skip_spatial_test flag, which allows to skip the spatial tests because
+#' they can be computationally demanding and may require several hours of runtime
 #' @param region a character indicating the region for which the records should be downloaded. 
 #' Valid options are `world` and `USA`. Can be also set as \code{NULL} in case user-defined 
 #' limits are supplied
@@ -74,22 +79,32 @@
 #' @param max_res_norm testing threshold, highest standardized residual tolerated
 #' by the test. Note: both thresholds need to be exceeded in order for the 
 #' test to yield a flag
-#' @return data.frame with \code{nrow(weather)} rows and six columns. The first
-#' five columns are the individual test results and the sixth column is the
-#' aggregated test resuls, which is positive if at least two tests yielded
-#' positive results for an observation. All columns contain logicals, where 
-#' values of \code{TRUE} indicate successful test, meaning that the tested 
-#' variable exceeded the limits of the test and is flagged as suspicious
-#' @examples weather_qc_costa(weather = target_weather, 
-#' weather_coords = c(target_info$Longitude, target_info$Latidue),
-#' variable = "Tmin", aux_list = neighbour_weather, aux_info = neighbour_info)
+#' @return data.frame with \code{nrow(weather)} rows and the same columns as
+#' in weather, but with nine extra columns called c("org_Tmin","org_Tmax", "org_Precip",
+#' "flag_Tmin", "flag_Tmax", "flag_Precip", "comment_Tmin", "comment_Tmax", "comment_Precip). 
+#' In the columns called "org_" plus variable name the exact copies of observations 
+#' as in weather can be found, completely unaltered.
+#' In the original column flagged values were replaced with NA. In the same row as where
+#' the original value was removed, a comment indicating which test let to the removal
+#' can be found in the "flag_" plus variable name column. The numbers indicate which
+#' test yielded a positive test. Only in cases of two or more positive tests at
+#' the same time was the flagged observation of the weather variable removed.
+#' @examples 
+#' weather_list <- list(target_weather)
+#' names(weather_list <- target_info$id)
+#' weather_qc_costa(weather = weather_list, 
+#' mute = T, skip_spatial_test = T)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
 #' @export
-weather_qc_costa <- function(weather, weather_coords, variable,
-                             aux_list, aux_info, region = NULL, subregion = NULL, 
+weather_qc_costa <- function(weather_list, 
+                             weather_info = NULL, 
+                             mute = FALSE, 
+                             skip_spatial_test = TRUE,
+                             aux_list = NULL, aux_info = NULL, 
+                             region = NULL, subregion = NULL, 
                              records = NULL,
                              probs_variable_limit = c(0.01, 0.99),
                              probs_temporal_continuity = 0.995,
@@ -99,26 +114,45 @@ weather_qc_costa <- function(weather, weather_coords, variable,
                              min_station = 3, max_station = 7, max_res = 8, 
                              max_res_norm = 4){
   
-  #if temperature, then Tmean is needed
-  if(variable %in% c('Tmin', 'Tmax')){
-    if(!'Tmean' %in% colnames(weather)){
-      stop('For variable consistency test daily average temperature called "Tmean" is required')
+  #check if needed columns are present
+  column_check <- purrr::map_lgl(weather_list, function(x){
+    !all(c("Year", "Month", "Day", "Tmin", "Tmax", "Tmean", "Precip") %in% colnames(x))
+  })
+  if(any(column_check)){
+    stop("at least one weather station in weather_list does not contain the required columns c('Year', 'Month', 'Day', 'Tmin', 'Tmax', 'Tmean', 'Precip')")
+  }
+  
+  if(skip_spatial_test == F){
+    #make sure that all the names of weather info are also found in weather_list
+    if(!all(weather_info$id %in% names(weather_list))){
+      stop("Could not find all weather station ids mentioned in weather_info also
+         in names(weather_list")
     }
   }
+
   
-  if(!'Date' %in% colnames(weather)){
-    weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
-                            format = '%Y-%m-%d')
+  
+  #add a column to weather_list objects indicating which test performed positive
+  #also add Date and doy
+  weather_list <- purrr::map(weather_list, function(x) tibble::tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d"),
+                                                              'Tmin_org' = x$Tmin, 
+                                                              'Tmax_org' = x$Tmax, 'Precip_org' = x$Precip,
+                                                              'flag_Tmin' = NA, 'flag_Tmax' = NA, 
+                                                              'flag_Precip' = NA) %>%
+                               dplyr::mutate(doy = lubridate::yday(Date)) %>%
+                               dplyr::relocate(Date, doy))#make sure date and doy are in beginning of columns
+  
+  if(is.null(aux_list) == F){
+    #make sure aux list contains tibbles and date and doy column
+    aux_list <- purrr::map(aux_list, function(x){
+      tibble::tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")) %>%
+        dplyr::mutate(doy = lubridate::yday(Date))
+    })
   }
+
+
   
-  #make sure weather and aux_list are tibbles
-  weather <- tibble(weather)
-  aux_list <- map(aux_list, tibble)
-  
-  #make sure that weather has date column
-  weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
-                          format = '%Y-%m-%d')
-  
+
   #do testing of input stuff: 
   #   weather needs to have certain columns
   #   weather coords needs to be of length two and numeric
@@ -126,58 +160,233 @@ weather_qc_costa <- function(weather, weather_coords, variable,
   #   aux_list needs to be list, names need to be same as in aux_info$id; colnames should contain same objects as weather does
   #   aux_info needs to contain coordinates and date?
   
-  #call fixed limits test
-  fixed_lim <- test_fixed_limit(weather = weather, region = region, 
-                                subregion = subregion,variable = variable)
+  #### Fixed limit test ####
   
-  #call variable limits test
-  variable_lim <- test_variable_limit(weather = weather, variable = variable,
-                                      probs = probs_variable_limit)
+  if(mute == FALSE){
+    cat(paste0(rep('-', 10), recycle0 = FALSE), '\n')
+    cat('Fixed limit test', '\n')
+    cat('', '\n')
+  }
   
-  #call temporal consistency test
-  temporal_consistency <- test_temporal_continuity(weather = weather, variable = variable, 
-                                                   prob = probs_temporal_continuity)
-  
-  #call variable consistency test (only applicable for temperature data)
-  #make ifelse condition for temperature and precipitation
-  if(variable %in% c('Tmin', 'Tmax')){
-    variable_consistency <- test_temperature_consistency(weather = weather,
-                                                         probs = probs_temperature_consistency)
+  #apply test, add column with flag
+  weather_list <- purrr::map(weather_list, function(x){
+    x$fixed_lim_test_Tmin <- test_fixed_limit(weather = x, variable = 'Tmin', region = region,
+                     subregion = subregion, records = records)
     
-    spatial_consistency <- test_spatial_consistency(weather = weather, 
-                                                    weather_coords = weather_coords, 
-                                                    aux_list = aux_list, 
-                                                    aux_info = aux_info, 
-                                                    variable = variable, 
-                                                    max_dist = max_dist, 
-                                                    window_width = window_width, 
-                                                    min_coverage = min_coverage, 
-                                                    min_correlation = min_correlation,
-                                                    min_station = min_station, 
-                                                    max_station = max_station, 
-                                                    max_res = max_res, 
-                                                    max_res_norm = max_res_norm)
-  } else if(variable == 'Precip'){
-    variable_consistency <- NA
+    x$fixed_lim_test_Tmax <- test_fixed_limit(weather = x, variable = 'Tmax', region = region,
+                                              subregion = subregion, records = records)
     
-    spatial_consistency <- test_precipitation_spatial_corrobation(weather = weather, 
-                                                                  weather_coords = weather_coords,
-                                                                  aux_info = aux_info,
-                                                                  aux_list = aux_list,
-                                                                  max_dist = max_dist,
-                                                                  max_station = max_station,
-                                                                  min_station = min_station)
+    x$fixed_lim_test_Precip <- test_fixed_limit(weather = x, variable = 'Precip', region = region,
+                                                subregion = subregion, records = records)
+    
+    return(x)
+  })
+  
+
+  
+
+  #### Variable limit test ####
+  
+  if(mute == FALSE){
+    cat(paste0(rep('-', 10), recycle0 = FALSE), '\n')
+    cat('Variable limit test', '\n')
+    cat('', '\n')
+  }
+  
+  #tmin
+  weather_list <- purrr::map(weather_list, function(x){
+    x$variable_lim_test_Tmin <- test_variable_limit(weather = x, variable = 'Tmin', 
+                                                    probs = probs_variable_limit)
+    
+    x$variable_lim_test_Tmax <- test_variable_limit(weather = x, variable = 'Tmax', 
+                                                    probs = probs_variable_limit)
+    
+    x$variable_lim_test_Precip <- test_variable_limit(weather = x, variable = 'Precip', 
+                                                      probs = probs_variable_limit)
+    
+    return(x)
+  })
+  
+
+  
+  
+  #### Temporal consistency ####
+  
+  if(mute == FALSE){
+    cat(paste0(rep('-', 10), recycle0 = FALSE), '\n')
+    cat('Temporal consistency test', '\n')
+    cat('', '\n')
+  }
+  
+
+  weather_list <- purrr::map(weather_list, function(x){
+    x$temporal_consistency_Tmin <- test_temporal_continuity(weather = x, variable ='Tmin', 
+                                                         prob = probs_temporal_continuity)
+    
+    x$temporal_consistency_Tmax <- test_temporal_continuity(weather = x, variable ='Tmax', 
+                                                            prob = probs_temporal_continuity)
+    
+    x$temporal_consistency_Precip <- test_temporal_continuity(weather = x, variable ='Precip', 
+                                                              prob = probs_temporal_continuity)
+    
+    return(x)
+  })
+  
+
+
+  
+  #### Consistency of variables ####
+  
+  if(mute == FALSE){
+    cat(paste0(rep('-', 10), recycle0 = FALSE), '\n')
+    cat('Test consistency of variables', '\n')
+    cat('', '\n')
+  } 
+
+  weather_list <- purrr::map(weather_list, function(x){
+    #temperature
+    x$consistency_variable_Tmin <- x$consistency_variable_Tmax <- test_temperature_consistency(weather = x,
+                                                                                               probs = probs_temperature_consistency)
+    #precipitation                                                                                                            
+    x$consistency_variable_Precip <- FALSE
+    
+    return(x)
+  })
+  
+  
+  #### Spatial consistency ####
+  
+  #flag which allows to skip spatial tests
+  if(is.null(aux_info) == T | is.null(aux_list) == T){
+    skip_spatial_test <- TRUE
+    warning("Because arguments aux_info and aux_list were not provided, the spatial
+            consistency tests are skipped")
   }
   
   
+  if(skip_spatial_test == FALSE){
+    
+    if(mute == FALSE){
+      cat(paste0(rep('-', 10), recycle0 = FALSE), '\n')
+      cat('Spatial consistency', '\n')
+      cat('', '\n')
+    } 
+    
+    weather_list <- purrr::map(weather_info$id, function(x){
+      
+      weather_coords <- c(weather_info$Longitude[weather_info$id == x],
+                          weather_info$Latitude[weather_info$id == x])
+      
+      x$spatial_test_Tmin <- test_spatial_consistency(weather = weather_list[[x]], 
+                                                      weather_coords = weather_coords, 
+                                                      aux_list = aux_list, 
+                                                      aux_info = aux_info, 
+                                                      variable = 'Tmin', 
+                                                      max_dist = max_dist, 
+                                                      window_width = window_width, 
+                                                      min_coverage = min_coverage, 
+                                                      min_correlation = min_correlation,
+                                                      min_station = min_station, 
+                                                      max_station = max_station, 
+                                                      max_res = max_res, 
+                                                      max_res_norm = max_res_norm)
+      
+      x$spatial_test_Tmax <- test_spatial_consistency(weather = weather_list[[x]], 
+                                                      weather_coords = weather_coords, 
+                                                      aux_list = aux_list, 
+                                                      aux_info = aux_info, 
+                                                      variable = 'Tmax', 
+                                                      max_dist = max_dist, 
+                                                      window_width = window_width, 
+                                                      min_coverage = min_coverage, 
+                                                      min_correlation = min_correlation,
+                                                      min_station = min_station, 
+                                                      max_station = max_station, 
+                                                      max_res = max_res, 
+                                                      max_res_norm = max_res_norm)
+      
+      
+      x$spatial_test_Precip <- test_precipitation_spatial_corrobation(weather = weather_list[[x]], 
+                                                                      weather_coords = weather_coords,
+                                                                      aux_info = aux_info,
+                                                                      aux_list = aux_list,
+                                                                      max_dist = max_dist,
+                                                                      max_station = max_station,
+                                                                      min_station = min_station)
+      
+      return(x)
+    })
+    
+  } else{
+    
+    #case that spatial test was skipped, still add flag so that function
+    #can operate normally
+    
+    weather_list <- purrr::map(weather_list, function(x){
+      x$spatial_test_Tmin <- x$spatial_test_Tmax <- x$spatial_test_Precip <- FALSE
+      return(x)
+    })
+  }
   
-  test_res <- tibble('fixed_limit' = fixed_lim, 
-                     'variable_limit' = variable_lim, 
-                     'temporal_consistent' =  temporal_consistency, 
-                     'consistent_variables' = variable_consistency, 
-                     'spatial_consistent' = spatial_consistency)
+ 
+  #### Summarise the test ####
   
-  test_res$outlier <- rowSums(test_res, na.rm = T) >= 2
+  #add final flag
+  #add comment which tests were positive
+  #remove flagged data
+  weather_list <- purrr::map(weather_list, function(x){
+    
+    x$flag_Tmin <- rowSums(x[,c("fixed_lim_test_Tmin", "variable_lim_test_Tmin",
+                                "temporal_consistency_Tmin", "consistency_variable_Tmin",
+                                "spatial_test_Tmin")], na.rm = T) >= 2
+    x$Tmin[x$flag_Tmin] <- NA
+    x$flag_Tmin <- paste0(ifelse(x$fixed_lim_test_Tmin, yes = '1, ', no = ''), 
+                             ifelse(x$variable_lim_test_Tmin, '2, ', ''),
+                             ifelse(x$temporal_consistency_Tmin, '3, ', ''),
+                             ifelse(x$consistency_variable_Tmin, '4, ', ''),
+                             ifelse(x$spatial_test_Tmin, '5, ', '')) %>%
+      trimws(which = 'right') %>% #trim trailing white space
+      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
+    
+    x$flag_Tmax <- rowSums(x[,c("fixed_lim_test_Tmax", "variable_lim_test_Tmax",
+                                "temporal_consistency_Tmax", "consistency_variable_Tmax",
+                                "spatial_test_Tmax")], na.rm = T) >= 2
+    x$Tmax[x$flag_Tmax] <- NA
+    x$flag_Tmax <- paste0(ifelse(x$fixed_lim_test_Tmax, yes = '1, ', no = ''), 
+                             ifelse(x$variable_lim_test_Tmax, '2, ', ''),
+                             ifelse(x$temporal_consistency_Tmax, '3, ', ''),
+                             ifelse(x$consistency_variable_Tmax, '4, ', ''),
+                             ifelse(x$spatial_test_Tmax, '5, ', '')) %>%
+      trimws(which = 'right') %>% #trim trailing white space
+      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
+    
+    x$flag_Precip <- rowSums(x[,c("fixed_lim_test_Precip", "variable_lim_test_Precip",
+                                  "temporal_consistency_Precip", "consistency_variable_Precip",
+                                  "spatial_test_Precip")], na.rm = T) >= 2
+    x$Precip[x$flag_Precip] <- NA
+    x$flag_Precip <- paste0(ifelse(x$fixed_lim_test_Precip, yes = '1, ', no = ''), 
+                               ifelse(x$variable_lim_test_Precip, '2, ', ''),
+                               ifelse(x$temporal_consistency_Precip, '3, ', ''),
+                               ifelse(x$consistency_variable_Precip, '4, ', ''),
+                               ifelse(x$spatial_test_Precip, '5, ', '')) %>%
+      trimws(which = 'right') %>% #trim trailing white space
+      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
+    
+    #drop old flag columns
+    x <- x %>%
+      dplyr::select(-c(fixed_lim_test_Tmin, variable_lim_test_Tmin,
+                  temporal_consistency_Tmin, consistency_variable_Tmin,
+                  spatial_test_Tmin, 
+                fixed_lim_test_Tmax, variable_lim_test_Tmax,
+                  temporal_consistency_Tmax, consistency_variable_Tmax,
+                  spatial_test_Tmax,
+                fixed_lim_test_Precip, variable_lim_test_Precip,
+                  temporal_consistency_Precip, consistency_variable_Precip,
+                  spatial_test_Precip))
+    
+    return(x)
+  })
   
-  return(test_res)
+
+  return(weather_list)
 }

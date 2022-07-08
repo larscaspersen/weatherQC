@@ -6,10 +6,10 @@
 \usage{
 weather_qc_durre(
   weather_list,
-  weather_info,
+  weather_info = NULL,
   aux_list = NULL,
   aux_info = NULL,
-  mute = FALSE,
+  mute = TRUE,
   skip_spatial_test = FALSE,
   duplicate_test_min_obs = 3,
   same_temp_threshold = 10,
@@ -178,7 +178,7 @@ in weather, but with six extra columns called c("org_Tmin","org_Tmax", "org_Prec
 "flag_Tmin", "flag_Tmax", "flag_Precip"). In the columns called "org_" plus variable
 name the exact copies of observations as in weather can be found, completely unaltered.
 In the original column flagged values were replaced with NA. In the same row as where
-the original value was removed, a comemnt indicating which test let to the removal
+the original value was removed, a comment indicating which test let to the removal
 can be found in the "flag_" plus variable name column.
 }
 \description{
@@ -235,7 +235,7 @@ test.
 }
 \examples{
 weather_qc_durre(weather_list = list(target_weather), 
-weather_info = target_info, skip_spatial_test = TRUE)
+skip_spatial_test = TRUE, mute = TRUE)
 }
 \references{
 \insertAllCited{}

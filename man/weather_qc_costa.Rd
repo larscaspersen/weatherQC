@@ -5,11 +5,12 @@
 \title{Quality control of daily weather data after Costa et al. (2021)}
 \usage{
 weather_qc_costa(
-  weather,
-  weather_coords,
-  variable,
-  aux_list,
-  aux_info,
+  weather_list,
+  weather_info = NULL,
+  mute = FALSE,
+  skip_spatial_test = TRUE,
+  aux_list = NULL,
+  aux_info = NULL,
   region = NULL,
   subregion = NULL,
   records = NULL,
@@ -27,15 +28,21 @@ weather_qc_costa(
 )
 }
 \arguments{
-\item{weather}{data.frame containing a daily time series data set. 
-It should have columns c("Year", "Month", "Day")}
+\item{weather_list}{list of data.frames containing a daily time series data set. 
+It should have columns c("Year", "Month", "Day", "Tmin", "Tmax", "Precip") and
+ideally also "Tmean" for full testing power. weather_list elements names should
+be the same as the \code{weather_info$id}}
 
-\item{weather_coords}{numerical vector of length two. Should contain longitude and 
-latitude (in that order) of target station in decimal format}
+\item{weather_info}{data.frame at least the columns c("id", "Longtitude",
+"Latitude"). The column "id" should contain the same names as the named elements of
+weather_list. Latitude and longitude should be in decimal format. Number of rows of 
+data.frame should be same as number of elements in weather_list}
 
-\item{variable}{column name in \code{weather} for which the test is performed. Should
-be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
-name}
+\item{mute}{flag to allow function to communicate testing progress in console
+while the test runs}
+
+\item{skip_spatial_test}{flag, which allows to skip the spatial tests because
+they can be computationally demanding and may require several hours of runtime}
 
 \item{aux_list}{named list of data.frames with daily weather obsrvations of auxiliary
 weather stations. Names should be identical to \code{aux_info$id}. Strucuture of 
@@ -95,12 +102,16 @@ by the test. Note: both thresholds need to be exceeded in order for the
 test to yield a flag}
 }
 \value{
-data.frame with \code{nrow(weather)} rows and six columns. The first
-five columns are the individual test results and the sixth column is the
-aggregated test resuls, which is positive if at least two tests yielded
-positive results for an observation. All columns contain logicals, where 
-values of \code{TRUE} indicate successful test, meaning that the tested 
-variable exceeded the limits of the test and is flagged as suspicious
+data.frame with \code{nrow(weather)} rows and the same columns as
+in weather, but with nine extra columns called c("org_Tmin","org_Tmax", "org_Precip",
+"flag_Tmin", "flag_Tmax", "flag_Precip", "comment_Tmin", "comment_Tmax", "comment_Precip). 
+In the columns called "org_" plus variable name the exact copies of observations 
+as in weather can be found, completely unaltered.
+In the original column flagged values were replaced with NA. In the same row as where
+the original value was removed, a comment indicating which test let to the removal
+can be found in the "flag_" plus variable name column. The numbers indicate which
+test yielded a positive test. Only in cases of two or more positive tests at
+the same time was the flagged observation of the weather variable removed.
 }
 \description{
 Performs a series of consistency tests and returns flags of suspicious data.
@@ -131,9 +142,10 @@ positive tests are required for an observation to be flagged. This is intended
 to reduce the amount of false-positive flags.
 }
 \examples{
-weather_qc_costa(weather = target_weather, 
-weather_coords = c(target_info$Longitude, target_info$Latidue),
-variable = "Tmin", aux_list = neighbour_weather, aux_info = neighbour_info)
+weather_list <- list(target_weather)
+names(weather_list <- target_info$id)
+weather_qc_costa(weather = weather_list, 
+mute = T, skip_spatial_test = T)
 }
 \references{
 \insertAllCited{}
