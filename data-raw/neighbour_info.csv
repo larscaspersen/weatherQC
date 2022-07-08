@@ -1,13 +1,13 @@
-"id","Name","Longitude","Latitude","Start_date","End_date"
-"cimis_7","Firebaugh/Telles",-120.59098,36.851248,"1982-09-22","2022-06-13"
-"cimis_15","Stratford",-119.851408,36.158138,"1982-10-29","2022-06-13"
-"cimis_39","Parlier",-119.50412,36.597481,"1983-05-23","2022-06-13"
-"cimis_80","Fresno State",-119.742308,36.820833,"1988-10-03","2022-06-13"
-"MADERA.C","Madera",-120.033333333333,36.95,"1951-01-01","2021-09-21"
-"FRESNO.C","Fresno Yosemite International Airport",-119.716666666667,36.7666666666667,"1951-01-01","2021-09-21"
-"FIVE_PTS.C","Five Points",-120.15,36.3666666666667,"1951-01-01","2021-09-21"
-"PRIESTVY.C","Priest Valley",-120.7,36.1833333333333,"1951-01-01","2021-09-21"
-"COALINGA.C","Coalinga",-120.35,36.15,"1951-01-01","2021-09-21"
-"HANFORD.C","Hanford",-119.65,36.3,"1951-01-01","2021-09-21"
-"VISALIA.C","Visalia",-119.3,36.3333333333333,"1951-01-01","2021-09-21"
-"CORCORAN.C","Corcoran Irrigation District",-119.566666666667,36.1,"1951-01-01","2021-09-21"
+"id","Name","Longitude","Latitude"
+"cimis_15","Stratford",-119.851408,36.158138
+"cimis_39","Parlier",-119.50412,36.597481
+"cimis_7","Firebaugh/Telles",-120.59098,36.851248
+"cimis_80","Fresno State",-119.742308,36.820833
+"COALINGA.C","Coalinga",-120.35,36.15
+"CORCORAN.C","Corcoran Irrigation District",-119.566666666667,36.1
+"FIVE_PTS.C","Five Points",-120.15,36.3666666666667
+"FRESNO.C","Fresno Yosemite International Airport",-119.716666666667,36.7666666666667
+"HANFORD.C","Hanford",-119.65,36.3
+"MADERA.C","Madera",-120.033333333333,36.95
+"PRIESTVY.C","Priest Valley",-120.7,36.1833333333333
+"VISALIA.C","Visalia",-119.3,36.3333333333333
