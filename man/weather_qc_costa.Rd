@@ -8,7 +8,7 @@ weather_qc_costa(
   weather_list,
   weather_info = NULL,
   mute = FALSE,
-  skip_spatial_test = TRUE,
+  skip_spatial_test = FALSE,
   aux_list = NULL,
   aux_info = NULL,
   region = NULL,
