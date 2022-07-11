@@ -198,15 +198,23 @@ weather_qc_durre <- function(weather_list,
   
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
-  weather_list <- purrr::map(weather_list, function(x) tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d"),
-                                                       'Tmin_org' = x$Tmin, 
-                                                       'Tmax_org' = x$Tmax, 'Precip_org' = x$Precip,
-                                                       'flag_Tmin' = NA, 'flag_Tmax' = NA, 
-                                                       'flag_Precip' = NA) %>%
-                        dplyr::mutate(doy = lubridate::yday(Date)))
+  weather_list <- purrr::map(weather_list, function(x){
+    
+    if("Date" %in% colnames(x) == F){
+      x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")
+    }
+    
+    tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax, 'Tmean_org' = x$Tmean,
+                   'Precip_org' = x$Precip,'flag_Tmin' = NA, 
+                   'flag_Tmax' = NA, 'flag_Tmean' = NA,'flag_Precip' = NA) %>%
+      dplyr::mutate(doy = lubridate::yday(Date)) %>%
+      dplyr::relocate(Date, doy)#make sure date and doy are in beginning of columns
+    
+  }) 
   
   #if the user does not provide any information on auxilliary weather stations, 
   #then spatial consistency tests are skipped
+  
   if(is.null(aux_info) == T | is.null(aux_list) == T){
     skip_spatial_test <- TRUE
     warning("Because arguments aux_info and aux_list were not provided, the spatial
@@ -299,6 +307,21 @@ weather_qc_durre <- function(weather_list,
                                                       subregion = NULL,
                                                       records = records_temp), 
                        test_name = 'record_exceedance')
+  })
+  
+  ####if Tmean is present, should be tested as well
+  weather_list <- purrr::map(weather_list, function(x){
+    if('Tmean' %in% colnames(x)){
+      clear_flagged_data(weather = x, variable = 'Tmean', 
+                         test_result = test_fixed_limit(weather = x, 
+                                                        variable = 'Tmean',
+                                                        region = NULL,
+                                                        subregion = NULL,
+                                                        records = records_temp), 
+                         test_name = 'record_exceedance')
+    } else{
+      x
+    }
   })
   
   #Precipitation
@@ -396,6 +419,23 @@ weather_qc_durre <- function(weather_list,
                        test_name = 'gap_check')
   })
   
+  
+  ####if Tmean is present, should be tested as well
+  weather_list <- purrr::map(weather_list, function(x){
+    if('Tmean' %in% colnames(x)){
+      clear_flagged_data(weather = x, variable = 'Tmean', 
+                         test_result = perform_gap_check(weather = x, 
+                                                         variable = 'Tmean', 
+                                                         temp_gap_threshold = temp_gap_threshold,
+                                                         prec_gap_threshold = prec_gap_threshold), 
+                         test_name = 'gap_check')
+    } else{
+      x
+    }
+  })
+  
+  
+  
   #Precip
   weather_list <- purrr::map(weather_list, function(x){
     clear_flagged_data(weather = x, variable = 'Precip', 
@@ -422,6 +462,24 @@ weather_qc_durre <- function(weather_list,
                                                                    prec_percentile = prec_percentile_climate_outlier
                        ), 
                        test_name = 'clim_outlier')
+  })
+  
+  
+  ####if Tmean is present, should be tested as well
+  weather_list <- purrr::map(weather_list, function(x){
+    if('Tmean' %in% colnames(x)){
+      clear_flagged_data(weather = x, variable = 'Tmean', 
+                         test_result = perform_climate_outlier_check(weather = x, 
+                                                                     variable = 'Tmean',
+                                                                     max_temperature_z = max_temperature_z,
+                                                                     max_prec_threshold = max_prec_threshold,
+                                                                     max_prec_threshold_freezing = max_prec_threshold_freezing,
+                                                                     prec_percentile = prec_percentile_climate_outlier
+                         ), 
+                         test_name = 'clim_outlier')
+    } else{
+      x
+    }
   })
   
   #Tmax
@@ -480,6 +538,17 @@ weather_qc_durre <- function(weather_list,
                        test_name = 'iterative_consistency')
   })
   
+  
+  weather_list <- map2(weather_list, test_list, function(x,y){
+    if('Tmean' %in% colnames(x)){
+      clear_flagged_data(weather = x, variable = 'Tmean', 
+                         test_result = y$tmean_flag, 
+                         test_name = 'iterative_consistency')
+    } else{
+      x
+    }
+  })
+  
   #spike - dip check
   if(mute == FALSE){
     cat('Spike/Dip Test', '\n')
@@ -498,6 +567,15 @@ weather_qc_durre <- function(weather_list,
     clear_flagged_data(weather = x, variable = 'Tmax', 
                        test_result = test_spike_dip(weather = x, 
                                                     variable = 'Tmax',
+                                                    dip_threshold = dip_threshold), 
+                       test_name = 'spike-dip')
+  })
+  
+  #tmean
+  weather_list <- purrr::map(weather_list, function(x){
+    clear_flagged_data(weather = x, variable = 'Tmean', 
+                       test_result = test_spike_dip(weather = x, 
+                                                    variable = 'Tmean',
                                                     dip_threshold = dip_threshold), 
                        test_name = 'spike-dip')
   })
@@ -545,8 +623,15 @@ weather_qc_durre <- function(weather_list,
     #add cleaned weather_list to aux_list and make sure there are no duplicates
     aux_list[weather_info$id] <- weather_list
     
-    #make sure that each element of aux_data is a tibble
-    aux_data <- purrr::map(aux_data, tibble)
+    #make sure that each element of aux_list is a tibble and contains date
+    aux_list <- purrr::map(aux_list, function(x){
+      if(("Date" %in% colnames(x)) == F){
+        #add date
+        x$Date = as.Date(paste(x$Year, x$Month, x$Day, sep = "-"),
+                         format = "%Y-%m-%d")
+      }
+      
+      tibble::tibble(x)})
     
     #Tmin
     if(mute == FALSE){
@@ -557,7 +642,7 @@ weather_qc_durre <- function(weather_list,
                          test_result = test_spatial_consistency(weather = x, 
                                                                 weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                    weather_info$Latitude[weather_info$id == id]),
-                                                                aux_list = aux_data, 
+                                                                aux_list = aux_list, 
                                                                 aux_info = aux_info, 
                                                                 variable = 'Tmin',
                                                                 max_dist = max_dist,
@@ -577,7 +662,7 @@ weather_qc_durre <- function(weather_list,
                          test_result = test_spatial_consistency(weather = x, 
                                                                 weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                    weather_info$Latitude[weather_info$id == id]),
-                                                                aux_list = aux_data, 
+                                                                aux_list = aux_list, 
                                                                 aux_info = aux_info, 
                                                                 variable = 'Tmax',
                                                                 max_dist = max_dist,
@@ -602,7 +687,7 @@ weather_qc_durre <- function(weather_list,
                          test_result = test_temperature_corrobation(weather = x, 
                                                                     weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                        weather_info$Latitude[weather_info$id == id]),
-                                                                    aux_list = aux_data, 
+                                                                    aux_list = aux_list, 
                                                                     aux_info = aux_info, 
                                                                     variable = 'Tmin',
                                                                     max_station = max_station,
@@ -622,7 +707,7 @@ weather_qc_durre <- function(weather_list,
                          test_result = test_temperature_corrobation(weather = x, 
                                                                     weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                        weather_info$Latitude[weather_info$id == id]),
-                                                                    aux_list = aux_data, 
+                                                                    aux_list = aux_list, 
                                                                     aux_info = aux_info, 
                                                                     variable = 'Tmax',
                                                                     max_station = max_station,
@@ -639,7 +724,7 @@ weather_qc_durre <- function(weather_list,
                          test_result = test_precipitation_spatial_corrobation(weather = x, 
                                                                               weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                                  weather_info$Latitude[weather_info$id == id]),
-                                                                              aux_list = aux_data, 
+                                                                              aux_list = aux_list, 
                                                                               aux_info = aux_info,
                                                                               max_dist = max_dist,
                                                                               max_station = max_station,
