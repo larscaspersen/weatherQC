@@ -41,7 +41,7 @@ perform_climate_outlier_check <- function(weather, variable,
                                           max_prec_threshold_freezing = 5,
                                           prec_percentile = 0.95){
   
-  if(variable %in% c('Tmin', 'Tmax')){
+  if(variable %in% c('Tmin', 'Tmax', 'Tmean')){
     
     #calculate longt term mean and sd of temperature for each day of the year for a 15 day window centered at day of interest
     clim_df <- map(unique(weather$doy), ~ get_longterm_mean_and_sd(weather = weather, variable = variable, doy = .x)) %>%

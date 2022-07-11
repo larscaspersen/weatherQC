@@ -32,7 +32,7 @@ perform_gap_check <- function(weather, variable, temp_gap_threshold = 10,
                               prec_gap_threshold = 300){
   
   #set the threshold for the variable accordingly
-  if(variable %in% c('Tmin', 'Tmax')){
+  if(variable %in% c('Tmin', 'Tmax', 'Tmean')){
     gap_threshold <- temp_gap_threshold
   } else if(variable == 'Precip'){
     gap_threshold <- prec_gap_threshold
