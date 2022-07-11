@@ -278,7 +278,7 @@ sum(durre_test_result$flag_Tmin == 'record_exceedance', na.rm = T)
 
 ```
 
-```{r, include= FALSE}
+```{r, include=FALSE, eval=F}
 #old chunk
 
 #save original observation to extra column
@@ -304,7 +304,7 @@ A similar test is also available for precipitation, called `check_frequent_value
 The `check_frequent_value()` test ignores missing observation or zero-precipitation observations. For the remaining data it checks for a 10 day window, if five or more identical precipitation observations can be found. Given the frequency of the repeated value, it is then checked if the repeated value exceeds a certain climatological precipitation percentile for that day of the year, which was calculated before. The more often the suspected values is repeated, the lower the testing threshold is. For 9 - 10 identical repeated values the threshold is the 30% percentiles, for 8 repeated values the 50% percentile, for 7 the 70% percentile and for 5-6 repeated values the 90% percentile. 
 
 
-```{r, include= FALSE}
+```{r, include=FALSE, eval=F}
 
   #calculate percentiles for each weather df, store in list
   prec_percentile_df<- get_each_day_precipitation_percentile(weather = target_weather)
@@ -329,7 +329,7 @@ sum(durre_test_result$flag_Tmin == 'gap_check', na.rm = T)
 
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=F}
 
 #check for second stations which ones were marked
 perform_gap_check(weather = target_weather, variable = 'Tmin') %>%
@@ -381,7 +381,7 @@ sum(durre_test_result$flag_Tmin == 'clim_outlier', na.rm = T)
 ```
 
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=F}
 
 target_weather <- clear_flagged_data(weather = target_weather, variable = 'Tmin', 
                    test_result = perform_climate_outlier_check(weather =
@@ -408,7 +408,7 @@ sum(durre_test_result$flag_Tmin == 'iterative_consistency', na.rm = T)
 
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=F}
 
 result <- test_iterative_temperature_consistency(weather = target_weather)
 target_weather <- clear_flagged_data(weather = target_weather, variable = 'Tmin', 
