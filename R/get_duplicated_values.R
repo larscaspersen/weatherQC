@@ -110,7 +110,7 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
       which() %>%
       unique(weather$Year)[.]
     
-    #for this year(s) checj which months are duplciated
+    #for this year(s) check which months are duplicated
     res1 <- weather %>%
       dplyr::filter(Year %in% sus_year) %>%
       split(.$Year) %>%
@@ -210,6 +210,10 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   
   #change nas to false
   flag[is.na(flag) == TRUE] <- FALSE
+  
+  #remove cases in which NA-only months where flagged
+  flag <- ifelse(is.na(org_weather[[variable]]) == T & flag, yes = FALSE, no = flag)
+  
   
   return(flag)
 }
