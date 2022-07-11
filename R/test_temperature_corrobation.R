@@ -118,11 +118,34 @@ test_temperature_corrobation <- function(weather, weather_coords,
   }) %>%
     map2(., aux_list, function(x,y) tibble::tibble(y, anomaly = x))
   
-  #check if the absolute min distance of temperatre anomalies exceeds the threshold
-  flag <- map2_lgl(weather[variable], weather$Date, function(x,y){
-    get_abs_min_difference(x = x, target_date = y, variable = variable, 
-                           aux_list = aux_list) >= max_diff
-  })
   
-  return(replace_na(flag, FALSE))
+  
+  #create a matrix with lagged, normal and lead observartion of variable in aux_list
+  x <- data.frame(weather[,c('Date', variable)])
+  names(x)[2] <- 'x'
+  
+  #extract data from aux_list
+  y <- map(aux_list, function(y){
+      int <- merge.data.frame(x, y[,c('Date', variable)], 
+                       by = 'Date', all.x = T)
+      return(int[,variable])}) %>%
+    bind_cols()
+  
+  #bind by columns to a matrix
+  y <- tibble::tibble(y, dplyr::lead(y), dplyr::lag(y), .name_repair = 'minimal') %>%
+    as.matrix() 
+  
+  #find minimum absolute difference, check if larger than threshold
+  #cases in that min() only contain NA returns Inf, change Inf to NA instead
+  flag <- abs(x$x - y) %>%
+    apply(MARGIN = 1, function(x){
+      #check if it only contains NAs
+      if(all(is.na(x))){
+        return(NA)
+      } else{
+        min(x, na.rm = T)
+      }
+    })  >= max_diff
+  
+  return(ifelse(is.na(flag), yes = FALSE, no = flag))
 }

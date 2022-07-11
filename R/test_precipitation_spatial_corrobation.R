@@ -77,17 +77,84 @@ test_precipitation_spatial_corrobation <- function(weather, weather_coords, aux_
   #get absolute minimum difference
   ####
   
-  #now determine the prec rank difference  
-  prec_min_difference <- map2_dbl(weather$Precip, weather$Date, function(x,y) get_abs_min_difference(x = x, target_date = y, variable = 'Precip', aux_list = aux_list))
-  #same for precipitation percentile rank
-  prec_rank_difference <-  map2_dbl(weather$prec_rank, weather$Date, function(x,y) get_abs_min_difference(x = x, target_date = y, variable = 'prec_rank', aux_list = aux_list))
+  #create a matrix with lagged, normal and lead observartion of variable in aux_list
+  x_org <- data.frame(weather[,c('Date', 'Precip')])
+  names(x_org)[2] <- 'x'
   
+  #extract the precipitation data from the aux list
+  y_org <- map(aux_list, function(y){
+    int <- merge.data.frame(x_org, y[,c('Date', 'Precip')], 
+                            by = 'Date', all.x = T)
+    return(int[,'Precip'])}) %>%
+    bind_cols()
   
-  ###
-  #get test threshold & and test
-  ###
-  test_threshold <- (-45.72 * log(prec_rank_difference) + 269.24)
+  #bind by columns to a matrix
+  y_org <- tibble::tibble(y_org, dplyr::lead(y_org), dplyr::lag(y_org), .name_repair = 'minimal') %>%
+    as.matrix() 
   
-  return(replace_na(prec_min_difference > test_threshold, replace = FALSE))
+  #if x isnt the larger/smaller than all y in a row, return zero, 
+  #otherwise return minimum absolute difference
+
+  y_org_min_abs <- apply(cbind(x_org[2],y_org),MARGIN = 1, function(x){
+    i <- length(x)
+    x<-  unname(x)
+    #case that x is na
+    if(is.na(x[1]) == T){
+      return(NA)
+    #case that y only contains NAs
+    } else if(all(is.na(x[2:i])) == T){
+      return(NA)
+    #regular case
+    } else if(x[1] > max(x[2:i], na.rm = T) | x[1] < min(x[2:i], na.rm = T)){
+      
+      return(min(abs(x[1] - x[2:i]), na.rm = T))
+    #case that x is not the largest or the smallest
+    } else{
+      return(0)
+    }
+    
+  })
+  
+  #repeat the same thing for precipitation rank
+  x_rank <- data.frame(weather[,c('Date', 'prec_rank')])
+  names(x_rank)[2] <- 'x'
+  
+  #extract the precipitation data from the aux list
+  y_rank <- map(aux_list, function(y){
+    int <- merge.data.frame(x_rank, y[,c('Date', 'prec_rank')], 
+                            by = 'Date', all.x = T)
+    return(int[,'prec_rank'])}) %>%
+    bind_cols()
+  
+  #bind by columns to a matrix
+  y_rank <- tibble::tibble(y_rank, dplyr::lead(y_rank), dplyr::lag(y_rank), .name_repair = 'minimal') %>%
+    as.matrix() 
+  
+  y_rank_min_abs <- apply(cbind(x_rank[2],y_rank),MARGIN = 1, function(x){
+    i <- length(x)
+    x<-  unname(x)
+    #case that x is na
+    if(is.na(x[1]) == T){
+      return(NA)
+      #case that y only contains NAs
+    } else if(all(is.na(x[2:i])) == T){
+      return(NA)
+      #regular case
+    } else{
+      
+      return(min(abs(x[1] - x[2:i]), na.rm = T))
+      #case that x is not the largest or the smallest
+    } 
+    
+  })
+  
+  #determine testing threshold
+  
+  test_threshold <- ifelse(is.na(y_rank_min_abs), yes = 269.24, no = -45.72 * log(y_rank_min_abs) + 269.24)
+ 
+  flag <- ifelse(is.na(y_org_min_abs), yes = FALSE, no = y_org_min_abs > test_threshold)
+  
+ 
+  return(flag)
   
 }
