@@ -102,7 +102,7 @@
 weather_qc_costa <- function(weather_list, 
                              weather_info = NULL, 
                              mute = FALSE, 
-                             skip_spatial_test = TRUE,
+                             skip_spatial_test = FALSE,
                              aux_list = NULL, aux_info = NULL, 
                              region = NULL, subregion = NULL, 
                              records = NULL,
@@ -131,16 +131,21 @@ weather_qc_costa <- function(weather_list,
   }
 
   
-  
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
-  weather_list <- purrr::map(weather_list, function(x) tibble::tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d"),
-                                                              'Tmin_org' = x$Tmin, 
-                                                              'Tmax_org' = x$Tmax, 'Precip_org' = x$Precip,
-                                                              'flag_Tmin' = NA, 'flag_Tmax' = NA, 
-                                                              'flag_Precip' = NA) %>%
-                               dplyr::mutate(doy = lubridate::yday(Date)) %>%
-                               dplyr::relocate(Date, doy))#make sure date and doy are in beginning of columns
+  weather_list <- purrr::map(weather_list, function(x){
+    
+    if("Date" %in% colnames(x) == F){
+      x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")
+    }
+    
+    tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax, 
+                   'Precip_org' = x$Precip,'flag_Tmin' = NA, 
+                   'flag_Tmax' = NA, 'flag_Precip' = NA) %>%
+      dplyr::mutate(doy = lubridate::yday(Date)) %>%
+      dplyr::relocate(Date, doy)#make sure date and doy are in beginning of columns
+    
+  }) 
   
   if(is.null(aux_list) == F){
     #make sure aux list contains tibbles and date and doy column
@@ -277,7 +282,7 @@ weather_qc_costa <- function(weather_list,
       weather_coords <- c(weather_info$Longitude[weather_info$id == x],
                           weather_info$Latitude[weather_info$id == x])
       
-      x$spatial_test_Tmin <- test_spatial_consistency(weather = weather_list[[x]], 
+      weather_list[[x]]$spatial_test_Tmin <- test_spatial_consistency(weather = weather_list[[x]], 
                                                       weather_coords = weather_coords, 
                                                       aux_list = aux_list, 
                                                       aux_info = aux_info, 
@@ -291,7 +296,7 @@ weather_qc_costa <- function(weather_list,
                                                       max_res = max_res, 
                                                       max_res_norm = max_res_norm)
       
-      x$spatial_test_Tmax <- test_spatial_consistency(weather = weather_list[[x]], 
+      weather_list[[x]]$spatial_test_Tmax <- test_spatial_consistency(weather = weather_list[[x]], 
                                                       weather_coords = weather_coords, 
                                                       aux_list = aux_list, 
                                                       aux_info = aux_info, 
@@ -306,7 +311,7 @@ weather_qc_costa <- function(weather_list,
                                                       max_res_norm = max_res_norm)
       
       
-      x$spatial_test_Precip <- test_precipitation_spatial_corrobation(weather = weather_list[[x]], 
+      weather_list[[x]]$spatial_test_Precip <- test_precipitation_spatial_corrobation(weather = weather_list[[x]], 
                                                                       weather_coords = weather_coords,
                                                                       aux_info = aux_info,
                                                                       aux_list = aux_list,
@@ -314,7 +319,7 @@ weather_qc_costa <- function(weather_list,
                                                                       max_station = max_station,
                                                                       min_station = min_station)
       
-      return(x)
+      return(weather_list[[x]])
     })
     
   } else{
