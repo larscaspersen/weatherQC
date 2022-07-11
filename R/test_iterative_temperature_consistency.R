@@ -57,13 +57,13 @@ test_iterative_temperature_consistency <- function(weather){
     tmin_violations <- tmax_violations <- tmean_violations <- rep(0, nrow(weather))
     
     #1
-    t1 <- ifelse(tmax0 & tmin0, yes = weather$Tmax < (weather$Tmin-1), no = FALSE)
+    t1 <- ifelse(tmax0 & tmin0, yes = weather$Tmax < (weather$Tmin), no = FALSE)
     
     #2
-    t2 <- ifelse(tmean0 & tmax0, yes = ifelse(weather$Tmean > (weather$Tmax + 1), yes = TRUE, no = FALSE), no = FALSE)
+    t2 <- ifelse(tmean0 & tmax0, yes = ifelse(weather$Tmean > (weather$Tmax), yes = TRUE, no = FALSE), no = FALSE)
     
     #3
-    t3 <- ifelse(tmean0 & tmin0, yes = weather$Tmean < (weather$Tmin + 1), no = FALSE)
+    t3 <- ifelse(tmean0 & tmin0, yes = weather$Tmean < (weather$Tmin), no = FALSE)
     
     #4
     t4 <- ifelse(tmax0 & tmin1, yes = (weather$Tmax < (lead(weather$Tmin) - 1)), no = FALSE)
