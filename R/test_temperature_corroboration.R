@@ -101,34 +101,33 @@ test_temperature_corroboration <- function(weather, weather_coords,
   } 
   aux_list <- aux_list[aux_info$id]
   
-  aux_list <- map(aux_list, function(x){
+  aux_list <- purrr::map(aux_list, function(x){
     
     #add date and doy to aux data
     x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")
     x$doy <- lubridate::yday(x$Date)
     #calculate climate mean and sd of aux data
-    climate_df <- map(unique(x$doy), ~get_longterm_mean_and_sd(weather = x, variable = variable,
+    climate_df <- purrr::map(unique(x$doy), ~get_longterm_mean_and_sd(weather = x, variable = variable,
                                                                doy = .x)) %>%
       bind_rows() %>%
       merge(x, by = 'doy', all.y = TRUE) %>%
       arrange(Date)
-    
+
     #calculate climate anomaly of aux data
-    return((x[,variable] - climate_df$mean) / climate_df$sd)
-  }) %>%
-    map2(., aux_list, function(x,y) tibble::tibble(y, anomaly = x))
-  
-  
+    x$anomaly <- (x[[variable]] - climate_df$mean) / climate_df$sd
+    
+    return(x)
+  }) 
   
   #create a matrix with lagged, normal and lead observartion of variable in aux_list
-  x <- data.frame(weather[,c('Date', variable)])
+  x <- data.frame(weather[,c('Date', 'anomaly')])
   names(x)[2] <- 'x'
   
   #extract data from aux_list
   y <- map(aux_list, function(y){
-      int <- merge.data.frame(x, y[,c('Date', variable)], 
+      int <- merge.data.frame(x, y[,c('Date', 'anomaly')], 
                        by = 'Date', all.x = T)
-      return(int[,variable])}) %>%
+      return(int[,'anomaly'])}) %>%
     bind_cols()
   
   #bind by columns to a matrix
