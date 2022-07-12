@@ -1,8 +1,14 @@
 ---
 title: "Details on weather_qc_costa and weather_qc_durre"
 author: "Lars Caspersen"
-date: '2022-06-13'
-output: html_document
+date: '2022-07-12'
+bookdown::html_document2:
+                toc: true
+                toc_float: true
+                number_sections: true
+                number_figures: true
+                tof: true
+                css: styles.css
 bibliography: REFERENCES.bib
 ---
 
@@ -50,9 +56,17 @@ grid.arrange(p1, p2, ncol=2)
 
 ```
 
-I realized that some cleaning is necessary before doing further analysis (like feeding the data to weather generators or calculating chill portions). Since manual outlier detection requires time and skill (both of which I do not possess), so automated outlier detection routines are necessary. There are some general data quality packages specialised mainly for medical data @marino_r_2022 but few are specialized for weather data. The patching and homogenisation package 'Climatol' offers a simple outlier detection where the weather reading is compared to a model output @guijarro_homogenization_2021. Based on a (user-defined) threshold daily measurements with a residual (|observation - model|) exceeding the threshold were identified and removed. The reddprec package is specialized on quality control and missing data imputation of precipitation data. A detailed set of weather outlier detection algorithm is described by @durre_comprehensive_2010, who also validated the algorithms performance by manually checking the labelled outliers. Instead of using a single criterion a set of different plausibility checks were carried out. The plausibility checks range from basic integrity tests (for example duplicated records in different months) to more detailed tests like spatial integrity checks. These algorithms were also used for the Global Historical Climatology Network (GHCN-) Daily and are allegedly also available as a FORTRAN-code, but I can't find in on the web. A less exhaustive set of outlier tests were proposed by @costa_gap_2021 for a data set of Brazilian weather stations. Both proposed weather quality algorithms of @costa_gap_2021 and @durre_comprehensive_2010 were here reconstructed in R as close as possible from the descriptions in the manuscripts and tested for a network of weather stations in California including daily observations of minimum and maximum temperature (Tmin, Tmax) and precipitation (Precip). A total of 33 weather stations were used having records from 1990 to 2021. Additionally, 92  auxiliary weather stations from the UCIPM-database were used for spatial plausibility test. 
+I realized that some cleaning is necessary before doing further analysis (like feeding the data to weather generators or calculating chill portions). Since manual outlier detection requires time and skill (both of which I do not possess), so automated outlier detection routines are necessary. There are some general data quality packages specialised mainly for medical data @marino_r_2022 but few are specialized for weather data. The patching and homogenisation package 'Climatol' offers a simple outlier detection where the weather reading is compared to a model output @guijarro_homogenization_2021. Based on a (user-defined) threshold daily measurements with a residual (|observation - model|) exceeding the threshold were identified and removed. The reddprec package is specialized on quality control and missing data imputation of precipitation data. A detailed set of weather outlier detection algorithm is described by @durre_comprehensive_2010, who also validated the algorithms performance by manually checking the labelled outliers. Instead of using a single criterion a set of different plausibility checks were carried out. The plausibility checks range from basic integrity tests (for example duplicated records in different months) to more detailed tests like spatial integrity checks. These algorithms were also used for the Global Historical Climatology Network (GHCN-) Daily and are allegedly also available as a FORTRAN-code, but I can't find in on the web. A less exhaustive set of outlier tests were proposed by @costa_gap_2021 for a data set of Brazilian weather stations. Both proposed weather quality algorithms of @costa_gap_2021 and @durre_comprehensive_2010 were here reconstructed in R as close as possible from the descriptions in the manuscripts. While the output of both function is very similar, `weather_QC_costa` and `weather_qc_durre` differ in their testing principles. The scheme after Costa uses a parallel testing concept, erroneous data is then flagged by the convergence of at least two tests. In contrast, `weather_qc_durre` has a subsequent testing design: the testing order is important and the test become more and more specific. There, a single positive test result leads to the flagging of the observation. 
 
-```{r map_stations_california, fig.align = 'center', echo=F, out.width = "50%", fig.cap = "Map of target stations (from CIMIS database) and auxiliary weather stations for spatial plausibility checks (from UCIPM database)", label = 'map_stations_california'}
+
+```{r test_design, fig.align = 'center', echo=F, out.width = "50%", fig.cap = "Parallel test design of weather_qc_costa (left) and subsequent test design of weather_qc_durre (right).", label = 'tetst_design'}
+knitr::include_graphics(here::here("vignette/figures", "diagram_quality_control.jpg"))
+```
+## Data set
+
+In this document I will demonstrate the functions and the tests within the weather quality control scheme at the example of one weather station in California and 12 neighbouring weather stations within a 74 km range. The data is retrieved from CIMIS and UCIPM weather station data base via the R package `chillR`. The data used in this script can be accessed with the `weatherQC` package. The target weather station data set includes daily weather observation from 1990 to then end of 2021 for minimum, maximum and mean temperature (Tmin, Tmax, Tmean) and precipitation (Precip). 
+
+```{r map_stations_california, fig.align = 'center', echo=F, out.width = "50%", fig.cap = "Map of target stations (from CIMIS database) and auxiliary weather stations for spatial plausibility checks (from UCIPM and CIMIS database)", label = 'map_stations_california'}
 knitr::include_graphics(here::here("vignette/figures", "map_california_qc.png"))
 ```
 
@@ -181,7 +195,7 @@ ggplot(int_df, aes(x = Tmean, y = Tmean_calc)) +
 
 ### Spatial consistency test
 
-The authors mentioned that a spatial consistency test was carried out, but they did not explain any details to it. So for this kind of test, spatial regression of temperature and spatial corrobation test for precipitation were taken instead, which is explained in more detail by Durre 2010 and in the lower section dedicated to the Durre 2010 weather quality test. in general the outcome of the spatial consistency test also depend on the quality of the auxiliary weather stations. 
+The authors mentioned that a spatial consistency test was carried out, but they did not explain any details to it. So for this kind of test, spatial regression of temperature and spatial corroboration test for precipitation were taken instead, which is explained in more detail by Durre 2010 and in the lower section dedicated to the Durre 2010 weather quality test. in general the outcome of the spatial consistency test also depend on the quality of the auxiliary weather stations. 
 
 
 ### Run quality control after Costa 2021
@@ -224,7 +238,7 @@ In the column `flag_Tmin` you can see that for the fourth day the second quality
 
 ## Weather quality control after @durre_comprehensive_2010
 
-As we could see the testing philosophy of @costa_gap_2021 was to use the union of very sensitive test and more specific ones to flag suspicious data. The testing philosophy of @durre_comprehensive_2010 quality control schemes is different. The qc-scheme uses more tests, the testing limits are however very wide and the testing order plays an important role. Each positive test leads automatically to an outlier flag and the removal of the observation. The testing ranges are wide to reduce the false positive rate. The first tests are very broad and become more and more specific with the progress of the qc-scheme. At first basic integrity tests are carried out to detect duplicated months or 'false zeros'. Then come the outlier checks for instance for climatological outliers (similar to the variable limits test). However, the tests rely on hard threshold instead of percentiles.  The comes the temporal consistency tests like the spike and dips test (similar to the temporal consistency test of @costa_gap_2021). Next come spatial consistency test which include linear regressions and corrobation tests. Finally megaconsistency test look for remaining inconsistency of the data. The original testing framework of @durre_comprehensive_2010 included tests for snow coverage, but these were skipped in the here presented R-functions. In the following the test will be explained, for more details please refer to @durre_comprehensive_2010.
+As we could see the testing philosophy of @costa_gap_2021 was to use the union of very sensitive test and more specific ones to flag suspicious data. The testing philosophy of @durre_comprehensive_2010 quality control schemes is different. The qc-scheme uses more tests, the testing limits are however very wide and the testing order plays an important role. Each positive test leads automatically to an outlier flag and the removal of the observation. The testing ranges are wide to reduce the false positive rate. The first tests are very broad and become more and more specific with the progress of the qc-scheme. At first basic integrity tests are carried out to detect duplicated months or 'false zeros'. Then come the outlier checks for instance for climatological outliers (similar to the variable limits test). However, the tests rely on hard threshold instead of percentiles.  The comes the temporal consistency tests like the spike and dips test (similar to the temporal consistency test of @costa_gap_2021). Next come spatial consistency test which include linear regressions and corroboration tests. Finally megaconsistency test look for remaining inconsistency of the data. The original testing framework of @durre_comprehensive_2010 included tests for snow coverage, but these were skipped in the here presented R-functions. In the following the test will be explained, for more details please refer to @durre_comprehensive_2010.
 
 The function is run the same way as explained in `weather_qc_costa`. A named list containing the weather observation is always required. To run also spatial consistency tests additional arguments in form of weather station coordinates of the targeted weather station, coordinates of auxiliary weather stations and a list of auxiliary observations are needed in that case. Here is an example how to run the function, 
 it may take around 2 - 5 minutes to run, because the spatial tests are quite slow.
@@ -398,7 +412,7 @@ Looks like there is no climatological outlier in Tmin for this station.
 
 ### Temporal consistency
 
-The next tests investigate the temporal integrity of the weather data. The iterative temperature consistency test called `test_iterative_temperature_consistency()` checks if minimum, maximum and mean temperature are line with another. This involves that minimum temperature should not be larger than mean and maximum temperature at the same day, but also at the current day compared to the following day. There are in total 7 seven plausibility checks done for each day, for more details please refer to the Appendix A of Durre 2010. For each variable at each day the amount of positive tests (called violations) are summarized. The observations having the most violations are removed. Then test is run again until no more violations are detected. The iterative nature of the test should prevent excessive flagging and prevent that valid observations are 'dragged down' by faulty neighbours. For full potential of the test, also mean temperature observations are required. 
+The next tests investigate the temporal integrity of the weather data. The iterative temperature consistency test called `test_iterative_temperature_consistency()` checks if minimum, maximum and mean temperature are line with another. This involves that minimum temperature should not be larger than mean and maximum temperature at the same day, but also at the current day compared to the following day. There are in total 7 seven plausibility checks done for each day, for more details please refer to the Appendix A of Durre 2010. For each variable at each day the amount of positive tests (called violations) are summarized. The observations having the most violations are removed. Then test is run again until no more violations are detected. The iterative nature of the test should prevent excessive flagging and prevent that valid observations are 'dragged down' by faulty neighbors. For full potential of the test, also mean temperature observations are required. 
 
 ```{r, warning=FALSE}
 
@@ -503,7 +517,7 @@ There were further precipitation consistency tests described by Durre 2010, howe
 
 ### Spatial consistency test
 
-The next section is about the spatial consistency of the observations. The first test in this section is a regression check of temperature observation called `spatial_consistency_test()`. This test only applies to Tmax and Tmin. At first only neighbouring stations within a 75km radius around the target station were considered. Using a three day window centered on the day of interest, a weighted mean of the pairwise regression of target and neighbour values is calculated. Target neighbour regressions needed to have correlation coefficient of 0.8 or larger in order to be considered. At least three, but never more than seven neighbouring stations were used for the regression. Mean value of the regression is calculated based on the index of agreement. Regressions are done for each year / month independently. In order to be flagged, the residual and the standardized residual must exceed a threshold. (>= 4 and 8, respectively).
+The next section is about the spatial consistency of the observations. The first test in this section is a regression check of temperature observation called `spatial_consistency_test()`. This test only applies to Tmax and Tmin. At first only neighboring stations within a 75km radius around the target station were considered. Using a three day window centered on the day of interest, a weighted mean of the pairwise regression of target and neighbor values is calculated. Target neighbor regressions needed to have correlation coefficient of 0.8 or larger in order to be considered. At least three, but never more than seven neighboring stations were used for the regression. Mean value of the regression is calculated based on the index of agreement. Regressions are done for each year / month independently. In order to be flagged, the residual and the standardized residual must exceed a threshold. (>= 4 and 8, respectively).
 
 ```{r, warning=FALSE}
 
@@ -515,13 +529,12 @@ There are several positive test results for Tmin. Let's have a closer look at th
 
 ```{r, warning=FALSE}
 
-
 ###prepare input data ####
 
 #make sure that aux_list has date and doy
 neighbour_weather <- purrr::map(neighbour_weather, function(x){
   if('Date' %in% colnames(x) == F){
-    x$Date <- as.Date(paste(x$Year, x$Monnth,x$Day, sep = '-'), format = "Y%-%m-%d")
+    x$Date <- as.Date(paste(x$Year, x$Month,x$Day, sep = '-'), format ='%Y-%m-%d')
   }
   
   if('doy' %in% colnames(x) == FALSE){
@@ -569,6 +582,22 @@ period_start <- period_start - window_width
   #extract data from target (x) and aux (y)
 x <- select_target_days(df = weather, variable = variable, period_start = period_start, period_end = period_end)
 
+
+#take the 7 closest stations
+aux_info$dist <- sp::spDistsN1(pts = as.matrix(aux_info[, c('Longitude', 'Latitude')]), 
+                              pt = c(target_info$Longitude,
+                                           target_info$Latitude),
+                              longlat = TRUE)
+#order increasing distance
+aux_info <- aux_info[order(aux_info$dist),]
+
+#select 7 closest stations
+aux_info <- aux_info[1:7,]
+
+aux_list <- aux_list[aux_info$id]
+
+
+
 y <- purrr::map(aux_list, function(x){
   select_target_days(df = x, variable = variable, period_start = period_start, 
                      period_end = period_end)
@@ -580,7 +609,7 @@ y <- purrr::map(aux_list, function(x){
 aux_info <- aux_info[colSums(is.na(x) == F & is.na(y) == F) >= min_coverage, ]
   
 #drop stations from y
-y <- y[,aux_info$id]
+y <- y[aux_info$id]
   
   
 #case there are not enough stations left: return nas as flag
@@ -682,7 +711,7 @@ weather_long %>%
 
 ```
 
-The dashed lines show the tesing threshold. Both need to be exceeded in order for an observation to be flagged. We can have also a look at the observation of the neighbouring stations which led to the flagging, even though the lineplot already shows that the flagged osbervation is fishy.
+The dashed lines show the tesing threshold. Both need to be exceeded in order for an observation to be flagged. We can have also a look at the observation of the neighboring stations which led to the flagging, even though the lineplot already shows that the flagged osbervation is fishy.
 
 ```{r, warning=FALSE}
 
@@ -692,7 +721,7 @@ target_obs <- weather %>%
   pull()
 
 #prepare data.frame
-aux_Tmin <- purrr::map(neighbour_weather, function(x){
+aux_Tmin <- purrr::map(aux_list, function(x){
   
   x[x$Year == 2002 & x$Month == 5 & x$Day %in% 15:17,'Tmin']%>%
     pull()
@@ -701,12 +730,24 @@ aux_Tmin <- purrr::map(neighbour_weather, function(x){
   mutate(day = c(-1,0,1)) %>%
   reshape2::melt(id.var = 'day')
 
+#drop dist column
+aux_info <- aux_info %>%
+  select(-dist)
+
+
 #add latitude and longitude
-aux_Tmin <-  merge.data.frame(aux_Tmin, neighbour_info, by.x = 'variable', by.y = 'id', all.x = T)
+aux_Tmin <-  merge.data.frame(aux_Tmin, aux_info, by.x = 'variable', by.y = 'id', all.x = T)
+
 
 #add info of target station and coordinates to
 
-aux_Tmin <- rbind(aux_Tmin, data.frame(day = c(-1,0,1), variable = target_info$id, Longitude = target_info$Longitude, Latitude = target_info$Latitude, Name = target_info$Name, value = target_obs)) %>%
+aux_Tmin <- rbind(aux_Tmin, 
+                  data.frame(day = c(-1,0,1), variable = target_info$id, 
+                             Longitude = target_info$Longitude, 
+                             Latitude = target_info$Latitude, 
+                             Name = target_info$Name, 
+                             value = target_obs,
+                             ind_agreement = NA)) %>%
   mutate(day = factor(day, levels = c(-1, 0, 1), 
                       labels = c('day -1', 'day 0', 'day +1')))
 
@@ -721,177 +762,209 @@ aux_Tmin %>%
 
 
 ```
-The auxiliary weahter stations are marked by dots, the target weather station by an white-filled diamond. As you can see, the target observation of 0 degree C deviates strongly from the neighbouring observations of the precious day (day -1), the same day (day 0) and the following day (day +1). 
+The auxiliary weahter stations are marked by dots, the target weather station by an white-filled diamond. As you can see, the target observation of 0 degree C deviates strongly from the neighboring observations of the precious day (day -1), the same day (day 0) and the following day (day +1). 
 
-The spatial regression has relatively high quality demands on the target - neighbour station data quality. In cases were the requirements were not met, the second test can fill a gap. The corrobation test of temperature `perform_temperature_corrobation_check()` and precipitation `precipitation_spatial_corrobation_test()` tests if the smallest difference in target - neighbour observation exceeds a certain threshold. For the lowest absolute difference calculation a three day window centered on the day of interested is used for the neighbouring station. That means if there are seven neighbpour stations having for each of the three day window a valid observaiton, the target observation of day 0 is compared to 21 neighbouring observations. The three-day time window should account for different measurement protocols. If the smallest absolute difference is larger or equal to 10°C, then the target observation is flagged. In case of precipitation, the absolute difference accompanied by the difference in climatological percentiles. Climatological percentiles are calculated following the same protocoll described for the climatological outliers. The difference is, that this time the percentile of the values of interest are caclulated and not compared to a fixed threshold. The smalles absolute difference in climatololoigical percentiles is then used to determine a testing threshold for the smalles absolute difference in precipitation. For more details please refer to the Appendix C of Durre 2010. 
+The spatial regression has relatively high quality demands on the target - neighbor station data quality. In cases were the requirements were not met, the second test can fill a gap. The corroboration test of temperature `test_temperature_corroboration()` and precipitation `test_precipitation_spatial_corroboration()` are less demanding on the data coverage and thus can be used in cases the spatial regression test cannot be applied. The temperature corroboration test calculates for each observed day the temperature anomaly to the standardized long-term mean For the lowest absolute difference calculation a three day window centered on the day of interested is used for the neighboring station. That means if there are seven neighbor stations having for each of the three day window a valid observation, the target observation of day 0 is compared to 21 neighboring observations. The three-day time window should account for different measurement protocols. If the smallest absolute difference is larger or equal to 10°C, then the target observation is flagged. In case of precipitation, the absolute difference accompanied by the difference in climatological percentiles. Climatological percentiles are calculated following the same protocoll described for the climatological outliers. The difference is, that this time the percentile of the values of interest are calculated and not compared to a fixed threshold. The smallest absolute difference in climatololoigical percentiles is then used to determine a testing threshold for the smallest absolute difference in precipitation. For more details please refer to the Appendix C of @durre_comprehensive_2010 
 
-test results
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'spatial_corroboration', na.rm = T)
+
+```
+There are several cases of positive test results.  
+
+```{r, warning=FALSE}
+
+durre_test_result %>%
+  filter(Month == 1, Year == 1992, 
+         flag_Tmin %in% c('gap_check', 'record_exceedance', 'iterative_consistency',
+                          'spatial_regression') == F) %>%
+  ggplot(aes(x = Date, y = Tmin_org))+
+  geom_point() +
+  geom_line() + 
+  ylab('Minimum Temperature (°C)')+
+  geom_point(data = durre_test_result[durre_test_result$Month == 1 &
+                                        durre_test_result$Year == 1992 & 
+                                        (durre_test_result$flag_Tmin ==
+                                           'spatial_corroboration'),], 
+             aes(x = Date, y = Tmin_org), 
+             size = 7, pch = 1, stroke = 2, col = 'red')
+
+```
+
+```{r, warning=FALSE}
+
+#### prepare input data ####
+
+#just take the day 10 as an example
+
+#prepare weather data so that it is in the same state as in the function call
+weather <- durre_test_result %>%
+  mutate(Tmin = Tmin_org)
+
+#remove any outlier detected until spatial regression
+weather$Tmin[weather$flag_Tmin %in% c('gap_check', 'record_exceedance', 'iterative_consistency', 'spatial_regression')] <- NA
+
+
+#### calculate longterm mean & anomaly ####
+
+#calculate anomaly for target weather station
+weather <- purrr::map(unique(weather$doy), ~ get_longterm_mean_and_sd(weather = weather,
+                                                           variable = 'Tmin',
+                                                           doy = .x)) %>%
+  bind_rows() %>%
+  merge(weather, by = 'doy') %>%
+  arrange(Date) %>%
+  mutate(anomaly = Tmin - mean)
+
+target_anomaly <- weather$anomaly[weather$Year == 1992 & weather$Month == 1 & weather$Day == 10]
+
+aux_list <- neighbour_weather[neighbour_info$id]
+
+#calculate anomaly for auxiliary weather stations
+anomalies <- purrr::map(aux_list, function(x){
+  purrr::map(unique(x$doy), ~ get_longterm_mean_and_sd(weather = x,
+                                                       variable = 'Tmin',
+                                                       doy = .x)) %>%
+    bind_rows() %>%
+    merge(x, by = 'doy') %>%
+    arrange(Date) %>%
+    mutate(anomaly = Tmin - mean) %>%
+    filter(Year == 1992, Month == 1, Day %in% 9:11)
+}) %>%
+  bind_rows() %>%
+  select(anomaly, doy)
+
+anomalies$id <- rep(names(aux_list), each = 3)
+
+#add latitude and longitude
+anomalies <- merge(anomalies, neighbour_info, by = 'id', all.x = T)
+
+#add target observation
+anomalies <- rbind(anomalies, data.frame(id = target_info$id, Longitude = target_info$Longitude,
+           Latitude = target_info$Latitude, Name = target_info$Name,
+           anomaly = target_anomaly, doy = 9:11) ) %>%
+  mutate(doy = factor(doy, levels = 9:11, labels = c('day -1', 'day 0', 
+                                                     'day +1')))
+
+anomalies %>%
+  ggplot(aes(x = Longitude, y = Latitude, label = round(anomaly,2)))+
+  geom_point() +
+  ggrepel::geom_text_repel()+
+  facet_wrap(~doy, ncol = 1, nrow = 3) +
+  geom_point(data = anomalies[anomalies$id == 'cimis_2',], aes(x = Longitude,
+                                                                  y = Latitude), shape = 23, size = 2, fill = "white", stroke = 1.2)+
+  theme_bw()
+
+
+```
+
+
+show minimum absolute difference to neighbour against anomaly threshold
+
+```{r, warning=FALSE}
+
+#### prepare input data ####
+
+#just take the day 10 as an example
+
+#prepare weather data so that it is in the same state as in the function call
+weather <- durre_test_result %>%
+  mutate(Tmin = Tmin_org)
+
+#remove any outlier detected until spatial regression
+weather$Tmin[weather$flag_Tmin %in% c('gap_check', 'record_exceedance', 'iterative_consistency', 'spatial_regression')] <- NA
+
+
+#### calculate longterm mean & anomaly ####
+
+#calculate anomaly for target weather station
+weather <- purrr::map(unique(weather$doy), ~ get_longterm_mean_and_sd(weather = weather,
+                                                           variable = 'Tmin',
+                                                           doy = .x)) %>%
+  bind_rows() %>%
+  merge(weather, by = 'doy') %>%
+  arrange(Date) %>%
+  mutate(anomaly = Tmin - mean)
+
+target_anomaly <- weather$anomaly[weather$Year == 1992 & weather$Month == 1]
+
+aux_list <- neighbour_weather[neighbour_info$id]
+
+#calculate anomaly for auxiliary weather stations
+anomalies <- purrr::map(aux_list, function(x){
+  purrr::map(unique(x$doy), ~ get_longterm_mean_and_sd(weather = x,
+                                                       variable = 'Tmin',
+                                                       doy = .x)) %>%
+    bind_rows() %>%
+    merge(x, by = 'doy') %>%
+    arrange(Date) %>%
+    mutate(anomaly = Tmin - mean) %>%
+    mutate(lag = lag(anomaly), lead = lead(anomaly)) %>%
+    filter(Year == 1992, Month == 1) %>%
+    select(lag, anomaly, lead)
+}) %>%
+  bind_cols() %>%
+  as.matrix()
+
+#add target anomalies to column
+anomalies <- cbind(target_anomaly, anomalies)
+
+min_diff <- apply(anomalies, MARGIN = 1, function(x){
+  #if target anomaly is NA, then return NA
+  if(is.na(x[1])){
+    return(NA) 
+  #if all auxiliary observations are NA, return NA as well
+  } else if(all(is.na(x[2:(length(x))]))){
+    return(NA)
+  } else{
+    return(min(abs(x[1] - x[2:(length(x))]), na.rm = T))
+  }
+})
+
+plot_df <- data.frame(day = rep(1:31,3),  value = c(weather$Tmin[weather$Year == 1992 & weather$Month == 1], target_anomaly, min_diff),
+                      var = c(rep('Tmin', 31), rep('anomaly', 31), rep('min_abs_dif', 31))) %>%
+  mutate(var = factor(var, levels = c('Tmin', 'anomaly', 'min_abs_dif')))
+
+#dataframe for vertical line
+line_df <- data.frame(value = c(NA, NA, 10), var = c('Tmin', 'anomaly', 'min_abs_dif')) %>%
+  mutate(var = factor(var, levels = c('Tmin', 'anomaly', 'min_abs_dif')))
+
+#dataframe for annotation
+text_df <- data.frame(day = 1, value = 10, 
+                      var = factor('min_abs_dif', levels =  c('Tmin', 'anomaly', 'min_abs_dif')),
+                      lab = 'Testing Threshold')
+
+plot_df %>%
+  ggplot(aes(x = day, y = value )) + 
+  geom_point() +
+  geom_line() +
+  facet_wrap(~var, nrow = 3, ncol = 1, scales = 'free_y') + 
+  geom_hline(data = line_df, aes(yintercept = value), linetype = 'dashed')+
+  geom_text(data = text_df, label = 'Testing Threshold',
+            nudge_x = 2, nudge_y = 2.5)+
+  xlab('Day of the year')+
+  theme_bw()
+
+
+```
+
 
 ### Megaconsistency test
 
 In the end of the quality control scheme some final consistency test, labelled by Durre 2010 as megaconsistency tests are carried out. These involve again mostly plausibility on snow data (for example only snow in months were snowfall can be expected, or that snow occurred in months were the lowest Tmin was larger or equal than 7°C). In case of temperature one test is carried out, called `temperature_mega_consistency_check()`. The test checks that the current Tmax is not smaller than the lowest Tmin of the month and that the current Tmin is not larger than the highest Tmax of the month. This is necessary, because the consistency tests demanding that Tmin is smaller than Tmax only work if there are both observations available for a day. For days with a 'missing partner', erroneous observation could slip through the test and are intended to be catched with the megaconsistency test.
 
-test results
-
-I should apply the outlier functions also on descent data like UCIPM and GSOD. 
-
-Afterwards I should also run the patching functions on the dataset.
-
-
-
-
-
-
-
-
-
-
-### Check flagged Tmin data
-
-For each daily observation of the variables a column indicating potential problems with the data was downloaded. The details of the flag codes can be read in Echem & Temesgen (no date) and statistical tests for the data in Eching and Snysder (no date). In short there are flags indicating `R` data for outside the range of historical range (x > 99.8% percentile), `S` consistency problems of Tmin and Tmax or problems with the sensor and `Y` data moderately outside historical range (x > 96%). Further flags include `M` for missing data, `P` for pending quality test. While not explained in the manual, there can be also the quality flag `*` or no quality flag at all. I assume that in these cases there are no problems with the observation. A summary of the flags for `Tmin` for the weather station 'Five Points' can be seen below
-
 ```{r, warning=FALSE}
 
-table(target_weather$QC_Tmin)
-
-
-```
-
-Focussing on the flags `S` (=erronous sensor or inconsistency among variables) and `Y` (=strong historical outliers) we can see that the @costa_gap_2021 quality detects less than half of the flagged data. 
-
-```{r, warning=FALSE}
-
-#extract information which test positive
-tmin_t1 <- grepl(pattern = '1', x = costa_test_result$flag_Tmin)
-tmin_t2 <- grepl(pattern = '2', x = costa_test_result$flag_Tmin)
-tmin_t3 <- grepl(pattern = '3', x = costa_test_result$flag_Tmin)
-tmin_t4 <- grepl(pattern = '4', x = costa_test_result$flag_Tmin)
-tmin_t5 <- grepl(pattern = '5', x = costa_test_result$flag_Tmin)
-
-#flag raised when at least two tests positive
-costa_test_result$Tmin_outlier <- rowSums(cbind(tmin_t1, tmin_t2, tmin_t3, tmin_t4, tmin_t5)) >= 2
-
-sum(costa_test_result$Tmin_outlier)
+sum(durre_test_result$flag_Tmin == 'mega_consistency', na.rm = T)
 
 ```
-
-Let's have a look at some examples of raised flags, which also had quality flags raised in CIMIS
-
-```{r, warning=FALSE}
-
-costa_test_result %>%
-  filter(QC_Tmin %in% c('R', 'S') & Tmin_outlier == T) %>%
-  select(Date, Tmax, Tmin, Tmin_org, QC_Tmin, flag_Tmin, Tmin_outlier)%>%
-  head(n = 10)
-```
+No cases of positive test results for the megaconsistency test.
 
 
-Lets look at the cases which received a flag of `R` or `S` but remained undetected by the test. 
+## Summary
 
-```{r, warning=FALSE}
+No you have seen the different tests withing `weather_qc_costa` and `weather_qc_durre` and hopefully a better feeling how the functions try to detect erroneous weather data.
+For best outcomes include all auxiliary weather stations in `weather_qc_durre` as well as target weather stations. That way, erroneous weather observations in neighbouring stations are less likely to degrade the spatial consistency tests. In the next vignette I will work on a more detailed evaluation of both test results and compare it with quality flags supplied by CIMIS. 
 
-costa_test_result %>%
-  filter(QC_Tmin %in% c('R', 'S') & Tmin_outlier == F) %>%
-  select(Date, Tmax, Tmin, Tmin_org, QC_Tmin, Tmin_outlier)%>%
-  head(n = 10)
-```
-
-
- In many cases the data was already marked by an `NA`. 
- 
-```{r, warning=FALSE}
-sum(costa_test_result$QC_Tmin %in% c('R', 'S') & is.na(costa_test_result$Tmin_org))
-
-```
-
-
-This means the quality test didn't have a chance to detect 31 out of the 75 cases. So the rate of correctly detecting flags R and S by the Costa 2021 quality test is actually
-
-```{r, warning=FALSE}
-sum(costa_test_result$QC_Tmin %in% c('R', 'S') & is.na(costa_test_result$Tmin_org) ==F & costa_test_result$Tmin_outlier == T) / sum(costa_test_result$QC_Tmin %in% c('R', 'S') & is.na(costa_test_result$Tmin_org) ==F)
-
-```
-
-So roughly 76% of the flags were detected. Not bad bad also not great. Lets have a look at the cases which slipped through the test.
-
-```{r, warning=FALSE}
-
-costa_test_result %>%
-  filter(QC_Tmin %in% c('R', 'S') & Tmin_outlier == F & is.na(Tmin_org) == F) %>%
-  select(Date, Tmax, Tmin, QC_Tmin, flag_Tmin, Tmin_outlier)%>%
-  head(n = 10)
-```
-
-Another aspect are the cases which were marked as outlier by the test, but did not get any R or S flag.
-
-```{r, warning=FALSE}
-
-costa_test_result %>%
-  filter(!(QC_Tmin %in% c('R', 'S')) & Tmin_outlier == T) %>%
-  select(Date, Tmax, Tmin, Tmin_org, QC_Tmin, flag_Tmin, Tmin_outlier)%>%
-  head(n = 10)
-```
- 
- 
-```{r, warning=FALSE, echo = FALSE}
-
-p <- costa_test_result %>%
-  filter(Year == 1990 & Month == 9) %>%
-  ggplot(aes(x = Date)) + 
-  geom_line(aes(y = Tmin_org, col = 'Tmin', group = 'Tmin')) +
-  geom_point(aes(y = Tmin_org, col = 'Tmin')) + 
-  geom_line(aes(y = Tmax, col = 'Tmax', group = 'Tmax'))+ 
-  geom_point(aes(y = Tmax, col = 'Tmax')) 
-
-p +  geom_point(size = 7, pch = 1, stroke = 2, col = 'red', aes(x = as.Date('1990-9-14'), y = 1.1))
-  
-```
-
-The circled point of Tmin was labelled by the @costa_gap_2021 quality control function as an outlier, while the almost equally low observations of the two days prior remained in the end unflagged. All three points were flagged by the variable limits test. However, the circle point was also flagged by the temporal consistency test due to the sudden jump in temperature the day after and by the consistency among variables test, because the calculated mean temperature was far off the reported mean temperature (this might have been caused by the equally suspicious observation of Tmax at that day). 
-
-In total the weather quality test by Costa 2021 flagged 95 cases of Tmin (0.8%). It seems the majority of flagged data include unreasonably high or low readings, but there were also several cases of 'false zeros'
-
-```{r, warning=FALSE}
-
-costa_test_result %>%
-  ggplot(aes(x = Date, y = Tmin_org)) + 
-  geom_point() + coord_cartesian(ylim = c(-20,40)) + 
-  geom_point(data = costa_test_result[costa_test_result$Tmin_outlier,], aes (x = Date, y = Tmin_org), col = 'red')
-  
-```
-
-
-check which test lead how often to a flagged outlier
-sum
-
-```{r, warning=FALSE}
-
-data.frame(test = c(rep('fixed_limt', 2),
-                    rep('variable_limit',2),
-                    rep('temporal_consistent', 2),
-                    rep('consistent_variable', 2),
-                    rep('spatial_consistent', 2)), 
-           outlier = rep(c(T,F), 5), 
-           cases = c(sum(costa_test_result$Tmin_outlier & tmin_t1),
-                     sum(costa_test_result$Tmin_outlier == F & tmin_t1),
-                     sum(costa_test_result$Tmin_outlier & tmin_t2),
-                     sum(costa_test_result$Tmin_outlier == F & tmin_t2),
-                     sum(costa_test_result$Tmin_outlier & tmin_t3),
-                     sum(costa_test_result$Tmin_outlier == F & tmin_t3),
-                     sum(costa_test_result$Tmin_outlier & tmin_t4),
-                     sum(costa_test_result$Tmin_outlier == F & tmin_t4),
-                     sum(costa_test_result$Tmin_outlier & tmin_t5),
-                     sum(costa_test_result$Tmin_outlier == F & tmin_t5))) %>%
-  ggplot(aes(x = test, y= cases, fill = outlier)) + 
-  geom_bar(stat = 'identity')+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-
-
-
-
-```
-
-It can be seen that the consistency among variables and the variable limits test lead to the most instances of outlier flags, however, they both have a low specificity as the share of stand-alone positive test results is high. Positive fixed limit test results always lead to outlier flags, the is very specific but not very sensitive as the majority of outlier flags came from other tests. Spatial consistency and temporal consistency lie somewhere in the middle between specificity and sensitivity. In both cases true test results also lead in the majority of cases also to flagging of outlier.
-
+## References

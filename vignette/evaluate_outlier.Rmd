@@ -1,0 +1,172 @@
+---
+title: "Untitled"
+author: "Lars Caspersen"
+date: '2022-07-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+
+
+### Check flagged Tmin data
+
+For each daily observation of the variables a column indicating potential problems with the data was downloaded. The details of the flag codes can be read in Echem & Temesgen (no date) and statistical tests for the data in Eching and Snysder (no date). In short there are flags indicating `R` data for outside the range of historical range (x > 99.8% percentile), `S` consistency problems of Tmin and Tmax or problems with the sensor and `Y` data moderately outside historical range (x > 96%). Further flags include `M` for missing data, `P` for pending quality test. While not explained in the manual, there can be also the quality flag `*` or no quality flag at all. I assume that in these cases there are no problems with the observation. A summary of the flags for `Tmin` for the weather station 'Five Points' can be seen below
+
+```{r, warning=FALSE}
+
+table(target_weather$QC_Tmin)
+
+
+```
+
+Focussing on the flags `S` (=erronous sensor or inconsistency among variables) and `Y` (=strong historical outliers) we can see that the @costa_gap_2021 quality detects less than half of the flagged data. 
+
+```{r, warning=FALSE}
+
+#extract information which test positive
+tmin_t1 <- grepl(pattern = '1', x = costa_test_result$flag_Tmin)
+tmin_t2 <- grepl(pattern = '2', x = costa_test_result$flag_Tmin)
+tmin_t3 <- grepl(pattern = '3', x = costa_test_result$flag_Tmin)
+tmin_t4 <- grepl(pattern = '4', x = costa_test_result$flag_Tmin)
+tmin_t5 <- grepl(pattern = '5', x = costa_test_result$flag_Tmin)
+
+#flag raised when at least two tests positive
+costa_test_result$Tmin_outlier <- rowSums(cbind(tmin_t1, tmin_t2, tmin_t3, tmin_t4, tmin_t5)) >= 2
+
+sum(costa_test_result$Tmin_outlier)
+
+```
+
+Let's have a look at some examples of raised flags, which also had quality flags raised in CIMIS
+
+```{r, warning=FALSE}
+
+costa_test_result %>%
+  filter(QC_Tmin %in% c('R', 'S') & Tmin_outlier == T) %>%
+  select(Date, Tmax, Tmin, Tmin_org, QC_Tmin, flag_Tmin, Tmin_outlier)%>%
+  head(n = 10)
+```
+
+
+Lets look at the cases which received a flag of `R` or `S` but remained undetected by the test. 
+
+```{r, warning=FALSE}
+
+costa_test_result %>%
+  filter(QC_Tmin %in% c('R', 'S') & Tmin_outlier == F) %>%
+  select(Date, Tmax, Tmin, Tmin_org, QC_Tmin, Tmin_outlier)%>%
+  head(n = 10)
+```
+
+
+ In many cases the data was already marked by an `NA`. 
+ 
+```{r, warning=FALSE}
+sum(costa_test_result$QC_Tmin %in% c('R', 'S') & is.na(costa_test_result$Tmin_org))
+
+```
+
+
+This means the quality test didn't have a chance to detect 31 out of the 75 cases. So the rate of correctly detecting flags R and S by the Costa 2021 quality test is actually
+
+```{r, warning=FALSE}
+sum(costa_test_result$QC_Tmin %in% c('R', 'S') & is.na(costa_test_result$Tmin_org) ==F & costa_test_result$Tmin_outlier == T) / sum(costa_test_result$QC_Tmin %in% c('R', 'S') & is.na(costa_test_result$Tmin_org) ==F)
+
+```
+
+So roughly 76% of the flags were detected. Not bad bad also not great. Lets have a look at the cases which slipped through the test.
+
+```{r, warning=FALSE}
+
+costa_test_result %>%
+  filter(QC_Tmin %in% c('R', 'S') & Tmin_outlier == F & is.na(Tmin_org) == F) %>%
+  select(Date, Tmax, Tmin, QC_Tmin, flag_Tmin, Tmin_outlier)%>%
+  head(n = 10)
+```
+
+Another aspect are the cases which were marked as outlier by the test, but did not get any R or S flag.
+
+```{r, warning=FALSE}
+
+costa_test_result %>%
+  filter(!(QC_Tmin %in% c('R', 'S')) & Tmin_outlier == T) %>%
+  select(Date, Tmax, Tmin, Tmin_org, QC_Tmin, flag_Tmin, Tmin_outlier)%>%
+  head(n = 10)
+```
+ 
+ 
+```{r, warning=FALSE, echo = FALSE}
+
+p <- costa_test_result %>%
+  filter(Year == 1990 & Month == 9) %>%
+  ggplot(aes(x = Date)) + 
+  geom_line(aes(y = Tmin_org, col = 'Tmin', group = 'Tmin')) +
+  geom_point(aes(y = Tmin_org, col = 'Tmin')) + 
+  geom_line(aes(y = Tmax, col = 'Tmax', group = 'Tmax'))+ 
+  geom_point(aes(y = Tmax, col = 'Tmax')) 
+
+p +  geom_point(size = 7, pch = 1, stroke = 2, col = 'red', aes(x = as.Date('1990-9-14'), y = 1.1))
+  
+```
+
+The circled point of Tmin was labelled by the @costa_gap_2021 quality control function as an outlier, while the almost equally low observations of the two days prior remained in the end unflagged. All three points were flagged by the variable limits test. However, the circle point was also flagged by the temporal consistency test due to the sudden jump in temperature the day after and by the consistency among variables test, because the calculated mean temperature was far off the reported mean temperature (this might have been caused by the equally suspicious observation of Tmax at that day). 
+
+In total the weather quality test by Costa 2021 flagged 95 cases of Tmin (0.8%). It seems the majority of flagged data include unreasonably high or low readings, but there were also several cases of 'false zeros'
+
+```{r, warning=FALSE}
+
+costa_test_result %>%
+  ggplot(aes(x = Date, y = Tmin_org)) + 
+  geom_point() + coord_cartesian(ylim = c(-20,40)) + 
+  geom_point(data = costa_test_result[costa_test_result$Tmin_outlier,], aes (x = Date, y = Tmin_org), col = 'red')
+  
+```
+
+
+check which test lead how often to a flagged outlier
+sum
+
+```{r, warning=FALSE}
+
+data.frame(test = c(rep('fixed_limt', 2),
+                    rep('variable_limit',2),
+                    rep('temporal_consistent', 2),
+                    rep('consistent_variable', 2),
+                    rep('spatial_consistent', 2)), 
+           outlier = rep(c(T,F), 5), 
+           cases = c(sum(costa_test_result$Tmin_outlier & tmin_t1),
+                     sum(costa_test_result$Tmin_outlier == F & tmin_t1),
+                     sum(costa_test_result$Tmin_outlier & tmin_t2),
+                     sum(costa_test_result$Tmin_outlier == F & tmin_t2),
+                     sum(costa_test_result$Tmin_outlier & tmin_t3),
+                     sum(costa_test_result$Tmin_outlier == F & tmin_t3),
+                     sum(costa_test_result$Tmin_outlier & tmin_t4),
+                     sum(costa_test_result$Tmin_outlier == F & tmin_t4),
+                     sum(costa_test_result$Tmin_outlier & tmin_t5),
+                     sum(costa_test_result$Tmin_outlier == F & tmin_t5))) %>%
+  ggplot(aes(x = test, y= cases, fill = outlier)) + 
+  geom_bar(stat = 'identity')+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+
+
+```
+
+It can be seen that the consistency among variables and the variable limits test lead to the most instances of outlier flags, however, they both have a low specificity as the share of stand-alone positive test results is high. Positive fixed limit test results always lead to outlier flags, the is very specific but not very sensitive as the majority of outlier flags came from other tests. Spatial consistency and temporal consistency lie somewhere in the middle between specificity and sensitivity. In both cases true test results also lead in the majority of cases also to flagging of outlier.
+

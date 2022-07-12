@@ -76,7 +76,7 @@ test_temperature_corroboration <- function(weather, weather_coords,
     arrange(Date)
   
   #calculate climate anomaly
-  weather$anomaly <- (weather[,variable] - weather$mean) / weather$sd
+  weather$anomaly <- weather[,variable] - weather$mean
   
   #calculate temperature anomalies for a subset of closest stations of a three day window
   #take anomaly closest to target anomaly
@@ -114,7 +114,7 @@ test_temperature_corroboration <- function(weather, weather_coords,
       arrange(Date)
 
     #calculate climate anomaly of aux data
-    x$anomaly <- (x[[variable]] - climate_df$mean) / climate_df$sd
+    x$anomaly <- (x[[variable]] - climate_df$mean)
     
     return(x)
   }) 
