@@ -8,9 +8,9 @@
 #' \code{\link{test_spatial_consistency}}. While the aim is similar (identify
 #' observations which are not in line with neighboring observations) the testing 
 #' principle is different. While \code{test_spatial_consistency} compares the weighted
-#' output of linear regression to the target value, the \code{test_temperature_corrobation}
+#' output of linear regression to the target value, the \code{test_temperature_corroboration}
 #' compares the target observation to the temperature anomaly of the station to the 
-#' long term mean. The testing tolerance of \code{test_temperature_corrobation} is wider, so it is
+#' long term mean. The testing tolerance of \code{test_temperature_corroboration} is wider, so it is
 #' less strict, but it also makes fewer demands on the shared observation of 
 #' target and auxiliary weather stations, so it can be applicable where the demands
 #' of \code{test_spatial_consistency} do not permit any test result at all. 
@@ -42,7 +42,7 @@
 #' @param variable a character indicating the column name of the tested variable 
 #' in weathe
 #' @param max_dist maximum distance in kilometers of neighbouring stations to target station to be 
-#' included in the spatial corrobation test
+#' included in the spatial corroboration test
 #' @param max_station maximum number of neighbouring stations included in the test.
 #' If more auxiliary stations available than \code{max_station}, then closest ones
 #' are taken
@@ -54,7 +54,7 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples test_temperature_corrobation(weather = target_weather,
+#' @examples test_temperature_corroboration(weather = target_weather,
 #' weather_coords = c(target_info$Longitude, target_info$Latidue),
 #' aux_info = neighbour_info, aux_list = neighbour_list, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
@@ -62,7 +62,7 @@
 #' @references
 #' \insertAllCited{}
 #' @export
-test_temperature_corrobation <- function(weather, weather_coords,
+test_temperature_corroboration <- function(weather, weather_coords,
                                          aux_list, aux_info,
                                          variable,
                                          max_station = 7, min_station = 3,

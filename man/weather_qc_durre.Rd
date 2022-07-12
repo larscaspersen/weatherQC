@@ -36,7 +36,7 @@ weather_qc_durre(
   max_station = 7,
   max_res = 8,
   max_res_norm = 4,
-  max_diff_temp_corrobation = 10,
+  max_diff_temp_corroboration = 10,
   min_obs_megaconsistency = 140
 )
 }
@@ -126,7 +126,7 @@ are ignored}
 are ignored}
 
 \item{max_dist}{maximum distance in kilometers of neighbouring stations to target station to be 
-included in the spatial corrobation test}
+included in the spatial corroboration test}
 
 \item{window_width}{amount of extra days added to the target and auxiliary
 weather station for the linear regression. Extra days only part of the model
@@ -153,7 +153,7 @@ are taken}
 by the test. Note: both thresholds need to be exceeded in order for the 
 test to yield a flag}
 
-\item{max_diff_temp_corrobation}{maximum difference of the lowest minimum difference of target observation
+\item{max_diff_temp_corroboration}{maximum difference of the lowest minimum difference of target observation
 to neighbouring observations for temperature anomalies}
 
 \item{min_obs_megaconsistency}{minimum amount of observation per calendar month in order 
@@ -214,8 +214,8 @@ tests:
  \item{Group 4: Spatial consistency tests}
  \itemize{
     \item{Spatial regression test \code{\link{test_spatial_consistency}}}
-    \item{Temperature spatial corrobation test \code{\link{test_temperature_corrobation}}}
-    \item{Precipitation spatial corrobation test \code{\link{test_precipitation_spatial_corrobation}}}
+    \item{Temperature spatial corroboration test \code{\link{test_temperature_corroboration}}}
+    \item{Precipitation spatial corroboration test \code{\link{test_precipitation_spatial_corroboration}}}
     }
  \item{Group 5: Megaconsistency tests}
  \itemize{

@@ -74,7 +74,7 @@ temporal conitnuity test}
 for temperature consistency test}
 
 \item{max_dist}{maximum distance in kilometers of neighbouring stations to target station to be 
-included in the spatial corrobation test}
+included in the spatial corroboration test}
 
 \item{window_width}{amount of extra days added to the target and auxiliary
 weather station for the linear regression. Extra days only part of the model
@@ -126,7 +126,7 @@ It consists of five consistency tests, namely:
  \item{Test 2: Variable limit test; see also \code{\link{test_variable_limit}}}
  \item{Test 3: Temporal consistency test; see also \code{\link{test_temporal_continuity}}}
  \item{Test 4: Test for consistency among variables; see also \code{link{test_temperature_consistency}}}
- \item{Test 5: Spatial consistency test; see also \code{\link{test_spatial_consistency}} and \code{\link{test_precipitation_spatial_corrobation}}}
+ \item{Test 5: Spatial consistency test; see also \code{\link{test_spatial_consistency}} and \code{\link{test_precipitation_spatial_corroboration}}}
 }
 
 The function can be applied to temperature and precipitation data, though the 
