@@ -22,7 +22,7 @@
 #' data.frames should be identical of \code{weather}. Data.frames do not necissarily
 #' need to cover excat same time period as \code{weather}
 #' @param max_dist maximum distance in kilometers of neighbouring stations to target station to be 
-#' included in the spatial corrobation test
+#' included in the spatial corroboration test
 #' @param max_station maximum number of neighbouring stations included in the test.
 #' If more auxiliary stations available than \code{max_station}, then closest ones
 #' are taken
@@ -32,7 +32,7 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples test_precipitation_spatial_corrobation(weather = target_weather,
+#' @examples test_precipitation_spatial_corroboration(weather = target_weather,
 #' weather_coords = c(target_info$Longitude, target_info$Latidue),
 #' aux_info = neighbour_info, aux_list = neighbour_weather)
 #' @seealso \code{\link{get_prec_rank}}, \code{\link{get_abs_min_difference}}
@@ -41,7 +41,7 @@
 #' @references
 #' \insertAllCited{}
 #' @export
-test_precipitation_spatial_corrobation <- function(weather, weather_coords, aux_info, 
+test_precipitation_spatial_corroboration <- function(weather, weather_coords, aux_info, 
                                                    aux_list, max_dist = 75,
                                                    max_station = 7, min_station = 3){
   

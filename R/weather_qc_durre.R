@@ -31,8 +31,8 @@
 #'  \item{Group 4: Spatial consistency tests}
 #'  \itemize{
 #'     \item{Spatial regression test \code{\link{test_spatial_consistency}}}
-#'     \item{Temperature spatial corrobation test \code{\link{test_temperature_corrobation}}}
-#'     \item{Precipitation spatial corrobation test \code{\link{test_precipitation_spatial_corrobation}}}
+#'     \item{Temperature spatial corroboration test \code{\link{test_temperature_corroboration}}}
+#'     \item{Precipitation spatial corroboration test \code{\link{test_precipitation_spatial_corroboration}}}
 #'     }
 #'  \item{Group 5: Megaconsistency tests}
 #'  \itemize{
@@ -115,7 +115,7 @@
 #' @param lagged_range_max_diff threshold for the test, spike and dips lower than this value
 #' are ignored
 #' @param max_dist maximum distance in kilometers of neighbouring stations to target station to be 
-#' included in the spatial corrobation test
+#' included in the spatial corroboration test
 #' @param window_width amount of extra days added to the target and auxiliary
 #' weather station for the linear regression. Extra days only part of the model
 #' construction, not the testing
@@ -142,7 +142,7 @@
 #' @param window_width amount of extra days added to the target and auxiliary
 #' weather station for the linear regression. Extra days only part of the model
 #' construction, not the testing
-#' @param max_diff_temp_corrobation maximum difference of the lowest minimum difference of target observation
+#' @param max_diff_temp_corroboration maximum difference of the lowest minimum difference of target observation
 #' to neighbouring observations for temperature anomalies
 #' @param min_obs_megaconsistency minimum amount of observation per calendar month in order 
 #' to be considered in the test, otherwise for the calendar month all observations
@@ -193,7 +193,7 @@ weather_qc_durre <- function(weather_list,
                              max_station = 7,
                              max_res = 8,
                              max_res_norm = 4,
-                             max_diff_temp_corrobation = 10,
+                             max_diff_temp_corroboration = 10,
                              min_obs_megaconsistency = 140){
   
   #add a column to weather_list objects indicating which test performed positive
@@ -677,14 +677,14 @@ weather_qc_durre <- function(weather_list,
     })
     
     
-    #temperature corrobation
+    #temperature corroboration
     if(mute == FALSE){
-      cat('Spatial Corrobation Test', '\n')
+      cat('Spatial corroboration Test', '\n')
     }
     #Tmin
     weather_list <- imap(weather_list, function(x,id){
       clear_flagged_data(weather = x, variable = 'Tmin', 
-                         test_result = test_temperature_corrobation(weather = x, 
+                         test_result = test_temperature_corroboration(weather = x, 
                                                                     weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                        weather_info$Latitude[weather_info$id == id]),
                                                                     aux_list = aux_list, 
@@ -693,8 +693,8 @@ weather_qc_durre <- function(weather_list,
                                                                     max_station = max_station,
                                                                     min_station = min_station,
                                                                     max_dist = max_dist,
-                                                                    max_diff = max_diff_temp_corrobation), 
-                         test_name = 'spatial_corrobation')
+                                                                    max_diff = max_diff_temp_corroboration), 
+                         test_name = 'spatial_corroboration')
     })
     
     
@@ -704,7 +704,7 @@ weather_qc_durre <- function(weather_list,
     #Tmax
     weather_list <- imap(weather_list, function(x,id){
       clear_flagged_data(weather = x, variable = 'Tmax', 
-                         test_result = test_temperature_corrobation(weather = x, 
+                         test_result = test_temperature_corroboration(weather = x, 
                                                                     weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                        weather_info$Latitude[weather_info$id == id]),
                                                                     aux_list = aux_list, 
@@ -713,15 +713,15 @@ weather_qc_durre <- function(weather_list,
                                                                     max_station = max_station,
                                                                     min_station = min_station,
                                                                     max_dist = max_dist,
-                                                                    max_diff = max_diff_temp_corrobation), 
-                         test_name = 'spatial_corrobation')
+                                                                    max_diff = max_diff_temp_corroboration), 
+                         test_name = 'spatial_corroboration')
     })
     
     
     #Precipitation
     weather_list <- imap(weather_list, function(x,id){
       clear_flagged_data(weather = x, variable = 'Precip', 
-                         test_result = test_precipitation_spatial_corrobation(weather = x, 
+                         test_result = test_precipitation_spatial_corroboration(weather = x, 
                                                                               weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                                  weather_info$Latitude[weather_info$id == id]),
                                                                               aux_list = aux_list, 
@@ -729,7 +729,7 @@ weather_qc_durre <- function(weather_list,
                                                                               max_dist = max_dist,
                                                                               max_station = max_station,
                                                                               min_station = min_station), 
-                         test_name = 'spatial_corrobation')
+                         test_name = 'spatial_corroboration')
     })
     
   }
