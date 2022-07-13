@@ -51,7 +51,7 @@ get_weather_records <- function(region = "world"){
       stringr::str_trim()
     
     #final product, returned by function
-    records <- tiblle::tibble(Country = temp_table$`Country/Region`,
+    records <- tibble::tibble(Country = temp_table$`Country/Region`,
                       Tmin = cold,
                       Tmax = warm,
                       Precip = NA)

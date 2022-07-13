@@ -49,8 +49,10 @@ perform_climate_outlier_check <- function(weather, variable,
     
     #normalise temperature data
     
-    weather <- merge(weather, clim_df, by = 'doy') %>%
-      dplyr::arrange(.data$Date)
+    weather <- merge(weather, clim_df, by = 'doy') 
+    
+    #order by Date
+    weather <- weather[order(weather$Date),]
     
     clim_outlier <- abs((weather[,variable] - weather$mean) / weather$sd) > max_temperature_z
     
@@ -64,14 +66,13 @@ perform_climate_outlier_check <- function(weather, variable,
       unlist() %>%
       data.frame(doy = unique(weather$doy), percentile = .data) %>%
       merge.data.frame(weather, .data, by = 'doy') %>%
-      dplyr::arrange(Date)
     
     #in case precipitation happening at freezing temperatures, choose a lower threshold
     clim_outlier <- weather[,variable] >= ifelse((weather$Tmax + weather$Tmin) / 2 > 0, yes = weather$percentile * max_prec_threshold, 
                                                  no = weather$percentile * max_prec_threshold_freezing)
     
     #change na to false
-    clim_outlier <- replace_na(data = clim_outlier, replace = FALSE)
+    clim_outlier <- tidyr::replace_na(data = clim_outlier, replace = FALSE)
     
     return(clim_outlier)
   }

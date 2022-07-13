@@ -69,7 +69,7 @@ test_temperature_corroboration <- function(weather, weather_coords,
                                          max_dist = 75, max_diff = 10){
   #get climate mean and sd for each day of target station
   #and add it to weather data frame
-  weather <- dplyr::map(unique(weather$doy), ~get_longterm_mean_and_sd(weather = weather, variable = variable,
+  weather <- purrr::map(unique(weather$doy), ~get_longterm_mean_and_sd(weather = weather, variable = variable,
                                                                 doy = .x)) %>%
     dplyr::bind_rows() %>%
     merge(weather, by = 'doy', all.y = TRUE) %>%

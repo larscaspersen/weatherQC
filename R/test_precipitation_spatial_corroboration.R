@@ -82,7 +82,7 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
   names(x_org)[2] <- 'x'
   
   #extract the precipitation data from the aux list
-  y_org <- map(aux_list, function(y){
+  y_org <- purrr::map(aux_list, function(y){
     int <- merge.data.frame(x_org, y[,c('Date', 'Precip')], 
                             by = 'Date', all.x = T)
     return(int[,'Precip'])}) %>%
@@ -120,11 +120,11 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
   names(x_rank)[2] <- 'x'
   
   #extract the precipitation data from the aux list
-  y_rank <- map(aux_list, function(y){
+  y_rank <- purrr::map(aux_list, function(y){
     int <- merge.data.frame(x_rank, y[,c('Date', 'prec_rank')], 
                             by = 'Date', all.x = T)
     return(int[,'prec_rank'])}) %>%
-    bind_cols()
+    dplyr::bind_cols()
   
   #bind by columns to a matrix
   y_rank <- tibble::tibble(y_rank, dplyr::lead(y_rank), dplyr::lag(y_rank), .name_repair = 'minimal') %>%

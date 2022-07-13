@@ -36,7 +36,7 @@ test_variable_limit <- function(weather, variable, probs = c(0.01, 0.99)){
   
   #also test for yearly quantiles
   yearly_test <- stats::quantile(weather[,variable], probs = c(probs[1], probs[2]), na.rm = T) %>%
-    {ifelse(is.na(weather[,variable]), yes = F, no = ((weather[, variable] < .[1])|(weather[,variable]>.[2])))}
+    {ifelse(is.na(weather[,variable]), yes = F, no = ((weather[, variable] < .data[1])|(weather[,variable]>.data[2])))}
   
   return(yearly_test | monthly_test)
   

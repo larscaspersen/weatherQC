@@ -25,7 +25,7 @@ select_target_days <- function(df, variable, period_start, period_end){
   
   #in case every day of the target period is also present in the weather dataframe, then simply reutrn everything
   if(all(period_start:period_end %in% df$Date)){
-    return(pull(df[df$Date >= period_start & df$Date <= period_end,variable]))
+    return(dplyr::pull(df[df$Date >= period_start & df$Date <= period_end,variable]))
   } else{
     #make a placeholder for the selected days
     re_vec <- rep(NA, as.numeric(period_end-period_start +1))

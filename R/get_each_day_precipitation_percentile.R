@@ -29,9 +29,9 @@ get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7,
                                                   min_non_zero_days = 20){
   
   #incase there is no doy in weather, add it
-  if(!'doy' %in% names(weather)){
+  if('doy' %in% names(weather) == F){
     #in case no date in weather add it too
-    if(!'Date' %in% names(weather)){
+    if('Date' %in% names(weather) == F){
       weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
                               format = '%Y-%m-%d')
     }

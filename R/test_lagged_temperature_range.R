@@ -50,7 +50,7 @@ test_lagged_temperature_range <- function(weather, max_diff = 40){
   #create flag for tmin and tmax. each day of tmin tested true gets flagged, aswell as the tree day windows of tmax
   tmin_flag <- tmax_flag <- weather$Tmin <= lowest_tmax - max_diff
   addtional_true <- c(which(tmax_flag) + 1, which(tmax_flag) - 1) %>%
-    .[. != 0 | .!= length(tmin_flag)]
+    .data[.data != 0 | .data!= length(tmin_flag)]
   tmax_flag[addtional_true] <- TRUE
   
   #same for tmax
@@ -67,7 +67,7 @@ test_lagged_temperature_range <- function(weather, max_diff = 40){
   #create flag for tmin and tmax. each day of tmin tested true gets flagged, aswell as the tree day windows of tmax
   tmin_flag2 <- tmax_flag2 <- weather$Tmax >= highest_tmin + max_diff
   addtional_true <- c(which(tmax_flag2) + 1, which(tmax_flag2) - 1) %>%
-    .[. != 0 | .!= length(tmin_flag)]
+    .data[.data != 0 | .data!= length(tmin_flag)]
   tmax_flag2[addtional_true] <- TRUE
   
   #remove nas from flag, change them to NA
