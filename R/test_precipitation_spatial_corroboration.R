@@ -9,7 +9,14 @@
 #' description of the test please refer to \insertCite{durre_comprehensive_2010;textual}{weatherQC}
 #' section 6 "Spatial consistency checks" and "Appendix C". 
 #' 
-#' Climatological percentile ranks of precipitation is calculated using \code{\link{get_prec_rank}}
+#' Climatological percentile ranks of precipitation are calculated using the following approach.
+#' It includes precipitation data of a 29 day window centered at
+#' the day of interest throughout all observed years and calculates the empirical
+#' cumulative density function (ecdf). Missing observations and 
+#' zer-precipitation observations are discarded. If there are fewer observations than 
+#' 20 days, then NA is returned instead of the ecdf. Then the 
+#' precipitation event of interest is inserted in the ecdf and the corresponding 
+#' percentile rank is calculated. This is done for each precipitation event.
 #' 
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")
