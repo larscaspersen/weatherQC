@@ -17,7 +17,7 @@ data.frame with 1 row and 6 variables:
 \url{https://cimis.water.ca.gov/}
 }
 \usage{
-target_info
+data(target_info)
 }
 \description{
 data.frames containing a unique identifier for the weather station, coordinates

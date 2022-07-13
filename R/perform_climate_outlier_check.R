@@ -44,7 +44,7 @@ perform_climate_outlier_check <- function(weather, variable,
   if(variable %in% c('Tmin', 'Tmax', 'Tmean')){
     
     #calculate longt term mean and sd of temperature for each day of the year for a 15 day window centered at day of interest
-    clim_df <- map(unique(weather$doy), ~ get_longterm_mean_and_sd(weather = weather, variable = variable, doy = .x)) %>%
+    clim_df <- purrr::map(unique(weather$doy), ~ get_longterm_mean_and_sd(weather = weather, variable = variable, doy = .x)) %>%
       dplyr::bind_rows()
     
     #normalise temperature data

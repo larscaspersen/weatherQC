@@ -21,7 +21,7 @@ A list of 12 data.frames with varying amount rows and 8 variables:
 \url{https://cimis.water.ca.gov/} and \url{http://ipm.ucanr.edu/}
 }
 \usage{
-neighbour_weather
+data(neighbour_weather)
 }
 \description{
 List of data.frames with weather data of weather stations withing a 75 km of 

@@ -17,7 +17,7 @@ data.frame with 12 row and 6 variables:
 \url{https://cimis.water.ca.gov/} and \url{http://ipm.ucanr.edu/}
 }
 \usage{
-neighbour_info
+data(neighbour_info)
 }
 \description{
 data.frames containing a unique identifier for the weather station, coordinates

@@ -32,19 +32,19 @@
 #' It should have columns c("Year", "Month", "Day")
 #' @param aux_info data.frame listing the auxiliary weather stations. Should at least contain
 #' the columns c("id", "Longitude", "Latitude")
-#' @param aux_list named list of data.frames with daily weather obsrvations of auxiliary
-#' weather stations. Names should be identical to \code{aux_info$id}. Strucuture of 
-#' data.frames should be identical of \code{weather}. Data.frames do not necissarily
-#' need to cover excat same time period as \code{weather}
+#' @param aux_list named list of data.frames with daily weather observations of auxiliary
+#' weather stations. Names should be identical to \code{aux_info$id}. Structure of 
+#' data.frames should be identical of \code{weather}. Data.frames do not necessarily
+#' need to cover exact same time period as \code{weather}
 #' @param period_start Date, indicating the start of the month
 #' @param variable column in \code{weather} for which the test is performed. Should
 #' be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
 #' name
-#' @param max_res testing threshold, highest regular resiudal tolerated by test
+#' @param max_res testing threshold, highest regular residual tolerated by test
 #' @param max_res_norm testing threshold, highest standardized residual tolerated
 #' by the test. Note: both thresholds need to be exceeded in order for the 
 #' test to yield a flag
-#' @param max_station maximum number of neighbouring stations included in the test.
+#' @param max_station maximum number of neighboring stations included in the test.
 #' If more auxiliary stations available than \code{max_station}, then closest ones
 #' are taken
 #' @param min_station minimum amount of neighbouring stations for the test. If less
@@ -111,7 +111,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   
   #iterate over all y columns, for each column iterate over x and find the closest y value given a 3 day window centered around i
   y_closest <-  purrr::map(y, function(vec) purrr::imap_dbl(x,~get_closest_y(x = .x, y=vec, i = .y))) %>%
-    do.call(cbind.data.frame, .)
+    do.call(cbind.data.frame, .data)
   
   #carry out linear regression
   models <- purrr::map(y_closest, ~ lm(x~.x))
@@ -120,7 +120,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   #calculate correlation coefficient, filter stations with too low correlation coefficient
   #keep only stations fulfillinf the criteria of minimum correlation of their prediction
   aux_info <- purrr::map_lgl(models, ~sqrt(summary(.x)[['r.squared']]) > min_correlation) %>%
-    aux_info[.,]
+    aux_info[.data,]
   
   
   #if there are less then 3 stations remaining, then return NAs as flag
