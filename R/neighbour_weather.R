@@ -17,5 +17,6 @@
 #'   \item{Precip}{Daily Precipitation (mm)}
 #'   \item{Date}{Date}
 #' }
+#' @usage data(neighbour_weather)
 #' @source \url{https://cimis.water.ca.gov/} and \url{http://ipm.ucanr.edu/}
 "neighbour_weather"

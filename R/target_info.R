@@ -10,5 +10,6 @@
 #'   \item{Longitude}{longitude of weather station decimal format}
 #'   \item{Latitude}{latitude of weather station in decimal format}
 #' }
+#' @usage data(target_info)
 #' @source \url{https://cimis.water.ca.gov/}
 "target_info"

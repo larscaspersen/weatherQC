@@ -21,5 +21,6 @@
 #'   \item{Date}{Date}
 #'   \item{doy}{Day of the year}
 #' }
+#' @usage data(target_weather)
 #' @source \url{https://cimis.water.ca.gov/}
 "target_weather"
