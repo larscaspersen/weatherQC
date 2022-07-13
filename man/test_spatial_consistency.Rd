@@ -110,7 +110,7 @@ aux_info = neighbour_info, aux_list = neighbour_weather, variable = "Tmin")
 \insertAllCited{}
 }
 \seealso{
-\code{\link{spat_consist_one_period}}
+\code{\link{test_precipitation_spatial_corroboration}}, \code{\link{test_temperature_corroboration}},
 }
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}
