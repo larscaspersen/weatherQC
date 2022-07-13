@@ -17,7 +17,7 @@
 #' @seealso \code{\link{perform_climate_outlier_check}}
 #' @examples get_longterm_mean_and_sd(weather = target_weather, variable = "Tmin", doy = 1)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
-#' @export
+#' @noRd
 get_longterm_mean_and_sd <- function(weather, variable, doy){
   #get doys of target days
   lim_doy <- doy + c(-7,7)

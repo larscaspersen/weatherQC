@@ -23,7 +23,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
-#' @export
+#' @noRd
 get_ecdf <- function(weather, doy, min_non_zero_days = 20){
   #get doys of target days
   lim_doy <- doy + c(-14,14)

@@ -22,8 +22,11 @@
 #' @references
 #' \insertAllCited{}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
-#' @export
+#' @noRd
 get_gap_monthly <- function(x, temp = TRUE, gap_threshold = 10){
+  
+  #drop NAs from x
+  x <- stats::na.omit(x)
   
   gap_flag <- rep(FALSE, length(x))
   

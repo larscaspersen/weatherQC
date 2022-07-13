@@ -25,7 +25,7 @@
 #' @examples 
 #' get_abs_min_difference(x = target_weather$Precip[1], target_date = target_weather$Date[1],
 #' variable = "Precip", aux_list = neighbour_weather)
-#' @export
+#' @noRd
 get_abs_min_difference <- function(x, target_date, variable, aux_list){
   
   if(is.na(x) == TRUE){

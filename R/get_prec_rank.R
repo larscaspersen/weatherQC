@@ -26,7 +26,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
-#' @export
+#' @noRd
 get_prec_rank <- function(weather,min_non_zero_days = 20){
   
   #add date and doy

@@ -13,7 +13,7 @@
 #' @return value in x which is closest to the requested percentile
 #' @examples 
 #' which.quantile(x = c(1:4), probs = 0.5)
-#' @export
+#' @noRd
 which_quantile <- function (x, probs, na.rm = FALSE){
   if (! na.rm & any (is.na (x)))
     return (rep (NA_integer_, length (probs)))
