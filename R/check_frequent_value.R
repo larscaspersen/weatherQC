@@ -57,10 +57,8 @@ check_frequent_value <- function(weather, percentile_df, min_non_zero_days = 20)
   }
   
   #drop na values, and 0
-  x <- weather %>%
-    .[is.na(.$Precip) == FALSE,] %>%
-    filter(Precip > 0)
-  
+  x <- weather[is.na(weather$Precip) == FALSE & weather$Precip > 0,]
+
   #flag 
   frequent_value_flag <- rep(F, nrow(x))
   
@@ -112,7 +110,7 @@ check_frequent_value <- function(weather, percentile_df, min_non_zero_days = 20)
   
   #merge x and weather
   weather <- merge(weather, x, by = colnames(weather), all.x = T) %>%
-    arrange(Date)
+    dplyr::arrange(.data$Date)
   
   #change NAs in Flag to FALSE
   weather$flag[is.na(weather$flag)] <- FALSE
