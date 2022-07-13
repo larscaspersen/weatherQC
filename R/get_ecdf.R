@@ -54,8 +54,8 @@ get_ecdf <- function(weather, doy, min_non_zero_days = 20){
   #make it a empirical cumulative distribution function, then determine 
   #the percentile of the valuz 
   return(weather$Precip[target_days] %>%
-           na.omit() %>%
-           .[.>0] %>%
-           ecdf())
+           stats::na.omit() %>%
+           .data[.data > 0] %>%
+           stats::ecdf())
   
 }

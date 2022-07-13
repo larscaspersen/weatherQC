@@ -55,8 +55,8 @@ get_clim_percentiles_prec <- function(weather, doy, probs = c(0.3,0.5,0.7,0.9),
   #make it a empirical cumulative distribution function, then determine 
   #the percentile of the valuz 
   return(weather$Precip[target_days] %>%
-           na.omit() %>%
-           .[.>0] %>%
-           quantile(probs = probs))
+            stats::na.omit() %>%
+           .data[.data > 0] %>%
+           stats::quantile(probs = probs))
   
 }

@@ -40,11 +40,11 @@ get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7,
   
   names <- c('doy', paste0(probs * 100, '%'))
   
-  map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
+  purrr::map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
                                                        doy = .x,
                                                        probs = probs, 
                                                        min_non_zero_days = min_non_zero_days)) %>%
-    do.call(rbind, .) %>%
-    data.frame(doy = unique(weather$doy), .) %>%
+    do.call(rbind, .data) %>%
+    data.frame(doy = unique(weather$doy), .data) %>%
     `colnames<-`(names)
 }
