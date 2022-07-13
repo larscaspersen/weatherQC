@@ -22,7 +22,7 @@
 #' protocol. For each observation and station the temperature anomaly is calculated,
 #' meaning the standardized residuals of observation to the long term mean of the day of the year
 #' of the respective weather station. Long term mean and standard deviation are 
-#' calculated using the same principle as in \code{\link{get_longterm_mean_and_sd}}.
+#' calculated using the same principle as in \code{\link{perform_climate_outlier_check}}.
 #' If the minimum absolute difference of the target to neighbor anomaly is larger than 
 #' the default threshold of 10 degree C, then the target value is flagged by the 
 #' test.
