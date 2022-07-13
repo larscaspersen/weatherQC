@@ -222,7 +222,9 @@ could reduce the testing quality of more restrictive tests like climatological o
 test.
 }
 \examples{
-weather_qc_durre(weather_list = list(target_weather), 
+weather_list <- list(target_weather)
+names(weather_list) <- target_info$id
+weather_qc_durre(weather_list = weather_list, 
 skip_spatial_test = TRUE, mute = TRUE)
 }
 \references{

@@ -39,8 +39,9 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples test_precipitation_spatial_corroboration(weather = target_weather,
-#' weather_coords = c(target_info$Longitude, target_info$Latidue),
+#' @examples 
+#' test_precipitation_spatial_corroboration(weather = target_weather,
+#' weather_coords = c(target_info$Longitude[1], target_info$Latitude[1]),
 #' aux_info = neighbour_info, aux_list = neighbour_weather)
 #' @seealso \code{\link{test_temperature_corroboration}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
@@ -51,6 +52,9 @@
 test_precipitation_spatial_corroboration <- function(weather, weather_coords, aux_info, 
                                                    aux_list, max_dist = 75,
                                                    max_station = 7, min_station = 3){
+  
+  #avoid notes in cmd test
+  . <- NULL
   
   #calculate distance to aux_stations
   aux_info$dist <-  round(sp::spDistsN1(pts = as.matrix(aux_info[, c("Longitude", "Latitude")]),
@@ -78,7 +82,7 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
   
   #also add prec rank to aux data
   aux_list <-  purrr::map(aux_list, get_prec_rank) %>%
-    purrr::map2(.data, aux_list, function(x,y) tibble::tibble(y, prec_rank = x))
+    purrr::map2(., aux_list, function(x,y) tibble::tibble(y, prec_rank = x))
   
   ####
   #get absolute minimum difference

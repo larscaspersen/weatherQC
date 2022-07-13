@@ -41,6 +41,9 @@ perform_climate_outlier_check <- function(weather, variable,
                                           max_prec_threshold_freezing = 5,
                                           prec_percentile = 0.95){
   
+  #avoid note by cmd check
+  . <- NULL
+  
   if(variable %in% c('Tmin', 'Tmax', 'Tmean')){
     
     #calculate longt term mean and sd of temperature for each day of the year for a 15 day window centered at day of interest
@@ -64,8 +67,8 @@ perform_climate_outlier_check <- function(weather, variable,
     weather <- purrr::map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
                                                                     doy = .x, probs = prec_percentile)) %>%
       unlist() %>%
-      data.frame(doy = unique(weather$doy), percentile = .data) %>%
-      merge.data.frame(weather, .data, by = 'doy') %>%
+      data.frame(doy = unique(weather$doy), percentile = .) %>%
+      merge.data.frame(weather, ., by = 'doy') %>%
       dplyr::arrange(.data$Date)
     
     #in case precipitation happening at freezing temperatures, choose a lower threshold

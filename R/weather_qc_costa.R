@@ -91,9 +91,9 @@
 #' the same time was the flagged observation of the weather variable removed.
 #' @examples 
 #' weather_list <- list(target_weather)
-#' names(weather_list <- target_info$id)
-#' weather_qc_costa(weather = weather_list, 
-#' mute = T, skip_spatial_test = T)
+#' names(weather_list) <- target_info$id
+#' weather_qc_costa(weather_list = weather_list, 
+#' mute = TRUE, skip_spatial_test = TRUE)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
@@ -113,6 +113,9 @@ weather_qc_costa <- function(weather_list,
                              min_coverage = 40, min_correlation = 0.8,
                              min_station = 3, max_station = 7, max_res = 8, 
                              max_res_norm = 4){
+  
+  #avoid note cmd check
+  . <- NULL
   
   #check if needed columns are present
   column_check <- purrr::map_lgl(weather_list, function(x){
@@ -262,7 +265,7 @@ weather_qc_costa <- function(weather_list,
   #### Spatial consistency ####
   
   #flag which allows to skip spatial tests
-  if(is.null(aux_info) == T | is.null(aux_list) == T){
+  if(is.null(aux_info) == TRUE | is.null(aux_list) == TRUE){
     skip_spatial_test <- TRUE
     warning("Because arguments aux_info and aux_list were not provided, the spatial
             consistency tests are skipped")
@@ -343,7 +346,7 @@ weather_qc_costa <- function(weather_list,
     
     x$flag_Tmin <- rowSums(x[,c("fixed_lim_test_Tmin", "variable_lim_test_Tmin",
                                 "temporal_consistency_Tmin", "consistency_variable_Tmin",
-                                "spatial_test_Tmin")], na.rm = T) >= 2
+                                "spatial_test_Tmin")], na.rm = TRUE) >= 2
     x$Tmin[x$flag_Tmin] <- NA
     x$flag_Tmin <- paste0(ifelse(x$fixed_lim_test_Tmin, yes = '1, ', no = ''), 
                              ifelse(x$variable_lim_test_Tmin, '2, ', ''),
@@ -351,11 +354,11 @@ weather_qc_costa <- function(weather_list,
                              ifelse(x$consistency_variable_Tmin, '4, ', ''),
                              ifelse(x$spatial_test_Tmin, '5, ', '')) %>%
       trimws(which = 'right') %>% #trim trailing white space
-      gsub(pattern = "\\,$", replacement = "", x = .data) #trim trailing commata
+      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
     
     x$flag_Tmax <- rowSums(x[,c("fixed_lim_test_Tmax", "variable_lim_test_Tmax",
                                 "temporal_consistency_Tmax", "consistency_variable_Tmax",
-                                "spatial_test_Tmax")], na.rm = T) >= 2
+                                "spatial_test_Tmax")], na.rm = TRUE) >= 2
     x$Tmax[x$flag_Tmax] <- NA
     x$flag_Tmax <- paste0(ifelse(x$fixed_lim_test_Tmax, yes = '1, ', no = ''), 
                              ifelse(x$variable_lim_test_Tmax, '2, ', ''),
@@ -363,11 +366,11 @@ weather_qc_costa <- function(weather_list,
                              ifelse(x$consistency_variable_Tmax, '4, ', ''),
                              ifelse(x$spatial_test_Tmax, '5, ', '')) %>%
       trimws(which = 'right') %>% #trim trailing white space
-      gsub(pattern = "\\,$", replacement = "", x = .data) #trim trailing commata
+      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
     
     x$flag_Precip <- rowSums(x[,c("fixed_lim_test_Precip", "variable_lim_test_Precip",
                                   "temporal_consistency_Precip", "consistency_variable_Precip",
-                                  "spatial_test_Precip")], na.rm = T) >= 2
+                                  "spatial_test_Precip")], na.rm = TRUE) >= 2
     x$Precip[x$flag_Precip] <- NA
     x$flag_Precip <- paste0(ifelse(x$fixed_lim_test_Precip, yes = '1, ', no = ''), 
                                ifelse(x$variable_lim_test_Precip, '2, ', ''),
@@ -375,7 +378,7 @@ weather_qc_costa <- function(weather_list,
                                ifelse(x$consistency_variable_Precip, '4, ', ''),
                                ifelse(x$spatial_test_Precip, '5, ', '')) %>%
       trimws(which = 'right') %>% #trim trailing white space
-      gsub(pattern = "\\,$", replacement = "", x = .data) #trim trailing commata
+      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
     
     #drop old flag columns
     x <- x %>%

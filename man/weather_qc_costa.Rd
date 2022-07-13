@@ -143,9 +143,9 @@ to reduce the amount of false-positive flags.
 }
 \examples{
 weather_list <- list(target_weather)
-names(weather_list <- target_info$id)
-weather_qc_costa(weather = weather_list, 
-mute = T, skip_spatial_test = T)
+names(weather_list) <- target_info$id
+weather_qc_costa(weather_list = weather_list, 
+mute = TRUE, skip_spatial_test = TRUE)
 }
 \references{
 \insertAllCited{}

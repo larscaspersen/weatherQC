@@ -146,7 +146,10 @@
 #' In the original column flagged values were replaced with NA. In the same row as where
 #' the original value was removed, a comment indicating which test let to the removal
 #' can be found in the "flag_" plus variable name column.
-#' @examples weather_qc_durre(weather_list = list(target_weather), 
+#' @examples 
+#' weather_list <- list(target_weather)
+#' names(weather_list) <- target_info$id
+#' weather_qc_durre(weather_list = weather_list, 
 #' skip_spatial_test = TRUE, mute = TRUE)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt 

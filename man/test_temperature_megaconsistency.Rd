@@ -36,7 +36,7 @@ This function is part of the weather quality control scheme after Durre et al.
 please refer to section 7 "Megaconsistency tests".
 }
 \examples{
-test_temperature_mega_consistency(weather = target_weather)
+test_temperature_megaconsistency(weather = target_weather)
 }
 \references{
 \insertAllCited{}

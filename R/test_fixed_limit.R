@@ -58,7 +58,7 @@ test_fixed_limit <- function(weather, variable, region = NULL, subregion = NULL,
   #case that neither records nor details on the region / subregion are supplied
   #--> take world record then 
   if(all(c(is.null(region), is.null(subregion), is.null(records)))){
-    if(variable %in% c("Tmin", "Tmax")){
+    if(variable %in% c("Tmin", "Tmax", "Tmean")){
       records <- c(-89.4, 57.7)
     } else if(variable == 'Precip'){
       records <- c(0, 1828.8)

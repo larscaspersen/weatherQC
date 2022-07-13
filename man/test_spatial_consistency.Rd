@@ -103,7 +103,7 @@ section 6 "Spatial consistency checks" and "Appendix B".
 }
 \examples{
 test_spatial_consistency(weather = target_weather,
-weather_coords = c(target_info$Longitude, target_info$Latidue),
+weather_coords = c(target_info$Longitude, target_info$Latitude),
 aux_info = neighbour_info, aux_list = neighbour_weather, variable = "Tmin")
 }
 \references{

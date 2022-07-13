@@ -75,6 +75,8 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
                                     max_station = 7, window_width = 15, 
                                     min_correlation = 0.8, min_coverage = 40){
   
+  #avoid notes by cmd tets
+  . <- NULL
   
   #add window width to the period
   period_end <- lubridate::ceiling_date(period_start,unit = 'month') + window_width -1
@@ -86,7 +88,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
     select_target_days(df = x, variable = variable, period_start = period_start, 
                        period_end = period_end)
   }) %>%
-    do.call(cbind.data.frame, .data)
+    do.call(cbind.data.frame, .)
   
   #only keep aux stations which fulfill coverage criteria
   aux_info <- aux_info[colSums(is.na(x) == F & is.na(y) == F) >= min_coverage, ]
@@ -111,7 +113,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   
   #iterate over all y columns, for each column iterate over x and find the closest y value given a 3 day window centered around i
   y_closest <-  purrr::map(y, function(vec) purrr::imap_dbl(x,~get_closest_y(x = .x, y=vec, i = .y))) %>%
-    do.call(cbind.data.frame, .data)
+    do.call(cbind.data.frame, .)
   
   #carry out linear regression
   models <- purrr::map(y_closest, ~ lm(x~.x))
@@ -120,7 +122,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   #calculate correlation coefficient, filter stations with too low correlation coefficient
   #keep only stations fulfillinf the criteria of minimum correlation of their prediction
   aux_info <- purrr::map_lgl(models, ~sqrt(summary(.x)[['r.squared']]) > min_correlation) %>%
-    aux_info[.data,]
+    aux_info[.,]
   
   
   #if there are less then 3 stations remaining, then return NAs as flag

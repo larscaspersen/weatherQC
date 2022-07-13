@@ -51,8 +51,19 @@ refer to the help pages of the functions or see \insertCite{costa_gap_2021;textu
 or \insertCite{durre_comprehensive_2010;textual}{weatherQC}.
 }
 \examples{
-test_fixed_limit(weather = target_weather, region = 'USA', subregion = 'California', 
-variable = "Tmin")
+#using world-wide limits
+test_fixed_limit(weather = target_weather, variable = "Tmin")
+
+#using user-specified limits
+test_fixed_limit(weather = target_weather, variable = "Tmin", 
+records = c(-20,50))
+
+#using region-specific limits, retrieved from online sources
+\dontrun{
+test_fixed_limit(weather = target_weather, variable = "Tmin", 
+region = 'USA', subregion = 'California')
+}
+
 }
 \references{
 \insertAllCited{}

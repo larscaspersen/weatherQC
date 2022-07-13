@@ -55,8 +55,8 @@
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
 #' @examples test_temperature_corroboration(weather = target_weather,
-#' weather_coords = c(target_info$Longitude, target_info$Latidue),
-#' aux_info = neighbour_info, aux_list = neighbour_list, variable = "Tmin")
+#' weather_coords = c(target_info$Longitude, target_info$Latitude),
+#' aux_info = neighbour_info, aux_list = neighbour_weather, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
