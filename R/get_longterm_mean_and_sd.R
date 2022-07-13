@@ -42,6 +42,6 @@ get_longterm_mean_and_sd <- function(weather, variable, doy){
   
   return(data.frame(doy = doy,
                     mean = mean(weather[[variable]][target_days], na.rm =T), 
-                    sd = sd(weather[[variable]][target_days], na.rm =T)))
+                    sd = stats::sd(weather[[variable]][target_days], na.rm =T)))
   
 }

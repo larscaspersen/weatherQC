@@ -36,13 +36,13 @@ get_prec_rank <- function(weather,min_non_zero_days = 20){
   
   
   
-  ecdf_list <- map(unique(weather$doy), ~ get_ecdf(weather = weather, doy = .x, min_non_zero_days = min_non_zero_days))
+  ecdf_list <- purrr::map(unique(weather$doy), ~ get_ecdf(weather = weather, doy = .x, min_non_zero_days = min_non_zero_days))
   
   
   #somehow this only works if I assign one of the functions to y
   y <- ecdf_list[[1]]
   
-  return(map2(split(weather,f = weather$doy), ecdf_list, function(x,y) floor(sapply(x$Precip,y) * 100)) %>%
+  return(purrr::map2(split(weather,f = weather$doy), ecdf_list, function(x,y) floor(sapply(x$Precip,y) * 100)) %>%
            unsplit(weather$doy))
   
 }
