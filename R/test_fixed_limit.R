@@ -31,8 +31,19 @@
 #' @seealso \code{\link{get_weather_records}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' test_fixed_limit(weather = target_weather, region = 'USA', subregion = 'California', 
-#' variable = "Tmin")
+#' #using world-wide limits
+#' test_fixed_limit(weather = target_weather, variable = "Tmin")
+#' 
+#' #using user-specified limits
+#' test_fixed_limit(weather = target_weather, variable = "Tmin", 
+#' records = c(-20,50))
+#' 
+#' #using region-specific limits, retrieved from online sources
+#' \dontrun{
+#' test_fixed_limit(weather = target_weather, variable = "Tmin", 
+#' region = 'USA', subregion = 'California')
+#' }
+#' 
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
