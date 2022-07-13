@@ -56,7 +56,14 @@ in climatological percentile ranks of precipitation observation. For a detailed
 description of the test please refer to \insertCite{durre_comprehensive_2010;textual}{weatherQC}
 section 6 "Spatial consistency checks" and "Appendix C". 
 
-Climatological percentile ranks of precipitation is calculated using \code{\link{get_prec_rank}}
+Climatological percentile ranks of precipitation are calculated using the following approach.
+It includes precipitation data of a 29 day window centered at
+the day of interest throughout all observed years and calculates the empirical
+cumulative density function (ecdf). Missing observations and 
+zer-precipitation observations are discarded. If there are fewer observations than 
+20 days, then NA is returned instead of the ecdf. Then the 
+precipitation event of interest is inserted in the ecdf and the corresponding 
+percentile rank is calculated. This is done for each precipitation event.
 }
 \examples{
 test_precipitation_spatial_corroboration(weather = target_weather,
@@ -67,7 +74,7 @@ aux_info = neighbour_info, aux_list = neighbour_weather)
 \insertAllCited{}
 }
 \seealso{
-\code{\link{get_prec_rank}}, \code{\link{get_abs_min_difference}}
+\code{\link{test_temperature_corroboration}}
 }
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}
