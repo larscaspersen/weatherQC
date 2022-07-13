@@ -45,26 +45,26 @@ perform_climate_outlier_check <- function(weather, variable,
     
     #calculate longt term mean and sd of temperature for each day of the year for a 15 day window centered at day of interest
     clim_df <- map(unique(weather$doy), ~ get_longterm_mean_and_sd(weather = weather, variable = variable, doy = .x)) %>%
-      bind_rows()
+      dplyr::bind_rows()
     
     #normalise temperature data
     
     weather <- merge(weather, clim_df, by = 'doy') %>%
-      arrange(Date)
+      dplyr::arrange(.data$Date)
     
     clim_outlier <- abs((weather[,variable] - weather$mean) / weather$sd) > max_temperature_z
     
-    clim_outlier <- replace_na(data = clim_outlier, replace = FALSE)
+    clim_outlier <- tidyr::replace_na(data = clim_outlier, replace = FALSE)
     
     return(clim_outlier)
   } else if(variable == 'Precip'){
     
-    weather <- map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
+    weather <- purrr::map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
                                                                     doy = .x, probs = prec_percentile)) %>%
       unlist() %>%
-      data.frame(doy = unique(weather$doy), percentile = .) %>%
-      merge.data.frame(weather, ., by = 'doy') %>%
-      arrange(Date)
+      data.frame(doy = unique(weather$doy), percentile = .data) %>%
+      merge.data.frame(weather, .data, by = 'doy') %>%
+      dplyr::arrange(Date)
     
     #in case precipitation happening at freezing temperatures, choose a lower threshold
     clim_outlier <- weather[,variable] >= ifelse((weather$Tmax + weather$Tmin) / 2 > 0, yes = weather$percentile * max_prec_threshold, 

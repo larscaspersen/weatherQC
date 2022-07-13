@@ -27,7 +27,7 @@ get_weather_records <- function(region = "world"){
     #processes scrapped data
     temp_table <- temperature_html %>% 
       rvest::html_nodes(css = "table") %>% 
-      nth(1) %>% 
+      dplyr::nth(1) %>% 
       rvest::html_table(fill = TRUE, convert = F)
     
     #extract lowest temeprature record
@@ -35,7 +35,7 @@ get_weather_records <- function(region = "world"){
     
     #cases where we have negative value need special treatment
     #because of of special minus character, which confuses R
-    neg_val <- str_detect(temp_table$Coldest, pattern = rlang::chr_unserialise_unicode('<U+2212>'))
+    neg_val <- stringr::str_detect(temp_table$Coldest, pattern = rlang::chr_unserialise_unicode('<U+2212>'))
     cold[neg_val] <- cold[neg_val] * -1
     
     #take hottest temperature
@@ -48,10 +48,10 @@ get_weather_records <- function(region = "world"){
     
     #adjust and clean name of country
     temp_table$`Country/Region` <-  gsub(temp_table$`Country/Region`, pattern = '\\*', replacement = '') %>%
-      str_trim()
+      stringr::str_trim()
     
     #final product, returned by function
-    records <- tibble(Country = temp_table$`Country/Region`,
+    records <- tiblle::tibble(Country = temp_table$`Country/Region`,
                       Tmin = cold,
                       Tmax = warm,
                       Precip = NA)
@@ -66,17 +66,17 @@ get_weather_records <- function(region = "world"){
     
     #take min and max temperature, change from fahrenheit to degree celsius
     records <- records %>%
-      dplyr::select(State, Element, Value) %>%
-      dplyr::filter(Element %in% c('All-Time Maximum Temperature', 'All-Time Minimum Temperature', 'All-Time Greatest 24-Hour Precipitation')) %>%
-      dplyr::mutate(Element = as.factor(Element)) %>%
-      dplyr::mutate(Element = recode_factor(Element, 'All-Time Minimum Temperature' = 'Tmin', 
+      dplyr::select(.data$State, .data$Element, .data$Value) %>%
+      dplyr::filter(.data$Element %in% c('All-Time Maximum Temperature', 'All-Time Minimum Temperature', 'All-Time Greatest 24-Hour Precipitation')) %>%
+      dplyr::mutate(.data$Element = as.factor(Element)) %>%
+      dplyr::mutate(.data$Element = dplyr::recode_factor(.data$Element, 'All-Time Minimum Temperature' = 'Tmin', 
                                      'All-Time Maximum Temperature' = 'Tmax',
                                      'All-Time Greatest 24-Hour Precipitation' = 'Precip')) %>%
-      .[!duplicated(.),] %>%
+      .data[!duplicated(.data),] %>%
       reshape2::dcast(State ~ Element, value.variable = 'Value', value.var = 'Value') %>%
-      dplyr::mutate(Tmin = round((as.numeric(Tmin) - 32) * (5/9), digits = 1),
-             Tmax = round((as.numeric(Tmax) - 32) * (5/9), digits = 1),
-             Precip = Precip * 25.4)
+      dplyr::mutate(.data$Tmin = round((as.numeric(.data$Tmin) - 32) * (5/9), digits = 1),
+             .data$Tmax = round((as.numeric(.data$Tmax) - 32) * (5/9), digits = 1),
+             .data$Precip = .data$Precip * 25.4)
     
     
     records <- tibble::as_tibble(records)

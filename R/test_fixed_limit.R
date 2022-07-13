@@ -73,7 +73,7 @@ test_fixed_limit <- function(weather, variable, region = NULL, subregion = NULL,
       stop(paste0('provided subregion name: ', subregion, ' could not be found in the records list. subregion list contains: ', paste0(unlist(records$subregion), collapse = ', ')))
     } else{
       #extract subregion-specific record
-      records <-  filter(records, Country == subregion)
+      records <-  dplyr::filter(records, .data$Country == subregion)
       
       if(variable %in% c('Tmin', 'Tmax')){
         records <- c(records$Tmin, records$Tmax)

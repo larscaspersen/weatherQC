@@ -40,7 +40,7 @@
 #' @export
 test_lagged_temperature_range <- function(weather, max_diff = 40){
   #get lowesr tmax for each day using a trhee day window
-  lowest_tmax <- apply(matrix(c(lag(weather$Tmax), weather$Tmax, lead(weather$Tmax)),nrow = nrow(weather),
+  lowest_tmax <- apply(matrix(c(dplyr::lag(weather$Tmax), weather$Tmax, dplyr::lead(weather$Tmax)),nrow = nrow(weather),
                               ncol = 3, byrow = FALSE), MARGIN = 1, function(x){
                                 if(all(is.na(x))){
                                   return(NA)
@@ -57,7 +57,7 @@ test_lagged_temperature_range <- function(weather, max_diff = 40){
   
   #same for tmax
   #get lowesr tmax for each day using a trhee day window
-  highest_tmin <- apply(matrix(c(lag(weather$Tmin), weather$Tmin, lead(weather$Tmin)),nrow = nrow(weather),
+  highest_tmin <- apply(matrix(c(dplyr::lag(weather$Tmin), weather$Tmin, dplyr::lead(weather$Tmin)),nrow = nrow(weather),
                                ncol = 3, byrow = FALSE), MARGIN = 1,  function(x){
                                  if(all(is.na(x))){
                                    return(NA)
@@ -73,8 +73,8 @@ test_lagged_temperature_range <- function(weather, max_diff = 40){
   tmax_flag2[addtional_true] <- TRUE
   
   #remove nas from flag, change them to NA
-  tmin_flag <- replace_na(tmin_flag | tmin_flag2, replace = FALSE)
-  tmax_flag <- replace_na(tmax_flag | tmax_flag2, replace = FALSE)
+  tmin_flag <- tidyr::replace_na(tmin_flag | tmin_flag2, replace = FALSE)
+  tmax_flag <- tidyr::replace_na(tmax_flag | tmax_flag2, replace = FALSE)
   
   
   #return any case of tmin_flag / tmin_flag2; tmax_flag | tmax_flag2

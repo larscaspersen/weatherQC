@@ -31,7 +31,7 @@ select_target_days <- function(df, variable, period_start, period_end){
     re_vec <- rep(NA, as.numeric(period_end-period_start +1))
     
     #change days which are present in the 
-    re_vec[period_start:period_end %in% df$Date] <- pull(df[df$Date >= period_start & df$Date <= period_end,variable])
+    re_vec[period_start:period_end %in% df$Date] <- dplyr::pull(df[df$Date >= period_start & df$Date <= period_end,variable])
     
     return(re_vec)
     

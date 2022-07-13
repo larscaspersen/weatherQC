@@ -142,8 +142,8 @@ weather_qc_costa <- function(weather_list,
     tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax, 
                    'Precip_org' = x$Precip,'flag_Tmin' = NA, 
                    'flag_Tmax' = NA, 'flag_Precip' = NA) %>%
-      dplyr::mutate(doy = lubridate::yday(Date)) %>%
-      dplyr::relocate(Date, doy)#make sure date and doy are in beginning of columns
+      dplyr::mutate(doy = lubridate::yday(.data$Date)) %>%
+      dplyr::relocate(.data$Date, .data$doy)#make sure date and doy are in beginning of columns
     
   }) 
   
@@ -351,7 +351,7 @@ weather_qc_costa <- function(weather_list,
                              ifelse(x$consistency_variable_Tmin, '4, ', ''),
                              ifelse(x$spatial_test_Tmin, '5, ', '')) %>%
       trimws(which = 'right') %>% #trim trailing white space
-      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
+      gsub(pattern = "\\,$", replacement = "", x = .data) #trim trailing commata
     
     x$flag_Tmax <- rowSums(x[,c("fixed_lim_test_Tmax", "variable_lim_test_Tmax",
                                 "temporal_consistency_Tmax", "consistency_variable_Tmax",
@@ -379,15 +379,21 @@ weather_qc_costa <- function(weather_list,
     
     #drop old flag columns
     x <- x %>%
-      dplyr::select(-c(fixed_lim_test_Tmin, variable_lim_test_Tmin,
-                  temporal_consistency_Tmin, consistency_variable_Tmin,
-                  spatial_test_Tmin, 
-                fixed_lim_test_Tmax, variable_lim_test_Tmax,
-                  temporal_consistency_Tmax, consistency_variable_Tmax,
-                  spatial_test_Tmax,
-                fixed_lim_test_Precip, variable_lim_test_Precip,
-                  temporal_consistency_Precip, consistency_variable_Precip,
-                  spatial_test_Precip))
+      dplyr::select(-c(.data$fixed_lim_test_Tmin, 
+                       .data$variable_lim_test_Tmin,
+                       .data$temporal_consistency_Tmin, 
+                       .data$consistency_variable_Tmin,
+                       .data$spatial_test_Tmin, 
+                       .data$fixed_lim_test_Tmax, 
+                       .data$variable_lim_test_Tmax,
+                       .data$temporal_consistency_Tmax, 
+                       .data$consistency_variable_Tmax,
+                       .data$spatial_test_Tmax,
+                       .data$fixed_lim_test_Precip, 
+                       .data$variable_lim_test_Precip,
+                       .data$temporal_consistency_Precip, 
+                       .data$consistency_variable_Precip,
+                       .data$spatial_test_Precip))
     
     return(x)
   })

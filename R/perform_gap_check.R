@@ -42,12 +42,12 @@ perform_gap_check <- function(weather, variable, temp_gap_threshold = 10,
   var_per_month <-  split(weather, weather$Month)
   
   #perform the search for gaps on the monthly split data
-  gap_flag <- map(var_per_month, function(x){
+  gap_flag <- purrr::map(var_per_month, function(x){
     #drop na values
     x <- x[is.na(x[,variable]) == FALSE,]
     
     #sort decreasing 
-    x <- arrange(x, x[,variable])
+    x <- dplyr::arrange(x, x[,variable])
     
     #get monthly flag
     x$gap_flag <-  get_gap_monthly(x = x[[variable]], gap_threshold = gap_threshold)
@@ -55,14 +55,14 @@ perform_gap_check <- function(weather, variable, temp_gap_threshold = 10,
     return(x)
     
   }) %>%
-    bind_rows() %>%
-    arrange(Date) %>%
-    merge.data.frame(weather, ., by = colnames(weather), all.x = TRUE) %>%
-    select(gap_flag)
+    dplyr::bind_rows() %>%
+    dplyr::arrange(.data$Date) %>%
+    merge.data.frame(weather, .data, by = colnames(weather), all.x = TRUE) %>%
+    dplyr::select(gap_flag)
   
   #replace NAs with FALSE values
   gap_flag <- gap_flag[,1] %>%
-    replace_na(FALSE)
+    tidyr::replace_na(FALSE)
   
   #return gap_flag column
   return(gap_flag)

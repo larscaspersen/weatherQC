@@ -69,7 +69,7 @@ test_temperature_corroboration <- function(weather, weather_coords,
                                          max_dist = 75, max_diff = 10){
   #get climate mean and sd for each day of target station
   #and add it to weather data frame
-  weather <- map(unique(weather$doy), ~get_longterm_mean_and_sd(weather = weather, variable = variable,
+  weather <- dplyr::map(unique(weather$doy), ~get_longterm_mean_and_sd(weather = weather, variable = variable,
                                                                 doy = .x)) %>%
     bind_rows() %>%
     merge(weather, by = 'doy', all.y = TRUE) %>%
@@ -90,8 +90,8 @@ test_temperature_corroboration <- function(weather, weather_coords,
   
   #select stations within the max distance, which are not the target station
   aux_info <- aux_info %>%
-    filter(dist > 0 & dist <= max_dist) %>%
-    arrange(dist)
+    dplyr::filter(.data$dist > 0 & .data$dist <= max_dist) %>%
+    dplyr::arrange(.data$dist)
   
   #if too few neighbouring values, then the test can't be carried out
   if(nrow(aux_info) < min_station){
@@ -109,9 +109,9 @@ test_temperature_corroboration <- function(weather, weather_coords,
     #calculate climate mean and sd of aux data
     climate_df <- purrr::map(unique(x$doy), ~get_longterm_mean_and_sd(weather = x, variable = variable,
                                                                doy = .x)) %>%
-      bind_rows() %>%
+      dplyr::bind_rows() %>%
       merge(x, by = 'doy', all.y = TRUE) %>%
-      arrange(Date)
+      dplyr::arrange(.data$Date)
 
     #calculate climate anomaly of aux data
     x$anomaly <- (x[[variable]] - climate_df$mean)
@@ -124,11 +124,11 @@ test_temperature_corroboration <- function(weather, weather_coords,
   names(x)[2] <- 'x'
   
   #extract data from aux_list
-  y <- map(aux_list, function(y){
+  y <- purrr::map(aux_list, function(y){
       int <- merge.data.frame(x, y[,c('Date', 'anomaly')], 
                        by = 'Date', all.x = T)
       return(int[,'anomaly'])}) %>%
-    bind_cols()
+    dplyr::bind_cols()
   
   #bind by columns to a matrix
   y <- tibble::tibble(y, dplyr::lead(y), dplyr::lag(y), .name_repair = 'minimal') %>%

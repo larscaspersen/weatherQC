@@ -290,7 +290,7 @@ weather_qc_durre <- function(weather_list,
   if(is.null(region) == FALSE & is.null(subregion) == FALSE){
     #download records
     records <- get_weather_records(region = region) %>%
-      dplyr::filter(Country == subregion)
+      dplyr::filter(.data$Country == subregion)
     
     records_temp <- c(records$Tmin, records$Tmax)
     records_precip <- c(0, records$Precip)

@@ -28,8 +28,8 @@
 #' \insertAllCited{}
 #' @export
 test_spike_dip <- function(weather, variable, dip_threshold = 25){
-  flag <- abs(weather[,variable] - lead(weather[,variable])) >= dip_threshold & abs(weather[,variable] - lag(weather[,variable])) >= dip_threshold
+  flag <- abs(weather[,variable] - dplyr::lead(weather[,variable])) >= dip_threshold & abs(weather[,variable] - dplyr::lag(weather[,variable])) >= dip_threshold
   
-  flag <- replace_na(flag[,1], FALSE)
+  flag <- tidyr::replace_na(flag[,1], FALSE)
   return(flag)
 }

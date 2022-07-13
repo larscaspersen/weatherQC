@@ -86,7 +86,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
     select_target_days(df = x, variable = variable, period_start = period_start, 
                        period_end = period_end)
   }) %>%
-    do.call(cbind.data.frame, .)
+    do.call(cbind.data.frame, .data)
   
   #only keep aux stations which fulfill coverage criteria
   aux_info <- aux_info[colSums(is.na(x) == F & is.na(y) == F) >= min_coverage, ]
@@ -151,7 +151,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   rm(models)  
   
   #standardized residuals (by mean and std)
-  x_res_norm <- (x_res - mean(x_res, na.rm = T)) / sd(x_res, na.rm = T)
+  x_res_norm <- (x_res - mean(x_res, na.rm = T)) / stats::sd(x_res, na.rm = T)
   
   
   #take only the values for the month
@@ -162,7 +162,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   flag_res <- ifelse(is.na(x_res), yes = F, no = abs(x_res) >= max_res)
   flag_res_norm <-  ifelse(is.na(x_res_norm), yes = F, no = abs(x_res_norm) >= max_res_norm)
   
-  flag <- replace_na(flag_res & flag_res_norm, FALSE)
+  flag <- tidyr::replace_na(flag_res & flag_res_norm, FALSE)
   
   #if either the residuals or the standardized resiudals exceed the threshold, return for that given day a true
   return(flag)

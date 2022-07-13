@@ -51,8 +51,8 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
   
   #select stations within the max distance, which are not the target station
   aux_info <- aux_info %>%
-    filter(dist > 0 & dist <= max_dist) %>%
-    arrange(dist)
+    dplyr::filter(.data$dist > 0 & .data$dist <= max_dist) %>%
+    dplyr::arrange(.data$dist)
   
   #if too few neighbouring values, then the test can't be carried out
   if(nrow(aux_info) < min_station){
@@ -70,8 +70,8 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
   weather$prec_rank <- get_prec_rank(weather = weather)
   
   #also add prec rank to aux data
-  aux_list <-  map(aux_list, get_prec_rank) %>%
-    map2(., aux_list, function(x,y) tibble(y, prec_rank = x))
+  aux_list <-  purrr::map(aux_list, get_prec_rank) %>%
+    purrr::map2(.data, aux_list, function(x,y) tibble::tibble(y, prec_rank = x))
   
   ####
   #get absolute minimum difference
@@ -86,7 +86,7 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
     int <- merge.data.frame(x_org, y[,c('Date', 'Precip')], 
                             by = 'Date', all.x = T)
     return(int[,'Precip'])}) %>%
-    bind_cols()
+    dplyr::bind_cols()
   
   #bind by columns to a matrix
   y_org <- tibble::tibble(y_org, dplyr::lead(y_org), dplyr::lag(y_org), .name_repair = 'minimal') %>%
