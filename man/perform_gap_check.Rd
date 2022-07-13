@@ -44,7 +44,7 @@ This function is part of the weather quality control scheme after \insertCite{du
 please refer to section 4 "Outlier checks".
 }
 \examples{
-perform_gap_check(weather = weather, variable = "Tmin")
+perform_gap_check(weather = target_weather, variable = "Tmin")
 }
 \references{
 \insertAllCited{}
