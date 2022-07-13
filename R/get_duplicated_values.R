@@ -38,6 +38,10 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   #instanice the flags
   flag_dup_year <- flag_dup_mon <- flag_dup_mon2 <- flag_ident_temp <- rep(F, nrow(weather))
   
+  #this is just to avoid NOTES in the CMD-test, because the test doesn't
+  #like . in the pipes, but I am too bad at coding to avoid it
+  . <- NULL
+  
   ####
   #duplicated years
   ####
@@ -105,21 +109,22 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   
   if(any(t2)){
     #in case there is duplictaed month, find out which year
-    sus_year <- split(weather, weather$Year) %>%
+    index <- split(weather, weather$Year) %>%
       purrr::map_lgl(function(x) any(duplicated(split(x[,variable], x$Month)))) %>%
       which() %>%
-      unique(weather$Year)[.data]
+      unname()
+    sus_year <- unique(weather$Year)[index]
     
     #for this year(s) check which months are duplicated
     res1 <- weather %>%
       dplyr::filter(.data$Year %in% sus_year) %>%
-      split(.data$Year) %>%
+      split(.$Year) %>%
       purrr::map(function(x) duplicated(split(x[,variable], x$Month))) %>%
       purrr::map(which)
     
     res2 <-weather %>%
       dplyr::filter(.data$Year %in% sus_year) %>%
-      split(.data$Year) %>%
+      split(.$Year) %>%
       purrr::map(function(x) duplicated(split(x[,variable], x$Month), fromLast=TRUE)) %>%
       purrr::map(which)
     
@@ -148,23 +153,25 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   
   if(any(t3)){
     #identify month of duplicates
-    sus_month <- split(weather, weather$Month) %>%
+    index <- split(weather, weather$Month) %>%
       purrr::map_lgl(function(x) any(duplicated(split(x[,variable], x$Year)))) %>%
       which() %>%
-      unique(weather$Month)[.data]
+      unname()
+    
+    sus_month <- unique(weather$Month)[index]
     
     #identify which year of the months is problematic
     
     #for this year(s) checj which months are duplciated
     res1 <- weather %>%
       dplyr::filter(.data$Month %in% sus_month) %>%
-      split(.data$Month) %>%
+      split(.$Month) %>%
       purrr::map(function(x) duplicated(split(x[,variable], x$Year))) %>%
       purrr::map(which)
     
     res2 <-weather %>%
       dplyr::filter(.data$Month %in% sus_month) %>%
-      split(.data$Month) %>%
+      split(.$Month) %>%
       purrr::map(function(x) duplicated(split(x[,variable], x$Year), fromLast=TRUE)) %>%
       purrr::map(which)
     
