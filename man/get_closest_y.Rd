@@ -26,7 +26,7 @@ values in y which are the closest to x, the first one is returned. In case x
 or y only contains NA, the function returns NA instead.
 }
 \examples{
-get_closest_y(x = 1, y = c(0,2,3))
+get_closest_y(x = 1, y = c(0,2,3), i = 1)
 }
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}

@@ -12,7 +12,7 @@
 #' @param i index of value of interest on vector x
 #' @return value in \code{y} which is the closest to \code{x}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
-#' @examples get_closest_y(x = 1, y = c(0,2,3))
+#' @examples get_closest_y(x = 1, y = c(0,2,3), i = 1)
 #' @export
 get_closest_y <-  function(x,y,i){
   #if x is NA or all of y, then return na
