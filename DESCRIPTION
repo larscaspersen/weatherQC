@@ -1,14 +1,32 @@
-Package: weatherQC
 Type: Package
+Package: weatherQC
 Title: Quality Control for Daily Weather Data
 Version: 0.0.1.0
-Authors@R: person("Lars", "Caspersen", email = "lars.caspersen@uni-bonn.de",
-                  role = c("aut", "cre"))
-Description: This package contains two daily weather quality control algorithms
-RoxygenNote: 7.2.0
-Encoding: UTF-8
-Imports: Rdpack, rvest, readr, rlang, data.table, dplyr, reshape2, purrr, lubridate, sp, magrittr
-RdMacros: Rdpack
+Authors@R: 
+    person("Lars", "Caspersen", , "lars.caspersen@uni-bonn.de", role = c("aut", "cre"))
+Description: This package contains two daily weather quality control
+    algorithms, which allow to omit erroneous weather observations.
 Depends: 
     R (>= 2.10)
+Imports: 
+    data.table,
+    dplyr,
+    lubridate,
+    magrittr,
+    purrr,
+    Rdpack,
+    readr,
+    reshape2,
+    rlang,
+    rvest,
+    sp,
+    tibble
+RdMacros: 
+    Rdpack
+Encoding: UTF-8
+License: GPL-3
 LazyData: true
+RoxygenNote: 7.2.0
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
