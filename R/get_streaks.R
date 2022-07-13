@@ -49,13 +49,13 @@ get_streaks <- function(weather, variable, rep_threshold = 20){
   }
   
   x <- x %>%  
-    dplyr::mutate(.data$lagged = dplyr::lag(.data$trials)) %>% #note: that's dplyr::lag, not stats::lag
-    dplyr::mutate(.data$start = (.data$trials != .data$lagged))
+    dplyr::mutate('lagged' = dplyr::lag(.data$trials)) %>% #note: that's dplyr::lag, not stats::lag
+    dplyr::mutate('start' = (.data$trials != .data$lagged))
   
   x[1, "start"] <- TRUE
-  x <- x %>% dplyr::mutate(streak_id=cumsum(.data$start))
+  x <- x %>% dplyr::mutate('streak_id' = cumsum(.data$start))
   x <- x %>% dplyr::group_by(.data$streak_id) %>% 
-    dplyr::mutate(.data$streak = dplyr::row_number()) %>%
+    dplyr::mutate('streak' = dplyr::row_number()) %>%
     dplyr::ungroup()
   
   #filter days which exceed the streak id

@@ -10,6 +10,8 @@ get_closest_y(x, y, i)
 \item{x}{numerical value}
 
 \item{y}{vector, for which the closest value compared to x is searched}
+
+\item{i}{index of value of interest on vector x}
 }
 \value{
 value in \code{y} which is the closest to \code{x}

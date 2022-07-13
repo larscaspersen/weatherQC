@@ -48,8 +48,8 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
     #only take years which have at least three non-zero precipitation events
     invest_years <- weather %>%
       dplyr::group_by(.data$Year) %>%
-      dplyr::summarise(.data$n_nonzero = sum(.data$Precip > 0, na.rm =T)) %>%
-      dplyr::filter(n_nonzero >= 3) %>%
+      dplyr::summarise(n_nonzero = sum(.data$Precip > 0, na.rm = T)) %>%
+      dplyr::filter(.data$n_nonzero >= 3) %>%
       dplyr::select(.data$Year) %>%
       unlist()
     
@@ -89,9 +89,9 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   if(variable == 'Precip'){
     invest_periods <- weather %>%
       dplyr::group_by(.data$Year, .data$Month) %>%
-      dplyr::summarise(.data$n_nonzero = sum(.data$Precip > 0, na.rm =T)) %>%
+      dplyr::summarise('n_nonzero' = sum(.data$Precip > 0, na.rm =T)) %>%
       dplyr::filter(.data$n_nonzero >= 3) %>%
-      dplyr::mutate(.data$period = paste(.data$Year, .data$Month, sep = ' ')) %>%
+      dplyr::mutate('period' = paste(.data$Year, .data$Month, sep = ' ')) %>%
       dplyr::pull(.data$period)
     
     #subset weather by invest period
@@ -193,8 +193,8 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   if(variable %in% c('Tmin', 'Tmax')){
     sus_period <- weather %>%
       dplyr::group_by(.data$Year, .data$Month) %>%
-      dplyr::summarise(.data$same_temp = sum(.data$Tmin == .data$Tmax, na.rm = T)) %>%
-      dplyr::mutate(.data$period = paste(.data$Year, .data$Month, sep = ' ')) %>%
+      dplyr::summarise('same_temp' = sum(.data$Tmin == .data$Tmax, na.rm = T)) %>%
+      dplyr::mutate('period' = paste(.data$Year, .data$Month, sep = ' ')) %>%
       dplyr::filter(.data$same_temp >= same_temp_threshold) %>%
       dplyr::pull(.data$period)
     

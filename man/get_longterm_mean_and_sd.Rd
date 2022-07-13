@@ -12,6 +12,8 @@ It should have columns c("Year", "Month", "Day")}
 
 \item{variable}{a character indicating the column name of the tested variable 
 in weather}
+
+\item{doy}{day of the year, for which longterm mean and sd should be calculated}
 }
 \value{
 data.frame with columns c(doy, mean, sd)

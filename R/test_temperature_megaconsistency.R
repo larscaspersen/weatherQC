@@ -32,12 +32,12 @@ test_temperature_megaconsistency <- function(weather, min_obs = 140){
   #for each month get max(tmax) and min(tmin)
   flags <- weather %>%
     dplyr::group_by(.data$Month) %>%
-    dplyr::mutate(.data$flag_tmin = .data$Tmin > max(.data$Tmax, na.rm = T),
-           .data$flag_tmax = .data$Tmax < min(.data$Tmin, na.rm = T)) %>%
+    dplyr::mutate('flag_tmin' = .data$Tmin > max(.data$Tmax, na.rm = T),
+           'flag_tmax' = .data$Tmax < min(.data$Tmin, na.rm = T)) %>%
     dplyr::ungroup() %>%
     dplyr::select(.data$Month, .data$flag_tmin, .data$flag_tmax) %>%
-    dplyr::mutate(.data$flag_tmin = tidyr::replace_na(.data$flag_tmin, FALSE),
-           .data$flag_tmax = .data$replace_na(.data$flag_tmax, FALSE))
+    dplyr::mutate('flag_tmin' = tidyr::replace_na(.data$flag_tmin, FALSE),
+           'flag_tmax' = .data$replace_na(.data$flag_tmax, FALSE))
   
   #check if each month has enough observations, otherwise replace flags with FALSE
   obs_tmax <- weather %>%

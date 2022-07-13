@@ -159,18 +159,6 @@ to neighbouring observations for temperature anomalies}
 \item{min_obs_megaconsistency}{minimum amount of observation per calendar month in order 
 to be considered in the test, otherwise for the calendar month all observations
 automatically get flagged as FALSE}
-
-\item{variable}{column name in \code{weather} for which the test is performed. Should
-be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
-name}
-
-\item{probs_variable_limit}{percentile used as a testing threshold for variable limit test}
-
-\item{probs_temporal_continuity}{percentile uded as a testing threshold for 
-temporal conitnuity test}
-
-\item{probs_temperature_consistency}{percentile used as a testing threshold
-for temperature consistency test}
 }
 \value{
 data.frame with \code{nrow(weather)} rows and the same columns as
