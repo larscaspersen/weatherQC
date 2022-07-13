@@ -5,3 +5,6 @@
 ^figures$
 ^README\.Rmd$
 ^data-raw$
+^bibliography\.bib$
+^cache$
+^vignette$
