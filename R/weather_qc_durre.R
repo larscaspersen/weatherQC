@@ -147,10 +147,30 @@
 #' the original value was removed, a comment indicating which test let to the removal
 #' can be found in the "flag_" plus variable name column.
 #' @examples 
+#' \donotrun{
+#' #prepare input
 #' weather_list <- list(target_weather)
 #' names(weather_list) <- target_info$id
+#' 
+#' #run without spatial test
 #' weather_qc_durre(weather_list = weather_list, 
 #' skip_spatial_test = TRUE, mute = TRUE)
+#' 
+#' #run with spatial test 
+#' weather_qc_durre(weather_list = weather_list, 
+#' weather_info = target_info,
+#' aux_list = neighbour_weather,
+#' aux_info = neighbour_info,
+#' mute = TRUE)
+#' 
+#' #' #run with spatial test and regio-specific test limit
+#' weather_qc_durre(weather_list = weather_list, 
+#' weather_info = target_info,
+#' aux_list = neighbour_weather,
+#' aux_info = neighbour_info,
+#' region = 'USA', subregion = 'California',
+#' mute = TRUE)
+#' }
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt 
 #' @import magrittr

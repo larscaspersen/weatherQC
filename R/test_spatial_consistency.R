@@ -63,9 +63,12 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples test_spatial_consistency(weather = target_weather,
+#' @examples 
+#' \donotrun{
+#' test_spatial_consistency(weather = target_weather,
 #' weather_coords = c(target_info$Longitude, target_info$Latitude),
 #' aux_info = neighbour_info, aux_list = neighbour_weather, variable = "Tmin")
+#' }
 #' @seealso \code{\link{test_precipitation_spatial_corroboration}}, \code{\link{test_temperature_corroboration}},
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
