@@ -22,7 +22,7 @@
 #' or larger, then function flags data. By default 300 mm
 #' @return Logical vector of same length as rows in \code{weather}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test.
-#' @examples perform_gap_check(weather = weather, variable = "Tmin")
+#' @examples perform_gap_check(weather = target_weather, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
@@ -30,6 +30,9 @@
 #' @export
 perform_gap_check <- function(weather, variable, temp_gap_threshold = 10, 
                               prec_gap_threshold = 300){
+  
+  #this is to avoid notes in the cmd check,
+  . <- NULL
   
   #set the threshold for the variable accordingly
   if(variable %in% c('Tmin', 'Tmax', 'Tmean')){
@@ -57,7 +60,7 @@ perform_gap_check <- function(weather, variable, temp_gap_threshold = 10,
   }) %>%
     dplyr::bind_rows() %>%
     dplyr::arrange(.data$Date) %>%
-    merge.data.frame(weather, .data, by = colnames(weather), all.x = TRUE) %>%
+    merge.data.frame(weather, ., by = colnames(weather), all.x = TRUE) %>%
     dplyr::select(gap_flag)
   
   #replace NAs with FALSE values
