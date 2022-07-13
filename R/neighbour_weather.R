@@ -8,7 +8,7 @@
 #'
 #' @format A list of 12 data.frames with varying amount rows and 8 variables:
 #' \describe{
-#'   \item{Weather Station}{Name of station}
+#'   \item{Weather_Station}{Name of station}
 #'   \item{Year}{Year}
 #'   \item{Month}{Month}
 #'   \item{Day}{Day}
@@ -18,5 +18,6 @@
 #'   \item{Date}{Date}
 #' }
 #' @usage data(neighbour_weather)
+#' @docType data
 #' @source \url{https://cimis.water.ca.gov/} and \url{http://ipm.ucanr.edu/}
 "neighbour_weather"

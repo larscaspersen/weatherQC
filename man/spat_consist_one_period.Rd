@@ -23,10 +23,10 @@ spat_consist_one_period(
 \item{weather}{data.frame containing a daily time series data set. 
 It should have columns c("Year", "Month", "Day")}
 
-\item{aux_list}{named list of data.frames with daily weather obsrvations of auxiliary
-weather stations. Names should be identical to \code{aux_info$id}. Strucuture of 
-data.frames should be identical of \code{weather}. Data.frames do not necissarily
-need to cover excat same time period as \code{weather}}
+\item{aux_list}{named list of data.frames with daily weather observations of auxiliary
+weather stations. Names should be identical to \code{aux_info$id}. Structure of 
+data.frames should be identical of \code{weather}. Data.frames do not necessarily
+need to cover exact same time period as \code{weather}}
 
 \item{aux_info}{data.frame listing the auxiliary weather stations. Should at least contain
 the columns c("id", "Longitude", "Latitude")}
@@ -37,7 +37,7 @@ the columns c("id", "Longitude", "Latitude")}
 be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
 name}
 
-\item{max_res}{testing threshold, highest regular resiudal tolerated by test}
+\item{max_res}{testing threshold, highest regular residual tolerated by test}
 
 \item{max_res_norm}{testing threshold, highest standardized residual tolerated
 by the test. Note: both thresholds need to be exceeded in order for the 
@@ -47,7 +47,7 @@ test to yield a flag}
 is available, then test is not carried out and automatically returns \code{FALSE}
 for every observation}
 
-\item{max_station}{maximum number of neighbouring stations included in the test.
+\item{max_station}{maximum number of neighboring stations included in the test.
 If more auxiliary stations available than \code{max_station}, then closest ones
 are taken}
 

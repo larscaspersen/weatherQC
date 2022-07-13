@@ -7,7 +7,7 @@
 \format{
 A list of 12 data.frames with varying amount rows and 8 variables:
 \describe{
-  \item{Weather Station}{Name of station}
+  \item{Weather_Station}{Name of station}
   \item{Year}{Year}
   \item{Month}{Month}
   \item{Day}{Day}

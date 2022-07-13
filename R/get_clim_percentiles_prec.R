@@ -53,10 +53,15 @@ get_clim_percentiles_prec <- function(weather, doy, probs = c(0.3,0.5,0.7,0.9),
   
   #take non zero precipitation data from the 29 window over all years, 
   #make it a empirical cumulative distribution function, then determine 
-  #the percentile of the valuz 
-  return(weather$Precip[target_days] %>%
-            stats::na.omit() %>%
-           .data[.data > 0] %>%
-           stats::quantile(probs = probs))
+  #the percentile of the value
+  
+  #extract target days, drop nas
+  precip <- weather$Precip[target_days] %>%
+    stats::na.omit()
+  
+  result <- precip[precip > 0] %>%
+    stats::quantile(probs = probs)
+  
+  return(result)
   
 }

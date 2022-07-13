@@ -7,7 +7,7 @@
 \format{
 A data frame with 11688 rows and 14 variables:
 \describe{
-  \item{Weather Station}{Name of station}
+  \item{Weather_Station}{Name of station}
   \item{Year}{Year}
   \item{Month}{Month}
   \item{Day}{Day}

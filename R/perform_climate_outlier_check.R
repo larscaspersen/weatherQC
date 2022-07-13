@@ -66,6 +66,7 @@ perform_climate_outlier_check <- function(weather, variable,
       unlist() %>%
       data.frame(doy = unique(weather$doy), percentile = .data) %>%
       merge.data.frame(weather, .data, by = 'doy') %>%
+      dplyr::arrange(.data$Date)
     
     #in case precipitation happening at freezing temperatures, choose a lower threshold
     clim_outlier <- weather[,variable] >= ifelse((weather$Tmax + weather$Tmin) / 2 > 0, yes = weather$percentile * max_prec_threshold, 

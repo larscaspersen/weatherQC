@@ -11,5 +11,6 @@
 #'   \item{Latitude}{latitude of weather station in decimal format}
 #' }
 #' @usage data(neighbour_info)
+#' @docType data
 #' @source \url{https://cimis.water.ca.gov/} and \url{http://ipm.ucanr.edu/}
 "neighbour_info"
