@@ -42,7 +42,7 @@ get_weather_records <- function(region = "world"){
     warm <- readr::parse_number(temp_table$Hottest)
     
     #cases where we have negative value: strip the weird minus sign and add the 'real' minus
-    neg_val <- str_detect(temp_table$Hottest, pattern = rlang::chr_unserialise_unicode('<U+2212>'))
+    neg_val <- stringr::str_detect(temp_table$Hottest, pattern = rlang::chr_unserialise_unicode('<U+2212>'))
     warm[neg_val] <- warm[neg_val] * -1
     
     
@@ -68,7 +68,7 @@ get_weather_records <- function(region = "world"){
     records <- records %>%
       dplyr::select(.data$State, .data$Element, .data$Value) %>%
       dplyr::filter(.data$Element %in% c('All-Time Maximum Temperature', 'All-Time Minimum Temperature', 'All-Time Greatest 24-Hour Precipitation')) %>%
-      dplyr::mutate('Element' = as.factor(Element)) %>%
+      dplyr::mutate('Element' = as.factor(.data$Element)) %>%
       dplyr::mutate('Element' = dplyr::recode_factor(.data$Element, 'All-Time Minimum Temperature' = 'Tmin', 
                                      'All-Time Maximum Temperature' = 'Tmax',
                                      'All-Time Greatest 24-Hour Precipitation' = 'Precip')) %>%

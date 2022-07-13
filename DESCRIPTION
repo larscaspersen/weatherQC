@@ -20,7 +20,9 @@ Imports:
     rlang,
     rvest,
     sp,
-    tibble
+    stringr,
+    tibble,
+    tidyr
 RdMacros: 
     Rdpack
 Encoding: UTF-8

@@ -199,8 +199,8 @@ weather_qc_durre <- function(weather_list,
     tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax, 'Tmean_org' = x$Tmean,
                    'Precip_org' = x$Precip,'flag_Tmin' = NA, 
                    'flag_Tmax' = NA, 'flag_Tmean' = NA,'flag_Precip' = NA) %>%
-      dplyr::mutate(doy = lubridate::yday(Date)) %>%
-      dplyr::relocate(Date, doy)#make sure date and doy are in beginning of columns
+      dplyr::mutate(doy = lubridate::yday(.data$Date)) %>%
+      dplyr::relocate(.data$Date, .data$doy)#make sure date and doy are in beginning of columns
     
   }) 
   

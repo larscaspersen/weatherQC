@@ -44,13 +44,13 @@ test_temperature_megaconsistency <- function(weather, min_obs = 140){
     dplyr::group_by(.data$Month) %>%
     dplyr::select(.data$Tmax) %>%
     stats::na.omit() %>%
-    dplyr::summarise(n = n())
+    dplyr::summarise('n' = dplyr::n())
   
   obs_tmin <- weather %>%
-    dplyr::group_by(Month) %>%
-    dplyr::select(Tmin) %>%
-    na.omit() %>%
-    dplyr::summarise(n = n())
+    dplyr::group_by(.data$Month) %>%
+    dplyr::select(.data$Tmin) %>%
+    stats::na.omit() %>%
+    dplyr::summarise('n' = dplyr::n())
   
   too_few_obs <- which((obs_tmin$n >= min_obs) & (obs_tmax$n >= min_obs) == FALSE)
   

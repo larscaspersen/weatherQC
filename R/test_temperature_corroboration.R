@@ -71,9 +71,9 @@ test_temperature_corroboration <- function(weather, weather_coords,
   #and add it to weather data frame
   weather <- dplyr::map(unique(weather$doy), ~get_longterm_mean_and_sd(weather = weather, variable = variable,
                                                                 doy = .x)) %>%
-    bind_rows() %>%
+    dplyr::bind_rows() %>%
     merge(weather, by = 'doy', all.y = TRUE) %>%
-    arrange(Date)
+    dplyr::arrange(.data$Date)
   
   #calculate climate anomaly
   weather$anomaly <- weather[,variable] - weather$mean

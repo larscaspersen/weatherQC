@@ -35,9 +35,9 @@ get_abs_min_difference <- function(x, target_date, variable, aux_list){
   
   #extract values from aux station with +-1 day
   int <- purrr::map(aux_list, function(x){
-    x %>%
-      dplyr::filter(Date >= (target_date - 1) & Date <= (target_date + 1)) %>%
-      .data[[variable]]
+    x <- x %>%
+      dplyr::filter(.data$Date >= (target_date - 1) & .data$Date <= (target_date + 1)) %>%
+    x[[variable]]
   }) %>%
     unlist() %>%
     unname()

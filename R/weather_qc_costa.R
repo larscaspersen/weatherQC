@@ -151,7 +151,7 @@ weather_qc_costa <- function(weather_list,
     #make sure aux list contains tibbles and date and doy column
     aux_list <- purrr::map(aux_list, function(x){
       tibble::tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")) %>%
-        dplyr::mutate(doy = lubridate::yday(Date))
+        dplyr::mutate(doy = lubridate::yday(.data$Date))
     })
   }
 
@@ -363,7 +363,7 @@ weather_qc_costa <- function(weather_list,
                              ifelse(x$consistency_variable_Tmax, '4, ', ''),
                              ifelse(x$spatial_test_Tmax, '5, ', '')) %>%
       trimws(which = 'right') %>% #trim trailing white space
-      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
+      gsub(pattern = "\\,$", replacement = "", x = .data) #trim trailing commata
     
     x$flag_Precip <- rowSums(x[,c("fixed_lim_test_Precip", "variable_lim_test_Precip",
                                   "temporal_consistency_Precip", "consistency_variable_Precip",
@@ -375,7 +375,7 @@ weather_qc_costa <- function(weather_list,
                                ifelse(x$consistency_variable_Precip, '4, ', ''),
                                ifelse(x$spatial_test_Precip, '5, ', '')) %>%
       trimws(which = 'right') %>% #trim trailing white space
-      gsub(pattern = "\\,$", replacement = "", x = .) #trim trailing commata
+      gsub(pattern = "\\,$", replacement = "", x = .data) #trim trailing commata
     
     #drop old flag columns
     x <- x %>%
