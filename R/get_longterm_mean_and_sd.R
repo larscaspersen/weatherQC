@@ -12,6 +12,7 @@
 #' It should have columns c("Year", "Month", "Day")
 #' @param variable a character indicating the column name of the tested variable 
 #' in weather
+#' @param doy day of the year, for which longterm mean and sd should be calculated
 #' @return data.frame with columns c(doy, mean, sd)
 #' @seealso \code{\link{perform_climate_outlier_check}}
 #' @examples get_longterm_mean_and_sd(weather = target_weather, variable = "Tmin", doy = 1)

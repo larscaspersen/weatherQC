@@ -24,8 +24,6 @@
 #' please refer to section 5 "Internal and temporal consistency checks".
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")
-#' @param variable a character indicating the column name of the tested variable 
-#' in weather
 #' @param max_diff threshold for the test, spike and dips lower than this value
 #' are ignored
 #' @return data.frame with two columns and same amount of rows as in \code{weather}. 

@@ -58,9 +58,6 @@
 #' "Latitude"). The column "id" should contain the same names as the named elements of
 #' weather_list. Latitude and longitude should be in decimal format. Number of rows of 
 #' data.frame should be same as number of elements in weather_list
-#' @param variable column name in \code{weather} for which the test is performed. Should
-#' be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
-#' name
 #' @param aux_info data.frame listing the auxiliary weather stations. Should at least contain
 #' the columns c("id", "Longitude", "Latitude"). Can also be set to NULL, in that
 #' case spatial tests are automatically skipped
@@ -134,11 +131,6 @@
 #' @param max_res_norm testing threshold, highest standardized residual tolerated
 #' by the test. Note: both thresholds need to be exceeded in order for the 
 #' test to yield a flag
-#' @param probs_variable_limit percentile used as a testing threshold for variable limit test
-#' @param probs_temporal_continuity percentile uded as a testing threshold for 
-#' temporal conitnuity test
-#' @param probs_temperature_consistency percentile used as a testing threshold
-#' for temperature consistency test
 #' @param window_width amount of extra days added to the target and auxiliary
 #' weather station for the linear regression. Extra days only part of the model
 #' construction, not the testing
