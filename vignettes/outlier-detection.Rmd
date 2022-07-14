@@ -1,0 +1,988 @@
+---
+title: "outlier-detection"
+author: "Lars Caspersen"
+bibliography: REFERENCES.bib
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{outlier-detection}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(weatherQC)
+library(tidyverse)
+library(gridExtra) #for side by side plots
+library(dplyr)
+options(dplyr.summarise.inform = FALSE)
+```
+
+
+## Principle
+
+Screening for outlier in weather data is important. Erroneous weather data can be introduced to weather data sets for example via to malfunctioning of sensors or in the form of "false zeros", where a zero is intended to represent actually a missing data point instead an actual measurement. Often agencies collecting and providing data for the public exercise outlier detection and either mark suspicious weather readings with quality flags or remove them from the data set. Often there are automated checks based on deviations from confidence intervals (for example in CIMIS). I need to make more literature review! 
+
+For my master thesis I originally planned to do some chill analysis for California (since the last proper one is almost ten years ago). I noticed that especially the CIMIS weather data set is full of outliers. Some are easy to spot, but others are more subtle.
+
+
+```{r, echo=FALSE, warning=FALSE}
+
+
+#set theme
+theme_set(theme_bw(base_size = 15))
+
+target_weather$Date <- as.Date(paste(target_weather$Year, target_weather$Month, target_weather$Day, sep = '-'), format = '%Y-%m-%d')
+
+
+x_upper_outlier <- c('1990-07-02', '1992-01-15', '1990-12-15', '1990-12-25')
+y_upper_outlier <- c(84, 40, 38, 33)
+
+p1 <- ggplot(target_weather, aes(x = Date, y = Tmin)) + geom_line() +
+  geom_hline(yintercept = c(-43,57), linetype = 'dashed')+
+   annotate(geom = 'text', x = as.Date('1995-01-01'), y = c(-50,65), label = "California Temperature Records", hjust = "left") +
+  coord_cartesian(ylim = c(-100,100))
+
+
+p2 <- ggplot(target_weather, aes(x = Date, y = Tmin)) + geom_line() +
+  geom_point()+
+  coord_cartesian(ylim = c(-5,25), xlim = as.Date(c('2009-06-01', '2009-06-30')))
+
+
+grid.arrange(p1, p2, ncol=2)
+
+```
+
+I realized that some cleaning is necessary before doing further analysis (like feeding the data to weather generators or calculating chill portions). Since manual outlier detection requires time and skill (both of which I do not possess), so automated outlier detection routines are necessary. There are some general data quality packages specialised mainly for medical data @marino_r_2022 but few are specialized for weather data. The patching and homogenisation package 'Climatol' offers a simple outlier detection where the weather reading is compared to a model output @guijarro_homogenization_2021. Based on a (user-defined) threshold daily measurements with a residual (|observation - model|) exceeding the threshold were identified and removed. The reddprec package is specialized on quality control and missing data imputation of precipitation data. A detailed set of weather outlier detection algorithm is described by @durre_comprehensive_2010, who also validated the algorithms performance by manually checking the labelled outliers. Instead of using a single criterion a set of different plausibility checks were carried out. The plausibility checks range from basic integrity tests (for example duplicated records in different months) to more detailed tests like spatial integrity checks. These algorithms were also used for the Global Historical Climatology Network (GHCN-) Daily and are allegedly also available as a FORTRAN-code, but I can't find in on the web. A less exhaustive set of outlier tests were proposed by @costa_gap_2021 for a data set of Brazilian weather stations. Both proposed weather quality algorithms of @costa_gap_2021 and @durre_comprehensive_2010 were here reconstructed in R as close as possible from the descriptions in the manuscripts. While the output of both function is very similar, `weather_QC_costa` and `weather_qc_durre` differ in their testing principles. The scheme after Costa uses a parallel testing concept, erroneous data is then flagged by the convergence of at least two tests. In contrast, `weather_qc_durre` has a subsequent testing design: the testing order is important and the test become more and more specific. There, a single positive test result leads to the flagging of the observation. 
+
+
+```{r test_design, fig.align = 'center', echo=F, out.width = "50%", fig.cap = "Parallel test design of weather_qc_costa (left) and subsequent test design of weather_qc_durre (right).", label = 'tetst_design'}
+knitr::include_graphics(here::here("vignettes/figures", "diagram_quality_control.jpg"))
+```
+
+## Data set
+
+In this document I will demonstrate the functions and the tests within the weather quality control scheme at the example of one weather station in California and 12 neighbouring weather stations within a 74 km range. The data is retrieved from CIMIS and UCIPM weather station data base via the R package `chillR`. The data used in this script can be accessed with the `weatherQC` package. The target weather station data set includes daily weather observation from 1990 to then end of 2021 for minimum, maximum and mean temperature (Tmin, Tmax, Tmean) and precipitation (Precip). 
+
+```{r map_stations_california, fig.align = 'center', echo=F, out.width = "50%", fig.cap = "Map of target stations (from CIMIS database) and auxiliary weather stations for spatial plausibility checks (from UCIPM and CIMIS database)", label = 'map_stations_california'}
+knitr::include_graphics(here::here("vignettes/figures", "map_california_qc.png"))
+```
+
+
+## Basic function use
+
+The only mandatory argument is `weather_list`, which is a named list containing data.frames with daily weather observations. For full functionality, also the arguments `weather_info`, `aux_list` and `aux_info` should be supplied. `weather_info` and `aux_info` are both data.frames listing the weather
+stations in `weather_list` and `aux_list`. In both `_info` data.frames the columns `id` with a unique identifies per station (which is the same as the names in the list objects) and weather coordinates in the columns `Longitude` and `Latitude` are needed.
+With the boolean arguments `skip_spatial_test` can be decided if spatial tests (which are computationally expensive) are skipped (if aux_list and aux_info are not supplied it is automatically skipped). The boolean `mute` can be used to prevend the function from giving updates to the computation progress.
+
+The output of the functions is also similar: both return the `weather_list` object with two added columns per tested variable (so far only the variables Tmin, Tmax and Precip can be tested). These will be explained at the example of the column for minimum temperature Tmin. The original column of Tmin is altered by the function, if the test lead to a flagging of the observation it is replaced with NA. In case of `weather_qc_durre` one flag is enough for the removal of the observation, which test lead to it is indicated in `flag_Tmin`. `Tmin_org` contains the original, unaltered observations. In case of `weather_QC_durre` at least two tests need to flag an 
+observation before it gets replaced by NA. The comments in `flag_Tmin` also 
+look a bit different. The listed numbers correspond to the five tests, which are
+(1) fixed limit test, (2) variable limit test, (3) temporal consistency test
+, (4) consistency among variables (which only works for Tmin and Tmax) and (5) spatial consistency test. In cases of only one listed number, the observation was not removed.
+
+```{r}
+weather_list <- list(target_weather)
+names(weather_list) <- target_info$id
+
+output <- weather_qc_costa(weather_list = weather_list, mute = T)
+
+str(output)
+```
+
+## Details on weather_qc_costa
+
+Working on a data set of daily precipitation and temperature measurement in north-eastern Brazil, the authors proposed a set of 6 plausibility checks to detect suspicious data. The tests included checks on the meta data, fixed limit test, variable limit tests, consistency among variables, temporal consistency and spatial consistency tests. The main idea is, that a measurement needs to be flagged by at least two of these tests in order to be removed from the data set. This should reduced the amount of false positive rates. 
+The concept of the @costa_gap_2021 quality control tests has been written as an R function called `weather_qc_costa()`.
+
+The quality control checks of Costa 2021 were described with a data set containing minimum and maximum temperature, daily precipitation, relative humidity, atmospheric pressure, wind speed and insulation. However, in its current state it was written to satisfy the needs of the other functions of chillR, which only work with daily extreme temperatures and to a lesser extend with precipitation. Some of the tests require additionally the daily average temperature, so it should be supplied alongside to daily minimum and maximum temperature. 
+
+In the following the principles of the plausibility checks used in the function `weather_qc_costa()` are explained. For more details please refer to the original paper: @costa_gap_2021.
+
+### Metadata test
+
+In this version of the quality control function, the metadata accompanying the weather data was not analyzed. Originally, the test checks if the weather station specific identifier is the same throughout the weather data.
+
+### Fixed limit test
+
+This test checks if the specified variable is outside of the range of the highest and lowest measurements for the specified subregion. The records can be either supplied manually via `records`, they can be looked up by the function or the global records of `c(-89.4, 57.7)` in degree C and for temperature and `c(0, 1828.8)` for precipitation in mm are used @durre_comprehensive_2010. In case of user-defined records, it needs to contain the lower and upper bound. In case of daily precipitation the lower bound is zero. In case the user does not supply the records manually, a function downloads the weather records from resources in the internet. In case of `level = 'world'` the function scraps data from the website 'https://en.wikipedia.org/wiki/List_of_countries_and_territories_by_extreme_temperatures' which may not be the most professional looking source but I couldn't find anything else which contained most of the countries. If there are ideas for a more trusted source of temperature records, please let me know. Also, in case of variables which are not temperature, records need to be supplied manually. In case of `level = 'USA'` the function loads a csv-file accessible via 'https://www.ncdc.noaa.gov/extremes/scec/records.csv'. Sometimes the server seems to be down, in these cases records need to be supplied manually.
+
+```{r, eval=F}
+head(get_temp_records(region = 'world'))
+```
+
+As can be seen, not all countries have a complete set of record temperature and currently there is no data for precipitation. An example for the state-specific data of the United States can be seen next.
+
+
+```{r, eval=F}
+head(get_temp_records(region = 'USA'))
+```
+
+The test simply compares if the target is either lower or higher than the region-specific record. An example for Californian minimum temperature was already shown in the beginning of the document.
+
+### Variable limits test
+
+The variable limit test is based on the percentiles of the variable for each month. The test simply flags for each month observations higher than the 99% percentile or lower than the 1% percentile. Additionally to the monthly percentiles, the same is done for the whole year percentiles.
+
+```{r, echo = FALSE, warning=FALSE}
+
+limits <- target_weather %>%
+  filter(Month == 1) %>%
+  summarise(upper = quantile(Tmin, 0.99, na.rm = T),
+            lower = quantile(Tmin, 0.01, na.rm = T))
+
+target_weather %>%
+  filter(Month == 1, Year == 1992) %>%
+  ggplot(aes(x = Date)) +
+  geom_line(aes(y = Tmin))+
+  geom_point(aes(y = Tmin))+
+  geom_hline(yintercept = limits[1,1], linetype = 'dashed') + 
+  geom_hline(yintercept = limits[1,2], linetype = 'dashed') + 
+  coord_cartesian(ylim = c(-30, 50))
+
+```
+
+### Temporal consistency test
+
+This test investigates unexpected jumps and drops in the target variable. Again, the flaggin is based on percentiles. The absolute day-to-day difference of the target variable is calculated. If the difference to the following day exceeds the 99.5% percentile, then this observation receives a flag. The figure below shows the minum temperature for January 1990 at the 'Five Points' weather station. The observation at Jan-10 looks suspicious, as there is a large jump. followed by a strong dip. Using the absolute day-to-day difference and comparing it the 99.5% percentile (10.8°C) it can be seen, that the outlier is successfully detected. However, the following day receives a flag, too. But since the test requires at leas two positive tests, it is unlikely that the falsely flagged second observation at Jan-11 gets marked as suspicious data.
+
+```{r, echo=F, warning=FALSE}
+example_df <- data.frame(Tmin = target_weather$Tmin[1:31], Date = target_weather$Date[1:31])
+example_df$Tmin[10] <- 15
+example_df$diff_next_day <- c(abs(diff(example_df$Tmin)),NA)
+
+example_df_long <- reshape2::melt(example_df, id.var = 'Date')
+
+quan_df <- data.frame(variable = c('Tmin', 'diff_next_day'), 
+                      value = c(NA,quantile(abs(diff(target_weather$Tmin)), probs = 0.995, na.rm = T)))
+
+quan_df$variable <- factor(quan_df$variable, levels = c('Tmin', 'diff_next_day'))
+
+library(ggplot2)
+ggplot(example_df_long, aes(x = Date)) +
+  geom_line(aes(y = value, group = variable)) + 
+  geom_point(aes(y = value)) + 
+  geom_hline(data = quan_df, aes(yintercept = value), linetype = 'dashed')+
+  facet_wrap(~variable,nrow = 2,ncol = 1)
+
+```
+
+Wouldnt this test applied to precipitation penelize strong precipitation events? These events probably also get a flag by the variable limits test.
+
+### Variable consistency test
+
+These tests mainly focus on temperature variables. They include simple tests, such as that daily minimum temperature should not exceed daily maximum temperature, or that average temperature should be lower than maximum but higher than minimum temperature of the same day.
+Additionally it compares the reported average temperature to the mean of daily minumum and maximum temperature. Absolute residuals of reported to computed daily mean temperautre exceeding the 99% percentile also get flagged. In these cases both minimum and maximum temperature get flagged.
+
+```{r, echo=F, warning=FALSE}
+int_df <- target_weather %>%
+  mutate(Tmean_calc = (Tmin + Tmax)/2) %>%
+  mutate(Tmean_res = Tmean - Tmean_calc)
+
+lim <- quantile(abs(int_df$Tmean_res), probs = 0.99, na.rm = T)
+
+ggplot(int_df, aes(x = Tmean, y = Tmean_calc)) + 
+  geom_point() + 
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed', col = 'blue') +
+  geom_abline(slope = 1, intercept = lim, col = 'blue')+
+  geom_abline(slope = 1, intercept =-lim, col = 'blue')+
+  coord_cartesian(xlim = c(-10, 40), y = c(-10, 40)) 
+
+```
+
+### Spatial consistency test
+
+The authors mentioned that a spatial consistency test was carried out, but they did not explain any details to it. So for this kind of test, spatial regression of temperature and spatial corroboration test for precipitation were taken instead, which is explained in more detail by Durre 2010 and in the lower section dedicated to the Durre 2010 weather quality test. in general the outcome of the spatial consistency test also depend on the quality of the auxiliary weather stations. 
+
+### Run quality control after Costa 2021
+
+```{r, eval=FALSE}
+
+#run costa 2021 quality control
+costa_test_result <- weather_qc_costa(weather_list =  weather_list,
+                                weather_info = target_info, 
+                                aux_list = neighbour_weather, 
+                                aux_info = neighbour_info,
+                                skip_spatial_test = F,
+                                mute = TRUE,
+                                region = 'USA', 
+                                subregion = 'California')
+
+costa_test_result <- costa_test_result[[1]]
+
+#check the output
+head(costa_test_result[,c("Date", "Tmin", "Tmax", "Tmin_org", "Tmax_org", "flag_Tmin", "flag_Tmax")])
+
+
+```
+
+```{r,  echo=FALSE}
+
+#run costa 2021 quality control
+costa_test_result <- read.csv('qc_costa_example.csv')
+
+costa_test_result$Date <- as.Date(costa_test_result$Date)
+
+#check the output
+head(costa_test_result[,c("Date", "Tmin", "Tmax", "Tmin_org", "Tmax_org", "flag_Tmin", "flag_Tmax")])
+
+
+```
+
+In the column `flag_Tmin` you can see that for the fourth day the second quality test (variable limit test) raised a flag. But because it was the only raised flag, the observation was not removed from `Tmin` and is thus the same as in the original column `Tmin_org`. One of the major drawbacks of this test approach compared to `weather_qc_durre` is, that the erroneous data can deteriorate subsequent tests, as they are only removed after all tests are done.
+
+
+## Weather quality control after @durre_comprehensive_2010
+
+As we could see the testing philosophy of @costa_gap_2021 was to use the union of very sensitive test and more specific ones to flag suspicious data. The testing philosophy of @durre_comprehensive_2010 quality control schemes is different. The qc-scheme uses more tests, the testing limits are however very wide and the testing order plays an important role. Each positive test leads automatically to an outlier flag and the removal of the observation. The testing ranges are wide to reduce the false positive rate. The first tests are very broad and become more and more specific with the progress of the qc-scheme. At first basic integrity tests are carried out to detect duplicated months or 'false zeros'. Then come the outlier checks for instance for climatological outliers (similar to the variable limits test). However, the tests rely on hard threshold instead of percentiles.  The comes the temporal consistency tests like the spike and dips test (similar to the temporal consistency test of @costa_gap_2021). Next come spatial consistency test which include linear regressions and corroboration tests. Finally megaconsistency test look for remaining inconsistency of the data. The original testing framework of @durre_comprehensive_2010 included tests for snow coverage, but these were skipped in the here presented R-functions. In the following the test will be explained, for more details please refer to @durre_comprehensive_2010.
+
+The function is run the same way as explained in `weather_qc_costa`. A named list containing the weather observation is always required. To run also spatial consistency tests additional arguments in form of weather station coordinates of the targeted weather station, coordinates of auxiliary weather stations and a list of auxiliary observations are needed in that case. Here is an example how to run the function, 
+it may take around 2 - 5 minutes to run, because the spatial tests are quite slow.
+
+```{r, eval=FALSE}
+
+#run costa 2021 quality control
+durre_test_result <- weather_qc_durre(weather_list =  weather_list,
+                                weather_info = target_info, 
+                                aux_list = neighbour_weather, 
+                                aux_info = neighbour_info,
+                                mute = TRUE,
+                                region = 'USA', 
+                                subregion = 'California')
+
+durre_test_result <- durre_test_result[[1]]
+```
+
+```{r, echo = F}
+
+durre_test_result <- read.csv('qc_durre_example.csv')
+durre_test_result$Date <- as.Date(durre_test_result$Date)
+```
+
+
+### Basic integrity checks
+
+The basic integrity tests include tests which try to detect severe problems with the data. For example the  function `test_naught_weather()` investigates repetitions of false zeros in temperature data. It checks if minimum and maximum daily temperature both are either 0°C or -17.8°C (which are 0°F). In such a case both observations get removed. 
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'naught_check', na.rm = T)
+
+```
+
+As you can see the test did not reveal any cases of false zeros in the data set.
+
+The second function called `get_duplicated_values()` performs several checks to detect duplicated values. For precipitation data it checks if whole years are duplicated, given a year contains at least three rain events. For temperature and precipitation data the function also checks if either months of the same year are duplicated or if same months of different years contain exactly the same data (in case of precipitation there needs to be at least three rain events for a month to be included in the test). Furthermore, the test checks for months containing at least 10 cases in which minimum and maximum temperature are equal. In case one of the test finds instances of a duplicated month/year, the whole observation of that detected period gets flagged. The `get_duplicated_values()` function does not return any flags for non_NA observations when applied to Tmin, Tmax or Precip. However, it returns flags for some months which have no observations at all. This behavior should be changed, because the flags are in these cases meaningless and potentially misleading.
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'duplicated', na.rm = T)
+
+```
+
+Again, no cases of duplicated years or months detected within the data set. 
+
+Next comes the record exceedance test. It is implemented as described in the Costa 2021 quality control algorithm. The function `fixed_limit_test()` allows for the retrieval of country-specific temperature records and in the case of US-States also precipitation records. Then, it flags observations outside the record range. Alternatively user-defined records or the world-wide records can be used. This deviates from the description of Durre 2010, who used global temperature and precipitation records for the test. In the case of this vignette the outcome is the same as described in the section for `weather-qc_durre()`. Because the test design is subsequent in `weather_qc_durre` the test still has to be carried out and the flagged values need to be removed from the observation column. To clear the data and make a comment which test lead to the removal, one can use the `clear_flagged_data` function (however, it only really pays of if several stations are tested and cleared at the same time)
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'record_exceedance', na.rm = T)
+
+```
+
+```{r, include=FALSE, eval=F}
+#old chunk
+
+#save original observation to extra column
+target_weather$org_Tmin <- target_weather$Tmin
+
+target_weather <- clear_flagged_data(weather = target_weather, variable = 'Tmin', 
+                   test_result = test_fixed_limit(weather = target_weather, 
+                                                  variable = 'Tmin',
+                                                  region =  'USA',
+                                                  subregion = 'California'),
+                   test_name = 'record_exceedance')
+
+```
+
+Next comes the identical value streak test, which only applies to minimum and maximum temperature. It is carried out using the `get_streaks()` function. It tests if 20 or more subsequent observations of a variable have the exactly the same value. Missing values are skipped when evaluating for streaks. In such a case all values belonging to the streak are flagged. No cases of identical streak were detected for the data set.
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'streaks', na.rm = T)
+
+```
+
+A similar test is also available for precipitation, called `check_frequent_value()`. Before the test is run, the percentiles for each day of the year is calculated using the function `get_each_day_precipitation_percentile()`. Precipitation percentiles for each day of the year is calculated using a 29-day window centered at the day of interest. All non-zero precipitation observations throughout the observation period lying in that observation-window are used to calculate the percentiles.
+The `check_frequent_value()` test ignores missing observation or zero-precipitation observations. For the remaining data it checks for a 10 day window, if five or more identical precipitation observations can be found. Given the frequency of the repeated value, it is then checked if the repeated value exceeds a certain climatological precipitation percentile for that day of the year, which was calculated before. The more often the suspected values is repeated, the lower the testing threshold is. For 9 - 10 identical repeated values the threshold is the 30% percentiles, for 8 repeated values the 50% percentile, for 7 the 70% percentile and for 5-6 repeated values the 90% percentile. 
+
+
+```{r, include=FALSE, eval=F}
+
+  #calculate percentiles for each weather df, store in list
+  prec_percentile_df<- get_each_day_precipitation_percentile(weather = target_weather)
+
+  #carry out test
+check_frequent_value(weather = target_weather, percentile_df = prec_percentile_df) %>%
+  sum()
+
+```
+
+Again, no cases detected.
+
+
+### Outlier checks
+
+In the next section the daily observations are compared to the longterm observation for the same variable. 
+
+At first the so-called gap-test is carried out using the `perform_gap_check()` function. For each month of the year, the observations are tested independently. The test evaluates the ordered observations for gaps larger than 10°C in case of temperature and 300mm for precipitation. In case of temperature the search for gaps start at the median and goes to the tails of the distribution. In case of a gap, each observation to the tail side of the distribution is flagged. The search for gaps in precipitation starts at the first non-zero observation and includes only the upper tail of the distribution.
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'gap_check', na.rm = T)
+
+```
+
+```{r, include=FALSE, eval=F}
+
+#check for second stations which ones were marked
+perform_gap_check(weather = target_weather, variable = 'Tmin') %>%
+  which()
+
+```
+
+There are several cases, where the test was positive. Let's have a look at how the function determined the outlier for an example month.
+
+
+```{r, warning=FALSE}
+
+durre_test_result %>%
+  filter(Month == 12, flag_Tmin %in% c('record_exceedance') == F) %>%
+  arrange(Tmin_org) %>%
+  mutate(diff = c(diff(Tmin_org), NA)) %>%
+  ggplot(aes(x = diff)) + 
+  geom_histogram(bins = 100) + 
+  geom_point(aes(x = diff, y = 1)) + 
+  geom_vline(xintercept = 10, linetype = 'dashed')+
+  scale_y_continuous(trans="log10")+
+  geom_text(x=11.5, y=2.7, label="Test threshold") +
+  xlab("Difference to next highest observation in ordered Tmin (°C) in December")
+
+```
+
+The dots indicated observations, which otherwise would not be clearly seen in the histogram. Mind that the y-axis is logarithmised. On the x-axis you can see the differences to the next highest observation in all observations of Tmin in December ordered by increasing value. The testing threshold of 10°C difference to the next observation is indicated by a dashed line. This does not necissarily mean, that only two observations are flagged for the month of December, because all observations after the gap are flagged as well. It could be, for example that after the gap the values are clustered again.
+
+```{r, warning=FALSE}
+
+durre_test_result %>%
+  filter(Month == 12, flag_Tmin %in% c('record_exceedance') == F) %>%
+  ggplot(aes(x = Day, y = Tmin_org)) + 
+  geom_point() +
+  geom_point(data = durre_test_result[durre_test_result$Month == 12 &
+                                      durre_test_result$flag_Tmin == 'gap_check',], aes(x = Day, y = Tmin_org), 
+             size = 7, pch = 1, stroke = 2, col = 'red') +
+  ylab('Minimum Temperature (°C)')
+
+```
+
+The next test called `perform_climate_outlier_check()` evaluates, as the name already indicates, climatological outlier. The routines for temperature and precipitation data are different. For temperature data at first the long term mean and standard deviation for each day of the year is calculated. This is done using a 15-day window centered at the day of interest and using each observation in that time window throughout all observation years. There need to be at least 100 observation for the long term mean and standard deviation, otherwise the function will return only NA. In the next step the standardized residuals for each day to to long term mean of that day of the year are calculated. Normalization involves subtracting the long term mean from the observation and dividing by the standard deviation. Finally if the absolute value of standardized residuals is larger than 6°C, the value is flagged as outlier. 
+In case of precipitation the 95% percentile is used instead of long term mean and standard deviation. It is calculated in the same manner as in the frequent values test. A 29-day window centered at the day of interested is used, missing values and zero-precipitation observations were ignored. There need to be at least 20 valid observation in the time-window for the percentile calculation. In case of above zero temperature, precipitation values larger than 9 times the 95% percentile for the day of interest are flagged. In freezing conditions the threshold is lowered to 5 times the 95% percentile.
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'clim_outlier', na.rm = T)
+
+
+```
+
+
+```{r, include=FALSE, eval=F}
+
+target_weather <- clear_flagged_data(weather = target_weather, variable = 'Tmin', 
+                   test_result = perform_climate_outlier_check(weather =
+                                                                 target_weather, 
+                                                  variable = 'Tmin'),
+                   test_name = 'clim_outlier')
+
+sum(target_weather$flag_Tmin == 'clim_outlier', na.rm = T)
+
+
+```
+
+Looks like there is no climatological outlier in Tmin for this station.
+
+
+### Temporal consistency
+
+The next tests investigate the temporal integrity of the weather data. The iterative temperature consistency test called `test_iterative_temperature_consistency()` checks if minimum, maximum and mean temperature are line with another. This involves that minimum temperature should not be larger than mean and maximum temperature at the same day, but also at the current day compared to the following day. There are in total 7 seven plausibility checks done for each day, for more details please refer to the Appendix A of Durre 2010. For each variable at each day the amount of positive tests (called violations) are summarized. The observations having the most violations are removed. Then test is run again until no more violations are detected. The iterative nature of the test should prevent excessive flagging and prevent that valid observations are 'dragged down' by faulty neighbors. For full potential of the test, also mean temperature observations are required. 
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'iterative_consistency', na.rm = T)
+
+#which(durre_test_result$flag_Tmin == 'iterative_consistency')
+
+```
+
+```{r, include=FALSE, eval=F}
+
+result <- test_iterative_temperature_consistency(weather = target_weather)
+target_weather <- clear_flagged_data(weather = target_weather, variable = 'Tmin', 
+                   test_result = result$tmin_flag,
+                   test_name = 'iterative_consistency')
+
+sum(target_weather$flag_Tmin == 'iterative_consistency', na.rm = T)
+
+
+```
+
+Seems that there are several cases of positive test results. Let's have a look at one example
+
+```{r, warning=FALSE}
+
+durre_test_result %>%
+  filter(Month == 2, Year == 1990, 
+         flag_Tmin %in% c('gap_check', 'record_exceedance') == FALSE) %>%
+  ggplot(aes(x = Date)) + 
+  geom_point(aes(y = Tmin_org, col = 'Tmin')) +
+  geom_line(aes(y = Tmin_org, col = 'Tmin', group = 'Tmin'))+
+  geom_point(aes(y = Tmax_org, col = 'Tmax')) + 
+  geom_line(aes(y = Tmax_org, col = 'Tmax', group = 'Tmax'))+
+  geom_point(aes(y = Tmean, col = 'Tmean')) +
+  geom_line(aes(y = Tmean, col = 'Tmean', group = 'Tmean')) + 
+  geom_point(data = durre_test_result[durre_test_result$Month == 2 &
+                                        durre_test_result$Year == 1990 &
+                                        durre_test_result$flag_Tmin == 'iterative_consistency',], aes(x = Date, y = Tmin_org), 
+             size = 5, pch = 1, stroke = 2, col = 'red')+
+    geom_point(data = durre_test_result[durre_test_result$Month == 2 &
+                                        durre_test_result$Year == 1990 &
+                                        durre_test_result$flag_Tmax == 'iterative_consistency',], aes(x = Date, y = Tmax_org), 
+             size = 5, pch = 1, stroke = 2, col = 'red')+
+  geom_point(data = durre_test_result[durre_test_result$Month == 2 &
+                                        durre_test_result$Year == 1990 &
+                                        durre_test_result$flag_Tmean == 'iterative_consistency',], aes(x = Date, y = Tmean), 
+             size = 5, pch = 1, stroke = 2, col = 'red')
+
+```
+
+As you can see several observations have been flagged, some wrongly in my opinion.
+At day 20 the observations of Tmin and Tmax have been flagged and at the following day Tmin. While the first two are obvious, Tmin was the highest observation at that day, the latter seems odd. It is because the testing also includes the subsequent day and unluckily the days before day 20 had no observation. It seems that the Tmin observation was 'dragged down' by the faulty previous observations. 
+
+```{r, warning=FALSE}
+
+durre_test_result %>%
+  filter(Month == 1, Year == 1993, 
+         flag_Tmin %in% c('gap_check', 'record_exceedance') == FALSE) %>%
+  ggplot(aes(x = Date)) + 
+  geom_point(aes(y = Tmin_org, col = 'Tmin')) +
+  geom_line(aes(y = Tmin_org, col = 'Tmin', group = 'Tmin'))+
+  geom_point(aes(y = Tmax_org, col = 'Tmax')) + 
+  geom_line(aes(y = Tmax_org, col = 'Tmax', group = 'Tmax'))+
+  geom_point(aes(y = Tmean_org, col = 'Tmean')) +
+  geom_line(aes(y = Tmean_org, col = 'Tmean', group = 'Tmean')) + 
+  geom_point(data = durre_test_result[durre_test_result$Month == 1 &
+                                        durre_test_result$Year == 1993 &
+                                        durre_test_result$flag_Tmin == 'iterative_consistency',], aes(x = Date, y = Tmin_org), 
+             size = 5, pch = 1, stroke = 2, col = 'red')+
+    geom_point(data = durre_test_result[durre_test_result$Month == 1 &
+                                        durre_test_result$Year == 1993 &
+                                        durre_test_result$flag_Tmax == 'iterative_consistency',], aes(x = Date, y = Tmax_org), 
+             size = 5, pch = 1, stroke = 2, col = 'red')+
+  geom_point(data = durre_test_result[durre_test_result$Month == 1 &
+                                        durre_test_result$Year == 1993 &
+                                        durre_test_result$flag_Tmean == 'iterative_consistency',], aes(x = Date, y = Tmean_org), 
+             size = 5, pch = 1, stroke = 2, col = 'red')
+
+```
+
+There are also some characteristics of this test I find strange. For example in this example the Tmean observations of the spikes did not receive an outlier flag, but only at the prior day. This is because Tmean at t+1 are not included in the testing scheme. 
+Next comes the spike/dip test, which is run using `test_spike_dip()`. The test detects rapid day-to-day changes. If the absolute difference of a observation at day 0 to day -1 is larger than 25°C followed by an absolute change in the same variable to day +1 by also 25°C the observaiton at day 0 is flagged. This means that one spike or dip is not enough, there needs to be both.
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'spike-dip', na.rm = T)
+
+#which(durre_test_result$flag_Tmin == 'iterative_consistency')
+
+```
+
+No positive spike-dip test were found for Tmin.
+
+Next comes the lagged temperature range test. It is similar to the spike-dip test and searches for unrealistic large swings of Tmin and Tmax. For each day of Tmax the warmest Tmin within a three-day window centered at the day of interest is selected. If the difference of the two is greater than 40 degree C, then the Tmax and the three observations of Tmin are flagged. The same is done with Tmin, there the coldest of Tmax within a three-day window is selected and the same testing threshold is applied.
+
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'lagged_temperature', na.rm = T)
+
+
+```
+
+Again, no cases of positive test results for the lagged temeprature test.
+
+There were further precipitation consistency tests described by Durre 2010, however these involved the consistency between precipitation and snow data. Because snow data is not considered in this implementation of the quality control scheme, they were discarded.
+
+### Spatial consistency test
+
+The next section is about the spatial consistency of the observations. The first test in this section is a regression check of temperature observation called `spatial_consistency_test()`. This test only applies to Tmax and Tmin. At first only neighboring stations within a 75km radius around the target station were considered. Using a three day window centered on the day of interest, a weighted mean of the pairwise regression of target and neighbor values is calculated. Target neighbor regressions needed to have correlation coefficient of 0.8 or larger in order to be considered. At least three, but never more than seven neighboring stations were used for the regression. Mean value of the regression is calculated based on the index of agreement. Regressions are done for each year / month independently. In order to be flagged, the residual and the standardized residual must exceed a threshold. (>= 4 and 8, respectively).
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'spatial_regression', na.rm = T)
+
+
+```
+
+There are several positive test results for Tmin. Let's have a closer look at the results.
+
+```{r, warning=FALSE}
+
+###prepare input data ####
+
+#make sure that aux_list has date and doy
+neighbour_weather <- purrr::map(neighbour_weather, function(x){
+  if('Date' %in% colnames(x) == F){
+    x$Date <- as.Date(paste(x$Year, x$Month,x$Day, sep = '-'), format ='%Y-%m-%d')
+  }
+  
+  if('doy' %in% colnames(x) == FALSE){
+    x$doy <- lubridate::yday(x$Date)
+  }
+  x <- tibble::tibble(x)
+})
+
+#prepare weather data so that it is in the same state as in the function call
+weather <- durre_test_result %>%
+  filter(Year == 2002, Month %in% 4:6)
+
+weather$Tmin <- weather$Tmin_org
+
+weather <- tibble::tibble(weather)
+
+#remove any outlier detected until spatial regression
+weather$Tmin[weather$flag_Tmin %in% c('gap_check', 'record_exceedance', 'iterative_consistency')] <- NA
+
+
+#arguments in function call
+max_res = 8
+max_res_norm = 4
+min_station = 3
+max_station = 7
+window_width = 15
+min_correlation = 0.8
+min_coverage = 40
+variable = 'Tmin'
+aux_list <- neighbour_weather
+aux_info <- neighbour_info
+
+
+#add window width to the period
+period_start <- as.Date('2002-05-01')
+period_end <- lubridate::ceiling_date(period_start,unit = 'month') + window_width -1
+period_start <- period_start - window_width
+
+
+### recreate the spatial regression calculation ####
+
+#code mostly taken from spat_consist_one_period()
+
+  
+  #extract data from target (x) and aux (y)
+x <- weatherQC:::select_target_days(df = weather, variable = variable, period_start = period_start, period_end = period_end) %>%
+  unname()
+
+
+#take the 7 closest stations
+aux_info$dist <- sp::spDistsN1(pts = as.matrix(aux_info[, c('Longitude', 'Latitude')]), 
+                              pt = c(target_info$Longitude,
+                                           target_info$Latitude),
+                              longlat = TRUE)
+#order increasing distance
+aux_info <- aux_info[order(aux_info$dist),]
+
+#select 7 closest stations
+aux_info <- aux_info[1:7,]
+
+aux_list <- aux_list[aux_info$id]
+
+
+
+y <- purrr::map(aux_list, function(x){
+  weatherQC:::select_target_days(df = x, variable = variable, period_start = period_start, 
+                     period_end = period_end)
+}) %>%
+  do.call(cbind.data.frame, .)
+  
+  
+#only keep aux stations which fulfill coverage criteria
+aux_info <- aux_info[colSums(is.na(x) == F & is.na(y) == F) >= min_coverage, ]
+  
+#drop stations from y
+y <- y[aux_info$id]
+  
+  
+#case there are not enough stations left: return nas as flag
+if(nrow(aux_info) < min_station){
+  print('not enough auxiliary weather stations')
+}
+  
+#calcualte index of agreement and sort decreasing
+aux_info$ind_agreement <- purrr::map_dbl(y, ~ weatherQC:::calc_index_agreement(x = x, y = .x))
+aux_info <- aux_info[order(aux_info$ind_agreement,decreasing = T),]
+
+#bring y in same order
+y <- y[,aux_info$id]
+  
+  #iterate over all y columns, for each column iterate over x and find the closest y value given a 3 day window centered around i
+y_closest <-  purrr::map(y, function(vec) purrr::imap_dbl(x,~weatherQC:::get_closest_y(x = .x, y=vec, i = .y))) %>%
+  do.call(cbind.data.frame, .)
+  
+#carry out linear regression
+models <- purrr::map(y_closest, ~ lm(x~.x))
+  
+  
+#calculate correlation coefficient, filter stations with too low correlation coefficient
+#keep only stations fulfillinf the criteria of minimum correlation of their prediction
+aux_info <- purrr::map_lgl(models, ~sqrt(summary(.x)[['r.squared']]) > min_correlation) %>%
+  aux_info[.,]
+  
+  
+#if there are less then 3 stations remaining, then return NAs as flag
+if(nrow(aux_info) < min_station){
+  print('Not enough auxiliary stations')
+} else if(nrow(aux_info) > max_station){
+  aux_info <- aux_info[1:max_station,]
+}
+  
+models <-   models[aux_info$id]
+y_closest <- y_closest[,aux_info$id]
+  
+helper_func <- function(x,y,z){
+  z -as.numeric((x %*% as.matrix(y)) / sum(y))
+}
+  
+#calculate weighted model estimates for each day
+#problem: nas are not returned here, I need to match it with x
+x_res <- purrr::map2(models, y_closest, .f = function(x,y){
+  x$coefficients[1] +  x$coefficients[2] * y}) %>%
+  dplyr::bind_cols() %>%
+  as.matrix() %>%
+  helper_func(aux_info$ind_agreement, x) %>%
+  round(digits = 2)
+  
+rm(models)  
+  
+#standardized residuals (by mean and std)
+x_res_norm <- (x_res - mean(x_res, na.rm = T)) / sd(x_res, na.rm = T)
+  
+  
+#take only the values for the month
+#--> strip the leading and trailing 15 values
+x_res <- x_res[(window_width+1):(length(x_res) - (window_width))]
+x_res_norm <- x_res_norm[(window_width+1):(length(x_res_norm) - (window_width))]
+
+
+#add residuals and standardized resiudals to the data.frame
+#drop unwanted months in weather
+weather <-weather[weather$Month == 5,]
+
+
+  
+weather$residual <- x_res
+weather$residual_standardized <- x_res_norm
+
+### plotting ####
+
+#helper data.frame
+
+hline_df <- data.frame(value = c(NA, max_res, -max_res, max_res_norm, -max_res_norm),
+                       variable = c('Tmin_org', rep('residual',2),
+                                    rep('residual_standardized',2))) %>%
+    mutate(variable = factor(variable, levels = c('Tmin_org','residual', 'residual_standardized')))
+
+#bring weather in long format, drop not needed columns
+weather_long <- weather %>%
+  select(Date, Tmin_org, flag_Tmin, residual, residual_standardized) %>%
+  reshape2::melt( id.var = c('Date', 'flag_Tmin')) %>%
+  mutate(variable = factor(variable, levels = c('Tmin_org','residual', 'residual_standardized')))
+
+#do the actual plotting
+weather_long %>%
+  ggplot(aes(x = Date, y = value))+
+  geom_point() + 
+  geom_line() +
+  geom_hline(data = hline_df, aes(yintercept = value), linetype = 'dashed')+
+  facet_wrap(~variable,ncol = 1, nrow = 3,scales = 'free_y') +
+  geom_point(data = weather_long[which(weather_long$flag_Tmin == 'spatial_regression'),], 
+             aes(x = Date, y = value), 
+             size = 7, pch = 1, stroke = 2, col = 'red')
+
+
+```
+
+The dashed lines show the tesing threshold. Both need to be exceeded in order for an observation to be flagged. We can have also a look at the observation of the neighboring stations which led to the flagging, even though the lineplot already shows that the flagged osbervation is fishy.
+
+```{r, warning=FALSE}
+
+target_obs <- weather %>%
+  filter(Day == 16) %>%
+  select(Tmin_org) %>%
+  pull()
+
+#prepare data.frame
+aux_Tmin <- purrr::map(aux_list, function(x){
+  
+  x[x$Year == 2002 & x$Month == 5 & x$Day %in% 15:17,'Tmin']%>%
+    pull()
+}) %>%
+  bind_rows() %>%
+  mutate(day = c(-1,0,1)) %>%
+  reshape2::melt(id.var = 'day')
+
+#drop dist column
+aux_info <- aux_info %>%
+  select(-dist)
+
+
+#add latitude and longitude
+aux_Tmin <-  merge.data.frame(aux_Tmin, aux_info, by.x = 'variable', by.y = 'id', all.x = T)
+
+
+#add info of target station and coordinates to
+
+aux_Tmin <- rbind(aux_Tmin, 
+                  data.frame(day = c(-1,0,1), variable = target_info$id, 
+                             Longitude = target_info$Longitude, 
+                             Latitude = target_info$Latitude, 
+                             Name = target_info$Name, 
+                             value = target_obs,
+                             ind_agreement = NA)) %>%
+  mutate(day = factor(day, levels = c(-1, 0, 1), 
+                      labels = c('day -1', 'day 0', 'day +1')))
+
+aux_Tmin %>%
+  ggplot( aes(x = Longitude, y = Latitude, label = value))+
+  geom_point() +
+  ggrepel::geom_text_repel()+
+  facet_wrap(~day, ncol = 1, nrow = 3) +
+  geom_point(data = aux_Tmin[aux_Tmin$variable == 'cimis_2',], aes(x = Longitude,
+                                                                  y = Latitude), shape = 23, size = 2, fill = "white", stroke = 1.2)+
+  theme_bw()
+
+
+```
+
+The auxiliary weahter stations are marked by dots, the target weather station by an white-filled diamond. As you can see, the target observation of 0 degree C deviates strongly from the neighboring observations of the precious day (day -1), the same day (day 0) and the following day (day +1). 
+
+The spatial regression has relatively high quality demands on the target - neighbor station data quality. In cases were the requirements were not met, the second test can fill a gap. The corroboration test of temperature `test_temperature_corroboration()` and precipitation `test_precipitation_spatial_corroboration()` are less demanding on the data coverage and thus can be used in cases the spatial regression test cannot be applied. The temperature corroboration test calculates for each observed day the temperature anomaly to the standardized long-term mean For the lowest absolute difference calculation a three day window centered on the day of interested is used for the neighboring station. That means if there are seven neighbor stations having for each of the three day window a valid observation, the target observation of day 0 is compared to 21 neighboring observations. The three-day time window should account for different measurement protocols. If the smallest absolute difference is larger or equal to 10°C, then the target observation is flagged. In case of precipitation, the absolute difference accompanied by the difference in climatological percentiles. Climatological percentiles are calculated following the same protocoll described for the climatological outliers. The difference is, that this time the percentile of the values of interest are calculated and not compared to a fixed threshold. The smallest absolute difference in climatololoigical percentiles is then used to determine a testing threshold for the smallest absolute difference in precipitation. For more details please refer to the Appendix C of @durre_comprehensive_2010 
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'spatial_corroboration', na.rm = T)
+
+```
+
+There are several cases of positive test results.  
+
+```{r, warning=FALSE}
+
+durre_test_result %>%
+  filter(Month == 1, Year == 1992, 
+         flag_Tmin %in% c('gap_check', 'record_exceedance', 'iterative_consistency',
+                          'spatial_regression') == F) %>%
+  ggplot(aes(x = Date, y = Tmin_org))+
+  geom_point() +
+  geom_line() + 
+  ylab('Minimum Temperature (°C)')+
+  geom_point(data = durre_test_result[durre_test_result$Month == 1 &
+                                        durre_test_result$Year == 1992 & 
+                                        (durre_test_result$flag_Tmin ==
+                                           'spatial_corroboration'),], 
+             aes(x = Date, y = Tmin_org), 
+             size = 7, pch = 1, stroke = 2, col = 'red')
+
+```
+
+```{r, warning=FALSE}
+
+#### prepare input data ####
+
+#just take the day 10 as an example
+
+#prepare weather data so that it is in the same state as in the function call
+weather <- durre_test_result %>%
+  mutate(Tmin = Tmin_org)
+
+#remove any outlier detected until spatial regression
+weather$Tmin[weather$flag_Tmin %in% c('gap_check', 'record_exceedance', 'iterative_consistency', 'spatial_regression')] <- NA
+
+
+#### calculate longterm mean & anomaly ####
+
+#calculate anomaly for target weather station
+weather <- purrr::map(unique(weather$doy), ~ weatherQC:::get_longterm_mean_and_sd(weather = weather,
+                                                           variable = 'Tmin',
+                                                           doy = .x)) %>%
+  bind_rows() %>%
+  merge(weather, by = 'doy') %>%
+  arrange(Date) %>%
+  mutate(anomaly = Tmin - mean)
+
+target_anomaly <- weather$anomaly[weather$Year == 1992 & weather$Month == 1 & weather$Day == 10]
+
+aux_list <- neighbour_weather[neighbour_info$id]
+
+#calculate anomaly for auxiliary weather stations
+anomalies <- purrr::map(aux_list, function(x){
+  purrr::map(unique(x$doy), ~ weatherQC:::get_longterm_mean_and_sd(weather = x,
+                                                       variable = 'Tmin',
+                                                       doy = .x)) %>%
+    bind_rows() %>%
+    merge(x, by = 'doy') %>%
+    arrange(Date) %>%
+    mutate(anomaly = Tmin - mean) %>%
+    filter(Year == 1992, Month == 1, Day %in% 9:11)
+}) %>%
+  bind_rows() %>%
+  select(anomaly, doy)
+
+anomalies$id <- rep(names(aux_list), each = 3)
+
+#add latitude and longitude
+anomalies <- merge(anomalies, neighbour_info, by = 'id', all.x = T)
+
+#add target observation
+anomalies <- rbind(anomalies, data.frame(id = target_info$id, Longitude = target_info$Longitude,
+           Latitude = target_info$Latitude, Name = target_info$Name,
+           anomaly = target_anomaly, doy = 9:11) ) %>%
+  mutate(doy = factor(doy, levels = 9:11, labels = c('day -1', 'day 0', 
+                                                     'day +1')))
+
+anomalies %>%
+  ggplot(aes(x = Longitude, y = Latitude, label = round(anomaly,2)))+
+  geom_point() +
+  ggrepel::geom_text_repel()+
+  facet_wrap(~doy, ncol = 1, nrow = 3) +
+  geom_point(data = anomalies[anomalies$id == 'cimis_2',], aes(x = Longitude,
+                                                                  y = Latitude), shape = 23, size = 2, fill = "white", stroke = 1.2)+
+  theme_bw()
+
+
+```
+
+
+show minimum absolute difference to neighbour against anomaly threshold
+
+```{r, warning=FALSE}
+
+#### prepare input data ####
+
+#just take the day 10 as an example
+
+#prepare weather data so that it is in the same state as in the function call
+weather <- durre_test_result %>%
+  mutate(Tmin = Tmin_org)
+
+#remove any outlier detected until spatial regression
+weather$Tmin[weather$flag_Tmin %in% c('gap_check', 'record_exceedance', 'iterative_consistency', 'spatial_regression')] <- NA
+
+
+#### calculate longterm mean & anomaly ####
+
+#calculate anomaly for target weather station
+weather <- purrr::map(unique(weather$doy), ~ weatherQC:::get_longterm_mean_and_sd(weather = weather,
+                                                           variable = 'Tmin',
+                                                           doy = .x)) %>%
+  bind_rows() %>%
+  merge(weather, by = 'doy') %>%
+  arrange(Date) %>%
+  mutate(anomaly = Tmin - mean)
+
+target_anomaly <- weather$anomaly[weather$Year == 1992 & weather$Month == 1]
+
+aux_list <- neighbour_weather[neighbour_info$id]
+
+#calculate anomaly for auxiliary weather stations
+anomalies <- purrr::map(aux_list, function(x){
+  purrr::map(unique(x$doy), ~ weatherQC:::get_longterm_mean_and_sd(weather = x,
+                                                       variable = 'Tmin',
+                                                       doy = .x)) %>%
+    bind_rows() %>%
+    merge(x, by = 'doy') %>%
+    arrange(Date) %>%
+    mutate(anomaly = Tmin - mean) %>%
+    mutate(lag = lag(anomaly), lead = lead(anomaly)) %>%
+    filter(Year == 1992, Month == 1) %>%
+    select(lag, anomaly, lead)
+}) %>%
+  bind_cols() %>%
+  as.matrix()
+
+#add target anomalies to column
+anomalies <- cbind(target_anomaly, anomalies)
+
+min_diff <- apply(anomalies, MARGIN = 1, function(x){
+  #if target anomaly is NA, then return NA
+  if(is.na(x[1])){
+    return(NA) 
+  #if all auxiliary observations are NA, return NA as well
+  } else if(all(is.na(x[2:(length(x))]))){
+    return(NA)
+  } else{
+    return(min(abs(x[1] - x[2:(length(x))]), na.rm = T))
+  }
+})
+
+plot_df <- data.frame(day = rep(1:31,3),  value = c(weather$Tmin[weather$Year == 1992 & weather$Month == 1], target_anomaly, min_diff),
+                      var = c(rep('Tmin', 31), rep('anomaly', 31), rep('min_abs_dif', 31))) %>%
+  mutate(var = factor(var, levels = c('Tmin', 'anomaly', 'min_abs_dif')))
+
+#dataframe for vertical line
+line_df <- data.frame(value = c(NA, NA, 10), var = c('Tmin', 'anomaly', 'min_abs_dif')) %>%
+  mutate(var = factor(var, levels = c('Tmin', 'anomaly', 'min_abs_dif')))
+
+#dataframe for annotation
+text_df <- data.frame(day = 1, value = 10, 
+                      var = factor('min_abs_dif', levels =  c('Tmin', 'anomaly', 'min_abs_dif')),
+                      lab = 'Testing Threshold')
+
+plot_df %>%
+  ggplot(aes(x = day, y = value )) + 
+  geom_point() +
+  geom_line() +
+  facet_wrap(~var, nrow = 3, ncol = 1, scales = 'free_y') + 
+  geom_hline(data = line_df, aes(yintercept = value), linetype = 'dashed')+
+  geom_text(data = text_df, label = 'Testing Threshold',
+            nudge_x = 2, nudge_y = 2.5)+
+  xlab('Day of the year')+
+  theme_bw()
+
+
+```
+
+
+### Megaconsistency test
+
+In the end of the quality control scheme some final consistency test, labelled by Durre 2010 as megaconsistency tests are carried out. These involve again mostly plausibility on snow data (for example only snow in months were snowfall can be expected, or that snow occurred in months were the lowest Tmin was larger or equal than 7°C). In case of temperature one test is carried out, called `temperature_mega_consistency_check()`. The test checks that the current Tmax is not smaller than the lowest Tmin of the month and that the current Tmin is not larger than the highest Tmax of the month. This is necessary, because the consistency tests demanding that Tmin is smaller than Tmax only work if there are both observations available for a day. For days with a 'missing partner', erroneous observation could slip through the test and are intended to be catched with the megaconsistency test.
+
+```{r, warning=FALSE}
+
+sum(durre_test_result$flag_Tmin == 'mega_consistency', na.rm = T)
+
+```
+
+No cases of positive test results for the megaconsistency test.
+
+
+## Summary
+
+No you have seen the different tests withing `weather_qc_costa` and `weather_qc_durre` and hopefully a better feeling how the functions try to detect erroneous weather data.
+For best outcomes include all auxiliary weather stations in `weather_qc_durre` as well as target weather stations. That way, erroneous weather observations in neighbouring stations are less likely to degrade the spatial consistency tests. In the next vignette I will work on a more detailed evaluation of both test results and compare it with quality flags supplied by CIMIS. 
+
+## References
