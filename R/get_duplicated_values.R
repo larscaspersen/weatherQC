@@ -38,6 +38,10 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   #instanice the flags
   flag_dup_year <- flag_dup_mon <- flag_dup_mon2 <- flag_ident_temp <- rep(F, nrow(weather))
   
+  #this is just to avoid NOTES in the CMD-test, because the test doesn't
+  #like . in the pipes, but I am too bad at coding to avoid it
+  . <- NULL
+  
   ####
   #duplicated years
   ####
@@ -47,10 +51,10 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   if(variable == 'Precip'){
     #only take years which have at least three non-zero precipitation events
     invest_years <- weather %>%
-      dplyr::group_by(Year) %>%
-      dplyr::summarise(n_nonzero = sum(Precip > 0, na.rm =T)) %>%
-      dplyr::filter(n_nonzero >= 3) %>%
-      dplyr::select(Year) %>%
+      dplyr::group_by(.data$Year) %>%
+      dplyr::summarise(n_nonzero = sum(.data$Precip > 0, na.rm = T)) %>%
+      dplyr::filter(.data$n_nonzero >= 3) %>%
+      dplyr::select(.data$Year) %>%
       unlist()
     
     #check if the years to be investigated are duplicated (at least some of them)
@@ -88,11 +92,11 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   #for precipitation: find months with at least three non-zero precipitation events
   if(variable == 'Precip'){
     invest_periods <- weather %>%
-      dplyr::group_by(Year, Month) %>%
-      dplyr::summarise(n_nonzero = sum(Precip > 0, na.rm =T)) %>%
-      dplyr::filter(n_nonzero >= 3) %>%
-      dplyr::mutate(period = paste(Year, Month, sep = ' ')) %>%
-      dplyr::pull(period)
+      dplyr::group_by(.data$Year, .data$Month) %>%
+      dplyr::summarise('n_nonzero' = sum(.data$Precip > 0, na.rm =T)) %>%
+      dplyr::filter(.data$n_nonzero >= 3) %>%
+      dplyr::mutate('period' = paste(.data$Year, .data$Month, sep = ' ')) %>%
+      dplyr::pull(.data$period)
     
     #subset weather by invest period
     weather <- weather[weather$period %in% invest_periods,]
@@ -105,26 +109,27 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   
   if(any(t2)){
     #in case there is duplictaed month, find out which year
-    sus_year <- split(weather, weather$Year) %>%
+    index <- split(weather, weather$Year) %>%
       purrr::map_lgl(function(x) any(duplicated(split(x[,variable], x$Month)))) %>%
       which() %>%
-      unique(weather$Year)[.]
+      unname()
+    sus_year <- unique(weather$Year)[index]
     
     #for this year(s) check which months are duplicated
     res1 <- weather %>%
-      dplyr::filter(Year %in% sus_year) %>%
+      dplyr::filter(.data$Year %in% sus_year) %>%
       split(.$Year) %>%
       purrr::map(function(x) duplicated(split(x[,variable], x$Month))) %>%
       purrr::map(which)
     
     res2 <-weather %>%
-      dplyr::filter(Year %in% sus_year) %>%
+      dplyr::filter(.data$Year %in% sus_year) %>%
       split(.$Year) %>%
       purrr::map(function(x) duplicated(split(x[,variable], x$Month), fromLast=TRUE)) %>%
       purrr::map(which)
     
     #subset for months which yielded duplications
-    months <- map2(res1, res2, c) %>%
+    months <- purrr::map2(res1, res2, c) %>%
       purrr::map(unique) %>%
       unlist()
     
@@ -148,28 +153,30 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   
   if(any(t3)){
     #identify month of duplicates
-    sus_month <- split(weather, weather$Month) %>%
+    index <- split(weather, weather$Month) %>%
       purrr::map_lgl(function(x) any(duplicated(split(x[,variable], x$Year)))) %>%
       which() %>%
-      unique(weather$Month)[.]
+      unname()
+    
+    sus_month <- unique(weather$Month)[index]
     
     #identify which year of the months is problematic
     
     #for this year(s) checj which months are duplciated
     res1 <- weather %>%
-      dplyr::filter(Month %in% sus_month) %>%
+      dplyr::filter(.data$Month %in% sus_month) %>%
       split(.$Month) %>%
       purrr::map(function(x) duplicated(split(x[,variable], x$Year))) %>%
       purrr::map(which)
     
     res2 <-weather %>%
-      dplyr::filter(Month %in% sus_month) %>%
+      dplyr::filter(.data$Month %in% sus_month) %>%
       split(.$Month) %>%
       purrr::map(function(x) duplicated(split(x[,variable], x$Year), fromLast=TRUE)) %>%
       purrr::map(which)
     
     #subset for months which yielded duplications
-    years <- map2(res1, res2, c) %>%
+    years <- purrr::map2(res1, res2, c) %>%
       purrr::map(unique) %>%
       purrr::map(function(x) unique(weather$Year)[x]) %>%
       unlist()
@@ -192,11 +199,11 @@ get_duplicated_values <- function(weather, variable, precip_min_nonzero = 3,
   
   if(variable %in% c('Tmin', 'Tmax')){
     sus_period <- weather %>%
-      dplyr::group_by(Year, Month) %>%
-      dplyr::summarise(same_temp = sum(Tmin == Tmax, na.rm = T)) %>%
-      dplyr::mutate(period = paste(Year, Month, sep = ' ')) %>%
-      dplyr::filter(same_temp >= same_temp_threshold) %>%
-      dplyr::pull(period)
+      dplyr::group_by(.data$Year, .data$Month) %>%
+      dplyr::summarise('same_temp' = sum(.data$Tmin == .data$Tmax, na.rm = T)) %>%
+      dplyr::mutate('period' = paste(.data$Year, .data$Month, sep = ' ')) %>%
+      dplyr::filter(.data$same_temp >= same_temp_threshold) %>%
+      dplyr::pull(.data$period)
     
     #in case of at least one incident, change the flag
     if(length(sus_period) > 0){

@@ -9,8 +9,8 @@
 #'   \item{Name}{name of weather station}
 #'   \item{Longitude}{longitude of weather station decimal format}
 #'   \item{Latitude}{latitude of weather station in decimal format}
-#'   \item{Start_date}{first available day of weather observation of this station}
-#'   \item{End_date}{last available day of weather observation of this station}
 #' }
+#' @usage data(neighbour_info)
+#' @docType data
 #' @source \url{https://cimis.water.ca.gov/} and \url{http://ipm.ucanr.edu/}
 "neighbour_info"

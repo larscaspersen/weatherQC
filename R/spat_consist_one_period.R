@@ -32,19 +32,19 @@
 #' It should have columns c("Year", "Month", "Day")
 #' @param aux_info data.frame listing the auxiliary weather stations. Should at least contain
 #' the columns c("id", "Longitude", "Latitude")
-#' @param aux_list named list of data.frames with daily weather obsrvations of auxiliary
-#' weather stations. Names should be identical to \code{aux_info$id}. Strucuture of 
-#' data.frames should be identical of \code{weather}. Data.frames do not necissarily
-#' need to cover excat same time period as \code{weather}
+#' @param aux_list named list of data.frames with daily weather observations of auxiliary
+#' weather stations. Names should be identical to \code{aux_info$id}. Structure of 
+#' data.frames should be identical of \code{weather}. Data.frames do not necessarily
+#' need to cover exact same time period as \code{weather}
 #' @param period_start Date, indicating the start of the month
 #' @param variable column in \code{weather} for which the test is performed. Should
 #' be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
 #' name
-#' @param max_res testing threshold, highest regular resiudal tolerated by test
+#' @param max_res testing threshold, highest regular residual tolerated by test
 #' @param max_res_norm testing threshold, highest standardized residual tolerated
 #' by the test. Note: both thresholds need to be exceeded in order for the 
 #' test to yield a flag
-#' @param max_station maximum number of neighbouring stations included in the test.
+#' @param max_station maximum number of neighboring stations included in the test.
 #' If more auxiliary stations available than \code{max_station}, then closest ones
 #' are taken
 #' @param min_station minimum amount of neighbouring stations for the test. If less
@@ -69,25 +69,30 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
-#' @export
+#' @noRd
 spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, variable,
                                     max_res = 8, max_res_norm = 4, min_station = 3,
                                     max_station = 7, window_width = 15, 
                                     min_correlation = 0.8, min_coverage = 40){
   
+  #avoid notes by cmd tets
+  . <- NULL
   
   #add window width to the period
   period_end <- lubridate::ceiling_date(period_start,unit = 'month') + window_width -1
   period_start <- period_start - window_width
   
   #extract data from target (x) and aux (y)
-  x <- select_target_days(df = weather, variable = variable, period_start = period_start, period_end = period_end)
+  x <- select_target_days(df = weather, variable = variable, 
+                          period_start = period_start, period_end = period_end) %>%
+    unname()
   y <- purrr::map(aux_list, function(x){
     select_target_days(df = x, variable = variable, period_start = period_start, 
                        period_end = period_end)
   }) %>%
     do.call(cbind.data.frame, .)
   
+
   #only keep aux stations which fulfill coverage criteria
   aux_info <- aux_info[colSums(is.na(x) == F & is.na(y) == F) >= min_coverage, ]
   
@@ -110,7 +115,10 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   y <- y[,aux_info$id]
   
   #iterate over all y columns, for each column iterate over x and find the closest y value given a 3 day window centered around i
-  y_closest <-  purrr::map(y, function(vec) purrr::imap_dbl(x,~get_closest_y(x = .x, y=vec, i = .y))) %>%
+  y_closest <-  purrr::map(y, function(vec){
+    purrr::imap_dbl(x,function(val, i){
+      get_closest_y(x = val, y=vec, i = i)})
+  }) %>%
     do.call(cbind.data.frame, .)
   
   #carry out linear regression
@@ -151,7 +159,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   rm(models)  
   
   #standardized residuals (by mean and std)
-  x_res_norm <- (x_res - mean(x_res, na.rm = T)) / sd(x_res, na.rm = T)
+  x_res_norm <- (x_res - mean(x_res, na.rm = T)) / stats::sd(x_res, na.rm = T)
   
   
   #take only the values for the month
@@ -162,7 +170,7 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   flag_res <- ifelse(is.na(x_res), yes = F, no = abs(x_res) >= max_res)
   flag_res_norm <-  ifelse(is.na(x_res_norm), yes = F, no = abs(x_res_norm) >= max_res_norm)
   
-  flag <- replace_na(flag_res & flag_res_norm, FALSE)
+  flag <- tidyr::replace_na(flag_res & flag_res_norm, FALSE)
   
   #if either the residuals or the standardized resiudals exceed the threshold, return for that given day a true
   return(flag)

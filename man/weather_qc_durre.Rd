@@ -84,9 +84,7 @@ In case of \code{region = "USA"} it should be the state's name the weather is ob
 If user-defined limits are used, should be set to \code{NULL}}
 
 \item{records_temp}{minimum and maximum temperature in degree Celsius limits for the fixed
-limit test. If left NULL, either the function scraps records from the web if
-\code{region} and \code{subregion} are supplied, otherwise global temperature
-records are used}
+limit test. If left NULL, either the function scraps records from the web if}
 
 \item{records_precip}{lower and upper limits of daily precipitation sum (mm) 
 for the fixed limit test. If left NULL, either the function scraps records 
@@ -159,18 +157,6 @@ to neighbouring observations for temperature anomalies}
 \item{min_obs_megaconsistency}{minimum amount of observation per calendar month in order 
 to be considered in the test, otherwise for the calendar month all observations
 automatically get flagged as FALSE}
-
-\item{variable}{column name in \code{weather} for which the test is performed. Should
-be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
-name}
-
-\item{probs_variable_limit}{percentile used as a testing threshold for variable limit test}
-
-\item{probs_temporal_continuity}{percentile uded as a testing threshold for 
-temporal conitnuity test}
-
-\item{probs_temperature_consistency}{percentile used as a testing threshold
-for temperature consistency test}
 }
 \value{
 data.frame with \code{nrow(weather)} rows and the same columns as
@@ -234,8 +220,30 @@ could reduce the testing quality of more restrictive tests like climatological o
 test.
 }
 \examples{
-weather_qc_durre(weather_list = list(target_weather), 
+\dontrun{
+#prepare input
+weather_list <- list(target_weather)
+names(weather_list) <- target_info$id
+
+#run without spatial test
+weather_qc_durre(weather_list = weather_list, 
 skip_spatial_test = TRUE, mute = TRUE)
+
+#run with spatial test 
+weather_qc_durre(weather_list = weather_list, 
+weather_info = target_info,
+aux_list = neighbour_weather,
+aux_info = neighbour_info,
+mute = TRUE)
+
+#' #run with spatial test and regio-specific test limit
+weather_qc_durre(weather_list = weather_list, 
+weather_info = target_info,
+aux_list = neighbour_weather,
+aux_info = neighbour_info,
+region = 'USA', subregion = 'California',
+mute = TRUE)
+}
 }
 \references{
 \insertAllCited{}

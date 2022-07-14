@@ -12,9 +12,6 @@ It should have columns c("Year", "Month", "Day")}
 
 \item{max_diff}{threshold for the test, spike and dips lower than this value
 are ignored}
-
-\item{variable}{a character indicating the column name of the tested variable 
-in weather}
 }
 \value{
 data.frame with two columns and same amount of rows as in \code{weather}. 

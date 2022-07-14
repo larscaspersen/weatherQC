@@ -7,7 +7,7 @@
 \format{
 A list of 12 data.frames with varying amount rows and 8 variables:
 \describe{
-  \item{Weather Station}{Name of station}
+  \item{Weather_Station}{Name of station}
   \item{Year}{Year}
   \item{Month}{Month}
   \item{Day}{Day}
@@ -21,12 +21,12 @@ A list of 12 data.frames with varying amount rows and 8 variables:
 \url{https://cimis.water.ca.gov/} and \url{http://ipm.ucanr.edu/}
 }
 \usage{
-neighbour_weather
+data(neighbour_weather)
 }
 \description{
 List of data.frames with weather data of weather stations withing a 75 km of 
 target weather station Five Points (California). The individual data.frames contain
-daily weather observations similarly structured as in \code{\link{weather}}.
+daily weather observations similarly structured as in \code{\link{target_weather}}.
 Data was downloaded using using \code{chillR::handle_cimis()} and
 \code{chillR::handle_ucipm()} functions.
 }

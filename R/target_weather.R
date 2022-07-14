@@ -6,7 +6,7 @@
 #'
 #' @format A data frame with 11688 rows and 14 variables:
 #' \describe{
-#'   \item{Weather Station}{Name of station}
+#'   \item{Weather_Station}{Name of station}
 #'   \item{Year}{Year}
 #'   \item{Month}{Month}
 #'   \item{Day}{Day}
@@ -21,5 +21,7 @@
 #'   \item{Date}{Date}
 #'   \item{doy}{Day of the year}
 #' }
+#' @usage data(target_weather)
+#' @docType data
 #' @source \url{https://cimis.water.ca.gov/}
 "target_weather"

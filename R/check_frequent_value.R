@@ -40,16 +40,21 @@
 #' percentile_df <- get_each_day_precipitation_percentile(weather = target_weather)
 #' check_frequent_value(weather = target_weather, percentile_df = percentile_df)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
-#' @importFrom Rdpack reprompt
+#' @importFrom rlang .data
 #' @references
 #' \insertAllCited{}
 #' @export
 check_frequent_value <- function(weather, percentile_df, min_non_zero_days = 20){
   
+  #check if Tmin, Tmax, Precip, Year, Month, Day are present
+  if(any(!c('Year', 'Month', 'Day', 'Tmin', 'Tmax', 'Precip') %in% colnames(weather))){
+    stop("At least one of the required columns c('Year', 'Month', 'Day', 'Tmin', 'Tmax', 'Precip') is missing")
+  }
+  
   #incase there is no doy in weather, add it
-  if(!'doy' %in% names(weather)){
+  if(!'doy' %in% colnames(weather)){
     #in case no date in weather add it too
-    if(!'Date' %in% names(weather)){
+    if(!'Date' %in% colnames(weather)){
       weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
                               format = '%Y-%m-%d')
     }
@@ -57,10 +62,8 @@ check_frequent_value <- function(weather, percentile_df, min_non_zero_days = 20)
   }
   
   #drop na values, and 0
-  x <- weather %>%
-    .[is.na(.$Precip) == FALSE,] %>%
-    filter(Precip > 0)
-  
+  x <- weather[is.na(weather$Precip) == FALSE & weather$Precip > 0,]
+
   #flag 
   frequent_value_flag <- rep(F, nrow(x))
   
@@ -112,7 +115,7 @@ check_frequent_value <- function(weather, percentile_df, min_non_zero_days = 20)
   
   #merge x and weather
   weather <- merge(weather, x, by = colnames(weather), all.x = T) %>%
-    arrange(Date)
+    dplyr::arrange(.data$Date)
   
   #change NAs in Flag to FALSE
   weather$flag[is.na(weather$flag)] <- FALSE

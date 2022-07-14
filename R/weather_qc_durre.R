@@ -58,9 +58,6 @@
 #' "Latitude"). The column "id" should contain the same names as the named elements of
 #' weather_list. Latitude and longitude should be in decimal format. Number of rows of 
 #' data.frame should be same as number of elements in weather_list
-#' @param variable column name in \code{weather} for which the test is performed. Should
-#' be either Tmin or Tmax. data.frames in \code{aux_list} need to have the same
-#' name
 #' @param aux_info data.frame listing the auxiliary weather stations. Should at least contain
 #' the columns c("id", "Longitude", "Latitude"). Can also be set to NULL, in that
 #' case spatial tests are automatically skipped
@@ -87,8 +84,6 @@
 #' If user-defined limits are used, should be set to \code{NULL}
 #' @param records_temp minimum and maximum temperature in degree Celsius limits for the fixed
 #' limit test. If left NULL, either the function scraps records from the web if
-#' \code{region} and \code{subregion} are supplied, otherwise global temperature
-#' records are used
 #' @param records_precip lower and upper limits of daily precipitation sum (mm) 
 #' for the fixed limit test. If left NULL, either the function scraps records 
 #' from the web if \code{region} and \code{subregion} are supplied, otherwise 
@@ -134,11 +129,6 @@
 #' @param max_res_norm testing threshold, highest standardized residual tolerated
 #' by the test. Note: both thresholds need to be exceeded in order for the 
 #' test to yield a flag
-#' @param probs_variable_limit percentile used as a testing threshold for variable limit test
-#' @param probs_temporal_continuity percentile uded as a testing threshold for 
-#' temporal conitnuity test
-#' @param probs_temperature_consistency percentile used as a testing threshold
-#' for temperature consistency test
 #' @param window_width amount of extra days added to the target and auxiliary
 #' weather station for the linear regression. Extra days only part of the model
 #' construction, not the testing
@@ -154,8 +144,31 @@
 #' In the original column flagged values were replaced with NA. In the same row as where
 #' the original value was removed, a comment indicating which test let to the removal
 #' can be found in the "flag_" plus variable name column.
-#' @examples weather_qc_durre(weather_list = list(target_weather), 
+#' @examples 
+#' \dontrun{
+#' #prepare input
+#' weather_list <- list(target_weather)
+#' names(weather_list) <- target_info$id
+#' 
+#' #run without spatial test
+#' weather_qc_durre(weather_list = weather_list, 
 #' skip_spatial_test = TRUE, mute = TRUE)
+#' 
+#' #run with spatial test 
+#' weather_qc_durre(weather_list = weather_list, 
+#' weather_info = target_info,
+#' aux_list = neighbour_weather,
+#' aux_info = neighbour_info,
+#' mute = TRUE)
+#' 
+#' #' #run with spatial test and regio-specific test limit
+#' weather_qc_durre(weather_list = weather_list, 
+#' weather_info = target_info,
+#' aux_list = neighbour_weather,
+#' aux_info = neighbour_info,
+#' region = 'USA', subregion = 'California',
+#' mute = TRUE)
+#' }
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt 
 #' @import magrittr
@@ -196,6 +209,26 @@ weather_qc_durre <- function(weather_list,
                              max_diff_temp_corroboration = 10,
                              min_obs_megaconsistency = 140){
   
+  #check that weather_list is a list which contains lists
+  if(is.list(weather_list)){
+    list_test <- purrr::map_lgl(weather_list, is.list)
+    if(any(list_test == F)){
+      stop('weather_list need to contain data.frames with daily weather observations.
+           elements of weather_list appear to be not of type list')
+    }
+    
+  } else{
+    stop('weather_list needs to be a list. weather_list is not of type "list" ')
+  }
+  
+  #check if needed columns are present
+  column_check <- purrr::map_lgl(weather_list, function(x){
+    !all(c("Year", "Month", "Day", "Tmin", "Tmax", "Tmean", "Precip") %in% colnames(x))
+  })
+  if(any(column_check)){
+    stop("at least one weather station in weather_list does not contain the required columns c('Year', 'Month', 'Day', 'Tmin', 'Tmax', 'Tmean', 'Precip')")
+  }
+  
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
   weather_list <- purrr::map(weather_list, function(x){
@@ -207,8 +240,8 @@ weather_qc_durre <- function(weather_list,
     tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax, 'Tmean_org' = x$Tmean,
                    'Precip_org' = x$Precip,'flag_Tmin' = NA, 
                    'flag_Tmax' = NA, 'flag_Tmean' = NA,'flag_Precip' = NA) %>%
-      dplyr::mutate(doy = lubridate::yday(Date)) %>%
-      dplyr::relocate(Date, doy)#make sure date and doy are in beginning of columns
+      dplyr::mutate(doy = lubridate::yday(.data$Date)) %>%
+      dplyr::relocate(.data$Date, .data$doy)#make sure date and doy are in beginning of columns
     
   }) 
   
@@ -219,7 +252,92 @@ weather_qc_durre <- function(weather_list,
     skip_spatial_test <- TRUE
     warning("Because arguments aux_info and aux_list were not provided, the spatial
             consistency tests are skipped")
+  } else{
+    #if at least one of the two are present, make sure that all of them are and
+    #that they are of the correct type
+    if(is.list(aux_info) == FALSE | is.list(aux_list) == FALSE  | is.list(weather_info) == FALSE){
+      stop('if any of the arguments "aux_list", "aux_info", "target_info", are
+            supplied, then all of the three need to be supplied. Furthermore they need
+            to be of type "list"')
+    }
   }
+  
+  #make sure other arguments are of the right type
+  
+  #character, if supplied
+  if(is.null(region) == F | is.null(subregion) == FALSE){
+    test_list <- list(region, subregion)
+    tested_args <- c("region", "subregion")
+    test_res <- purrr::map_lgl(test_list, is.character) == FALSE
+    if(any(test_res)){
+      culprint <- tested_args[test_res]
+      stop(paste0('argument "', culprint, '" needs to be a character\n'))
+    }
+  }
+  
+  #logicals: mute, skip_spatial_test
+  test_list <- list(mute, skip_spatial_test)
+  tested_args <- c("mute", "skip_spatial_test")
+  test_res <- purrr::map_lgl(test_list, is.logical) == F
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    stop(paste0('argument: "', culprint, '" needs to be logical'))
+  }
+  
+  #numeric
+  test_list <- list(duplicate_test_min_obs,same_temp_threshold, min_non_zero_days,
+       temp_gap_threshold, prec_gap_threshold, max_temperature_z,
+       max_prec_threshold,  max_prec_threshold_freezing,  prec_percentile_climate_outlier,
+       dip_threshold,  lagged_range_max_diff,  max_dist,  window_width,  min_coverage,
+       min_correlation,  min_station,  max_station,  max_res,  max_res_norm,
+       max_diff_temp_corroboration,  min_obs_megaconsistency)
+  
+  tested_args <- c("duplicate_test_min_obs","same_temp_threshold", "min_non_zero_days",
+                   "temp_gap_threshold", "prec_gap_threshold", "max_temperature_z",
+                   "max_prec_threshold",  "max_prec_threshold_freezing",  "prec_percentile_climate_outlier",
+                   "dip_threshold",  "lagged_range_max_diff",  "max_dist",  "window_width",  "min_coverage",
+                   "min_correlation",  "min_station",  "max_station",  "max_res",  "max_res_norm",
+                   "max_diff_temp_corroboration",  "min_obs_megaconsistency")
+  
+  #test for numeric
+  test_res <- purrr::map_lgl(test_list, is.numeric) == FALSE
+  
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    
+    stop(paste0('argument: "', culprint, '" is not numeric\n'))
+  }
+  
+  #test for length 1
+  #add logical and character to this test aswell
+  test_list <- c(test_list, region, subregion, mute, skip_spatial_test)
+  tested_args <- c(tested_args, "region", "subregion", "mute", "skip_spatial_test")
+  test_res <- purrr::map_dbl(test_list, length) != 1
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    stop(paste0('argument: "', culprint, '" needs to be of length 1\n'))
+  }
+  
+  
+  #if supplied, the record_temp, record_precip need to be numeric of length 2
+  if(is.null(records_temp) == FALSE | is.null(records_precip) == F){
+    test_list <- list(records_temp, records_precip)
+    tested_args <- c("records_temp", "records_precip")
+    test_res <- purrr::map(test_list, function(x){
+      is.numeric(x) == F | length(x) != 2
+    })
+    if(any(test_res)){
+      culprint <- tested_args[test_res]
+      stop(paste0('argument "', culprint, '" needs to be numeric and of length 2'))
+    }
+  }
+  
+  if(is.numeric(percentile_frequent_value_test) == F | any(percentile_frequent_value_test <= 0) | any(percentile_frequent_value_test >= 1)){
+    stop('argument "percentile_frequent_value_test" needs to be numeric and should lie in between 0 and 1')
+  }
+  
+  
+  
   
   ####
   #basic integrity check
@@ -234,15 +352,22 @@ weather_qc_durre <- function(weather_list,
     cat('Naught check', '\n')
   }
   #1: naught check
-  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, 
-                                                                   variable = 'Tmin', 
-                                                                   test_result = test_naught_weather(weather = x),
-                                                                   test_name = 'naught_check'))
-  
-  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, 
-                                                                   variable = 'Tmax', 
-                                                                   test_result = test_naught_weather(weather = x),
-                                                                   test_name = 'naught_check'))
+  weather_list <- purrr::map(weather_list, function(x){
+    #Tmin
+    x <- clear_flagged_data(weather = x, 
+                       variable = 'Tmin', 
+                       test_result = test_naught_weather(weather = x),
+                       test_name = 'naught_check')
+    #Tmax
+    x <- clear_flagged_data(weather = x, 
+                            variable = 'Tmax', 
+                            test_result = test_naught_weather(weather = x),
+                            test_name = 'naught_check')
+    
+    return(x)
+    
+  })
+
   
   #2 duplicate check
   if(mute == FALSE){
@@ -250,27 +375,30 @@ weather_qc_durre <- function(weather_list,
   }
   #between entire years only for precipitation
   #tmin
-  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmin', 
-                                                                   test_result = get_duplicated_values(weather = x, 
-                                                                                                       variable = 'Tmin', 
-                                                                                                       precip_min_nonzero = duplicate_test_min_obs,
-                                                                                                       same_temp_threshold = same_temp_threshold), 
-                                                                   test_name = 'duplicated'))
+  weather_list <- purrr::map(weather_list, function(x){
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', 
+                            test_result = get_duplicated_values(weather = x, 
+                                                                variable = 'Tmin', 
+                                                                precip_min_nonzero = duplicate_test_min_obs,
+                                                                same_temp_threshold = same_temp_threshold), 
+                            test_name = 'duplicated')
+    #Tmax
+    x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                            test_result = get_duplicated_values(weather = x, variable = 'Tmax', 
+                                                                precip_min_nonzero = duplicate_test_min_obs,
+                                                                same_temp_threshold = same_temp_threshold), 
+                            test_name = 'duplicated')
+    #Precipitation
+    x <- clear_flagged_data(weather = x, variable = 'Precip', 
+                            test_result = get_duplicated_values(weather = x, variable = 'Precip', 
+                                                                precip_min_nonzero = duplicate_test_min_obs,
+                                                                same_temp_threshold = same_temp_threshold), 
+                            test_name = 'duplicated')
+    return(x)
+  })
   
-  #tmax
-  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Tmax', 
-                                                                   test_result = get_duplicated_values(weather = x, variable = 'Tmax', 
-                                                                                                       precip_min_nonzero = duplicate_test_min_obs,
-                                                                                                       same_temp_threshold = same_temp_threshold), 
-                                                                   test_name = 'duplicated'))
-  #precipitation
-  weather_list <- purrr::map(weather_list, function(x) clear_flagged_data(weather = x, variable = 'Precip', 
-                                                                   test_result = get_duplicated_values(weather = x, variable = 'Precip', 
-                                                                                                       precip_min_nonzero = duplicate_test_min_obs,
-                                                                                                       same_temp_threshold = same_temp_threshold), 
-                                                                   test_name = 'duplicated'))
-  
-  
+
   #### record exceedance test
   if(mute == FALSE){
     cat('Record exceedance test', '\n')
@@ -280,62 +408,56 @@ weather_qc_durre <- function(weather_list,
   if(is.null(region) == FALSE & is.null(subregion) == FALSE){
     #download records
     records <- get_weather_records(region = region) %>%
-      dplyr::filter(Country == subregion)
+      dplyr::filter(.data$Country == subregion)
     
     records_temp <- c(records$Tmin, records$Tmax)
     records_precip <- c(0, records$Precip)
   } 
   
-  
-  #Tmin
+  #carry out test
   weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmin', 
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = test_fixed_limit(weather = x, 
                                                       variable = 'Tmin',
                                                       region = NULL,
                                                       subregion = NULL,
                                                       records = records_temp), 
                        test_name = 'record_exceedance')
-  })
-  
-  #Tmax
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = test_fixed_limit(weather = x, 
-                                                      variable = 'Tmax',
-                                                      region = NULL,
-                                                      subregion = NULL,
-                                                      records = records_temp), 
-                       test_name = 'record_exceedance')
-  })
-  
-  ####if Tmean is present, should be tested as well
-  weather_list <- purrr::map(weather_list, function(x){
+    #Tmax
+    x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                            test_result = test_fixed_limit(weather = x, 
+                                                           variable = 'Tmax',
+                                                           region = NULL,
+                                                           subregion = NULL,
+                                                           records = records_temp), 
+                            test_name = 'record_exceedance')
+    
+    #Tmean, if present
     if('Tmean' %in% colnames(x)){
-      clear_flagged_data(weather = x, variable = 'Tmean', 
+       x <- clear_flagged_data(weather = x, variable = 'Tmean', 
                          test_result = test_fixed_limit(weather = x, 
                                                         variable = 'Tmean',
                                                         region = NULL,
                                                         subregion = NULL,
                                                         records = records_temp), 
                          test_name = 'record_exceedance')
-    } else{
-      x
     }
+    
+    #Precip
+        x <- clear_flagged_data(weather = x, variable = 'Precip', 
+                              test_result = test_fixed_limit(weather = x, 
+                                                             variable = 'Precip',
+                                                             region = NULL,
+                                                             subregion = NULL,
+                                                             records = records_precip), 
+                              test_name = 'record_exceedance')
+    return(x)
   })
   
-  #Precipitation
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = test_fixed_limit(weather = x, 
-                                                      variable = 'Precip',
-                                                      region = NULL,
-                                                      subregion = NULL,
-                                                      records = records_precip), 
-                       test_name = 'record_exceedance')
-  })
-  
-  
+
+
+
   #identical value streak test
   if(mute == FALSE){
     cat('Value Streak Test', '\n')
@@ -343,29 +465,22 @@ weather_qc_durre <- function(weather_list,
   
   #Tmin
   weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmin', 
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = get_streaks(weather = x, 
                                                  variable = 'Tmin',
                                                  rep_threshold = streak_threshold), 
                        test_name = 'streaks')
+    
+    #Tmax
+    x <-     clear_flagged_data(weather = x, variable = 'Tmax', 
+                                test_result = get_streaks(weather = x, 
+                                                          variable = 'Tmax',
+                                                          rep_threshold = streak_threshold), 
+                                test_name = 'streaks')
+    return(x)
   })
   
-  #Tmax
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = get_streaks(weather = x, 
-                                                 variable = 'Tmax',
-                                                 rep_threshold = streak_threshold), 
-                       test_name = 'streaks')
-  })
-  
-  #Precip
-  #weather_list <- purrr::map(weather_list, function(x){
-  #  clear_flagged_data(weather = x, variable = 'Precip', 
-  #                     test_result = get_streaks(weather = x, 
-  #                                               variable = 'Precip'), 
-  #                     test_name = 'streaks')
-  #})
   
   #calculate percentiles for each weather df, store in list
   prec_percentile_list <- purrr::map(weather_list, function(x){
@@ -377,7 +492,7 @@ weather_qc_durre <- function(weather_list,
     cat('Frequent Identical Value Test', '\n')
   }
   
-  weather_list <- map2(weather_list, prec_percentile_list, function(x,y){
+  weather_list <- purrr::map2(weather_list, prec_percentile_list, function(x,y){
     clear_flagged_data(weather = x, variable = 'Precip', 
                        test_result = check_frequent_value(weather = x, 
                                                           percentile_df = y,
@@ -399,61 +514,53 @@ weather_qc_durre <- function(weather_list,
   if(mute == FALSE){
     cat('Gap check', '\n')
   }
-  #Tmin
+
   weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmin', 
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = perform_gap_check(weather = x, 
                                                        variable = 'Tmin', 
                                                        temp_gap_threshold = temp_gap_threshold,
                                                        prec_gap_threshold = prec_gap_threshold), 
                        test_name = 'gap_check')
-  })
-  
-  #Tmax
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = perform_gap_check(weather = x, 
-                                                       variable = 'Tmax', 
-                                                       temp_gap_threshold = temp_gap_threshold,
-                                                       prec_gap_threshold = prec_gap_threshold), 
-                       test_name = 'gap_check')
-  })
-  
-  
-  ####if Tmean is present, should be tested as well
-  weather_list <- purrr::map(weather_list, function(x){
+    #Tmax
+    x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                            test_result = perform_gap_check(weather = x, 
+                                                            variable = 'Tmax', 
+                                                            temp_gap_threshold = temp_gap_threshold,
+                                                            prec_gap_threshold = prec_gap_threshold), 
+                            test_name = 'gap_check')
+    
+    #Tmean, if present
     if('Tmean' %in% colnames(x)){
-      clear_flagged_data(weather = x, variable = 'Tmean', 
+      x <- clear_flagged_data(weather = x, variable = 'Tmean', 
                          test_result = perform_gap_check(weather = x, 
                                                          variable = 'Tmean', 
                                                          temp_gap_threshold = temp_gap_threshold,
                                                          prec_gap_threshold = prec_gap_threshold), 
                          test_name = 'gap_check')
-    } else{
-      x
     }
+    #Precipitation
+    x <- clear_flagged_data(weather = x, variable = 'Precip', 
+                            test_result = perform_gap_check(weather = x, 
+                                                            variable = 'Precip', 
+                                                            temp_gap_threshold = temp_gap_threshold,
+                                                            prec_gap_threshold = prec_gap_threshold), 
+                            test_name = 'gap_check')
+    return(x)
   })
   
-  
-  
-  #Precip
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = perform_gap_check(weather = x, 
-                                                       variable = 'Precip', 
-                                                       temp_gap_threshold = temp_gap_threshold,
-                                                       prec_gap_threshold = prec_gap_threshold), 
-                       test_name = 'gap_check')
-  })
-  
+
+
   
   #climatological outlier
   if(mute == FALSE){
     cat('Climatological Outlier Test', '\n')
   }
-  #Tmin
+
   weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmin', 
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = perform_climate_outlier_check(weather = x, 
                                                                    variable = 'Tmin',
                                                                    max_temperature_z = max_temperature_z,
@@ -462,13 +569,19 @@ weather_qc_durre <- function(weather_list,
                                                                    prec_percentile = prec_percentile_climate_outlier
                        ), 
                        test_name = 'clim_outlier')
-  })
-  
-  
-  ####if Tmean is present, should be tested as well
-  weather_list <- purrr::map(weather_list, function(x){
+    #Tmax
+    x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                            test_result = perform_climate_outlier_check(weather = x, 
+                                                                        variable = 'Tmax',
+                                                                        max_temperature_z = max_temperature_z,
+                                                                        max_prec_threshold = max_prec_threshold,
+                                                                        max_prec_threshold_freezing = max_prec_threshold_freezing,
+                                                                        prec_percentile = prec_percentile_climate_outlier), 
+                            test_name = 'clim_outlier')
+    
+    #Tmean, if present
     if('Tmean' %in% colnames(x)){
-      clear_flagged_data(weather = x, variable = 'Tmean', 
+      x <- clear_flagged_data(weather = x, variable = 'Tmean', 
                          test_result = perform_climate_outlier_check(weather = x, 
                                                                      variable = 'Tmean',
                                                                      max_temperature_z = max_temperature_z,
@@ -477,35 +590,20 @@ weather_qc_durre <- function(weather_list,
                                                                      prec_percentile = prec_percentile_climate_outlier
                          ), 
                          test_name = 'clim_outlier')
-    } else{
-      x
     }
+    #Precipitation
+    x <- clear_flagged_data(weather = x, variable = 'Precip', 
+                            test_result = perform_climate_outlier_check(weather = x, 
+                                                                        variable = 'Precip',
+                                                                        max_temperature_z = max_temperature_z,
+                                                                        max_prec_threshold = max_prec_threshold,
+                                                                        max_prec_threshold_freezing = max_prec_threshold_freezing,
+                                                                        prec_percentile = prec_percentile_climate_outlier), 
+                            test_name = 'clim_outlier')
+    return(x)
   })
   
-  #Tmax
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = perform_climate_outlier_check(weather = x, 
-                                                                   variable = 'Tmax',
-                                                                   max_temperature_z = max_temperature_z,
-                                                                   max_prec_threshold = max_prec_threshold,
-                                                                   max_prec_threshold_freezing = max_prec_threshold_freezing,
-                                                                   prec_percentile = prec_percentile_climate_outlier), 
-                       test_name = 'clim_outlier')
-  })
-  
-  #Precip
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = perform_climate_outlier_check(weather = x, 
-                                                                   variable = 'Precip',
-                                                                   max_temperature_z = max_temperature_z,
-                                                                   max_prec_threshold = max_prec_threshold,
-                                                                   max_prec_threshold_freezing = max_prec_threshold_freezing,
-                                                                   prec_percentile = prec_percentile_climate_outlier), 
-                       test_name = 'clim_outlier')
-  })
-  
+
   
   ######
   #Temporal consistency checks
@@ -527,59 +625,56 @@ weather_qc_durre <- function(weather_list,
   })
   
   #apply resulst to tmin
-  weather_list <- map2(weather_list, test_list, function(x,y){
-    clear_flagged_data(weather = x, variable = 'Tmin', test_result = y$tmin_flag, 
+  weather_list <- purrr::map2(weather_list, test_list, function(x,y){
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', test_result = y$tmin_flag, 
                        test_name = 'iterative_consistency')
-  })
-  
-  #same results also for tmax
-  weather_list <- map2(weather_list, test_list, function(x,y){
-    clear_flagged_data(weather = x, variable = 'Tmax', test_result = y$tmax_flag, 
-                       test_name = 'iterative_consistency')
-  })
-  
-  
-  weather_list <- map2(weather_list, test_list, function(x,y){
+    #Tmax
+    x <- clear_flagged_data(weather = x, variable = 'Tmax', test_result = y$tmax_flag, 
+                            test_name = 'iterative_consistency')
+    return(x)
+    
+    #Tmean, if present
     if('Tmean' %in% colnames(x)){
-      clear_flagged_data(weather = x, variable = 'Tmean', 
+      x <- clear_flagged_data(weather = x, variable = 'Tmean', 
                          test_result = y$tmean_flag, 
                          test_name = 'iterative_consistency')
-    } else{
-      x
     }
+    return(x)
   })
   
+
+
   #spike - dip check
   if(mute == FALSE){
     cat('Spike/Dip Test', '\n')
   }
-  #tmin
+
   weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmin', 
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = test_spike_dip(weather = x, 
                                                     variable = 'Tmin',
                                                     dip_threshold = dip_threshold), 
                        test_name = 'spike-dip')
+    
+    #Tmax
+    x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                            test_result = test_spike_dip(weather = x, 
+                                                         variable = 'Tmax',
+                                                         dip_threshold = dip_threshold), 
+                            test_name = 'spike-dip')
+    #Tmean, if present
+    if('Tmean' %in% colnames(x)){
+      x <- clear_flagged_data(weather = x, variable = 'Tmean', 
+                              test_result = test_spike_dip(weather = x, 
+                                                           variable = 'Tmean',
+                                                           dip_threshold = dip_threshold), 
+                              test_name = 'spike-dip')
+    }
+    return(x)
   })
-  
-  #tmax
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = test_spike_dip(weather = x, 
-                                                    variable = 'Tmax',
-                                                    dip_threshold = dip_threshold), 
-                       test_name = 'spike-dip')
-  })
-  
-  #tmean
-  weather_list <- purrr::map(weather_list, function(x){
-    clear_flagged_data(weather = x, variable = 'Tmean', 
-                       test_result = test_spike_dip(weather = x, 
-                                                    variable = 'Tmean',
-                                                    dip_threshold = dip_threshold), 
-                       test_name = 'spike-dip')
-  })
-  
+
   
   #lagged temperature range check
   if(mute == FALSE){
@@ -590,18 +685,19 @@ weather_qc_durre <- function(weather_list,
                                   max_diff = lagged_range_max_diff)
   })
   
-  weather_list <- map2(weather_list, test_list, function(x,y){
-    clear_flagged_data(weather = x, variable = 'Tmin', 
+  weather_list <- purrr::map2(weather_list, test_list, function(x,y){
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = y$tmin_flag, 
                        test_name = 'lagged_temperature')
+    #Tmax
+    x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                            test_result = y$tmax_flag, 
+                            test_name = 'lagged_temperature')
+    return(x)
   })
   
-  weather_list <- map2(weather_list, test_list, function(x,y){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = y$tmax_flag, 
-                       test_name = 'lagged_temperature')
-  })
-  
+
   
   #####
   #spatial consistency check
@@ -633,12 +729,13 @@ weather_qc_durre <- function(weather_list,
       
       tibble::tibble(x)})
     
-    #Tmin
     if(mute == FALSE){
       cat('Spatial Regression Test', '\n')
     }
-    weather_list <- imap(weather_list, function(x,id){
-      clear_flagged_data(weather = x, variable = 'Tmin', 
+    
+    weather_list <- purrr::imap(weather_list, function(x,id){
+      #Tmin
+      x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                          test_result = test_spatial_consistency(weather = x, 
                                                                 weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                    weather_info$Latitude[weather_info$id == id]),
@@ -654,36 +751,36 @@ weather_qc_durre <- function(weather_list,
                                                                 max_res = max_res,
                                                                 max_res_norm = max_res_norm), 
                          test_name = 'spatial_regression')
+      #Tmax
+      x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                              test_result = test_spatial_consistency(weather = x, 
+                                                                     weather_coords = c(weather_info$Longitude[weather_info$id == id], 
+                                                                                        weather_info$Latitude[weather_info$id == id]),
+                                                                     aux_list = aux_list, 
+                                                                     aux_info = aux_info, 
+                                                                     variable = 'Tmax',
+                                                                     max_dist = max_dist,
+                                                                     window_width = window_width,
+                                                                     min_coverage = min_coverage,
+                                                                     min_correlation = min_correlation,
+                                                                     min_station = min_station,
+                                                                     max_station = max_station,
+                                                                     max_res = max_res,
+                                                                     max_res_norm = max_res_norm), 
+                              test_name = 'spatial_regression')
+      return(x)
     })
     
-    #Tmax
-    weather_list <- imap(weather_list, function(x,id){
-      clear_flagged_data(weather = x, variable = 'Tmax', 
-                         test_result = test_spatial_consistency(weather = x, 
-                                                                weather_coords = c(weather_info$Longitude[weather_info$id == id], 
-                                                                                   weather_info$Latitude[weather_info$id == id]),
-                                                                aux_list = aux_list, 
-                                                                aux_info = aux_info, 
-                                                                variable = 'Tmax',
-                                                                max_dist = max_dist,
-                                                                window_width = window_width,
-                                                                min_coverage = min_coverage,
-                                                                min_correlation = min_correlation,
-                                                                min_station = min_station,
-                                                                max_station = max_station,
-                                                                max_res = max_res,
-                                                                max_res_norm = max_res_norm), 
-                         test_name = 'spatial_regression')
-    })
-    
+
     
     #temperature corroboration
     if(mute == FALSE){
       cat('Spatial corroboration Test', '\n')
     }
-    #Tmin
-    weather_list <- imap(weather_list, function(x,id){
-      clear_flagged_data(weather = x, variable = 'Tmin', 
+
+    weather_list <- purrr::imap(weather_list, function(x,id){
+      #Tmin
+      x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                          test_result = test_temperature_corroboration(weather = x, 
                                                                     weather_coords = c(weather_info$Longitude[weather_info$id == id], 
                                                                                        weather_info$Latitude[weather_info$id == id]),
@@ -695,44 +792,33 @@ weather_qc_durre <- function(weather_list,
                                                                     max_dist = max_dist,
                                                                     max_diff = max_diff_temp_corroboration), 
                          test_name = 'spatial_corroboration')
+      #Tmax
+      x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                              test_result = test_temperature_corroboration(weather = x, 
+                                                                           weather_coords = c(weather_info$Longitude[weather_info$id == id], 
+                                                                                              weather_info$Latitude[weather_info$id == id]),
+                                                                           aux_list = aux_list, 
+                                                                           aux_info = aux_info, 
+                                                                           variable = 'Tmax',
+                                                                           max_station = max_station,
+                                                                           min_station = min_station,
+                                                                           max_dist = max_dist,
+                                                                           max_diff = max_diff_temp_corroboration), 
+                              test_name = 'spatial_corroboration')
+      #Precipitation
+      x <- clear_flagged_data(weather = x, variable = 'Precip', 
+                              test_result = test_precipitation_spatial_corroboration(weather = x, 
+                                                                                     weather_coords = c(weather_info$Longitude[weather_info$id == id], 
+                                                                                                        weather_info$Latitude[weather_info$id == id]),
+                                                                                     aux_list = aux_list, 
+                                                                                     aux_info = aux_info,
+                                                                                     max_dist = max_dist,
+                                                                                     max_station = max_station,
+                                                                                     min_station = min_station), 
+                              test_name = 'spatial_corroboration')
+      return(x)
     })
     
-    
-    
-    
-    
-    #Tmax
-    weather_list <- imap(weather_list, function(x,id){
-      clear_flagged_data(weather = x, variable = 'Tmax', 
-                         test_result = test_temperature_corroboration(weather = x, 
-                                                                    weather_coords = c(weather_info$Longitude[weather_info$id == id], 
-                                                                                       weather_info$Latitude[weather_info$id == id]),
-                                                                    aux_list = aux_list, 
-                                                                    aux_info = aux_info, 
-                                                                    variable = 'Tmax',
-                                                                    max_station = max_station,
-                                                                    min_station = min_station,
-                                                                    max_dist = max_dist,
-                                                                    max_diff = max_diff_temp_corroboration), 
-                         test_name = 'spatial_corroboration')
-    })
-    
-    
-    #Precipitation
-    weather_list <- imap(weather_list, function(x,id){
-      clear_flagged_data(weather = x, variable = 'Precip', 
-                         test_result = test_precipitation_spatial_corroboration(weather = x, 
-                                                                              weather_coords = c(weather_info$Longitude[weather_info$id == id], 
-                                                                                                 weather_info$Latitude[weather_info$id == id]),
-                                                                              aux_list = aux_list, 
-                                                                              aux_info = aux_info,
-                                                                              max_dist = max_dist,
-                                                                              max_station = max_station,
-                                                                              min_station = min_station), 
-                         test_name = 'spatial_corroboration')
-    })
-    
-  }
   
   
   ####
@@ -753,17 +839,21 @@ weather_qc_durre <- function(weather_list,
                                      min_obs = min_obs_megaconsistency)
   })
   
-  weather_list <- map2(weather_list, test, function(x,y){
-    clear_flagged_data(weather = x, variable = 'Tmin', 
+  weather_list <- purrr::map2(weather_list, test, function(x,y){
+    #Tmin
+    x <- clear_flagged_data(weather = x, variable = 'Tmin', 
                        test_result = y$flag_tmin, 
                        test_name =  'mega_consistency')
+    #Tmax
+    x <- clear_flagged_data(weather = x, variable = 'Tmax', 
+                            test_result = y$flag_tmax, 
+                            test_name =  'mega_consistency')
+    return(x)
   })
   
-  weather_list <- map2(weather_list, test, function(x,y){
-    clear_flagged_data(weather = x, variable = 'Tmax', 
-                       test_result = y$flag_tmax, 
-                       test_name =  'mega_consistency')
-  })
+  }
   
+  #tests are complete :)
+
   return(weather_list)
 }

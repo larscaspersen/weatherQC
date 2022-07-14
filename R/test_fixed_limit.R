@@ -31,8 +31,19 @@
 #' @seealso \code{\link{get_weather_records}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @examples 
-#' test_fixed_limit(weather = target_weather, region = 'USA', subregion = 'California', 
-#' variable = "Tmin")
+#' #using world-wide limits
+#' test_fixed_limit(weather = target_weather, variable = "Tmin")
+#' 
+#' #using user-specified limits
+#' test_fixed_limit(weather = target_weather, variable = "Tmin", 
+#' records = c(-20,50))
+#' 
+#' #using region-specific limits, retrieved from online sources
+#' \dontrun{
+#' test_fixed_limit(weather = target_weather, variable = "Tmin", 
+#' region = 'USA', subregion = 'California')
+#' }
+#' 
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
@@ -47,7 +58,7 @@ test_fixed_limit <- function(weather, variable, region = NULL, subregion = NULL,
   #case that neither records nor details on the region / subregion are supplied
   #--> take world record then 
   if(all(c(is.null(region), is.null(subregion), is.null(records)))){
-    if(variable %in% c("Tmin", "Tmax")){
+    if(variable %in% c("Tmin", "Tmax", "Tmean")){
       records <- c(-89.4, 57.7)
     } else if(variable == 'Precip'){
       records <- c(0, 1828.8)
@@ -73,7 +84,7 @@ test_fixed_limit <- function(weather, variable, region = NULL, subregion = NULL,
       stop(paste0('provided subregion name: ', subregion, ' could not be found in the records list. subregion list contains: ', paste0(unlist(records$subregion), collapse = ', ')))
     } else{
       #extract subregion-specific record
-      records <-  filter(records, Country == subregion)
+      records <-  dplyr::filter(records, .data$Country == subregion)
       
       if(variable %in% c('Tmin', 'Tmax')){
         records <- c(records$Tmin, records$Tmax)

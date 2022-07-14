@@ -49,6 +49,18 @@ target_weather <- read.csv('data-raw/target-weather_cimis_2.csv')
 neighbour_weather <- load_temperature_scenarios(path = 'data-raw/',
                                              prefix = 'neighbour-weather')
 
+#add date and doy to weather data
+target_weather$Date <- as.Date(paste(target_weather$Year, target_weather$Month,
+                                     target_weather$Day, sep = '-'), format = "%Y-%m-%d")
+target_weather$doy <- lubridate::yday(target_weather$Date)
+
+neighbour_weather <- purrr::map(neighbour_weather, function(x){
+  x$Date <- as.Date(paste(x$Year, x$Month,
+                                       x$Day, sep = '-'), format = "%Y-%m-%d")
+  x$doy <- lubridate::yday(x$Date)
+  return(x)
+})
+
 #download cimis stations and ucipm stations
 #save as objects in the end
 

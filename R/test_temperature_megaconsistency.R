@@ -21,7 +21,7 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples test_temperature_mega_consistency(weather = target_weather)
+#' @examples test_temperature_megaconsistency(weather = target_weather)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
@@ -31,31 +31,31 @@ test_temperature_megaconsistency <- function(weather, min_obs = 140){
   
   #for each month get max(tmax) and min(tmin)
   flags <- weather %>%
-    dplyr::group_by(Month) %>%
-    dplyr::mutate(flag_tmin = Tmin > max(Tmax, na.rm = T),
-           flag_tmax = Tmax < min(Tmin, na.rm = T)) %>%
+    dplyr::group_by(.data$Month) %>%
+    dplyr::mutate('flag_tmin' = .data$Tmin > max(.data$Tmax, na.rm = T),
+           'flag_tmax' = .data$Tmax < min(.data$Tmin, na.rm = T)) %>%
     dplyr::ungroup() %>%
-    dplyr::select(Month, flag_tmin, flag_tmax) %>%
-    dplyr::mutate(flag_tmin = replace_na(flag_tmin, FALSE),
-           flag_tmax = replace_na(flag_tmax, FALSE))
+    dplyr::select(.data$Month, .data$flag_tmin, .data$flag_tmax) %>%
+    dplyr::mutate('flag_tmin' = tidyr::replace_na(.data$flag_tmin, FALSE),
+           'flag_tmax' = tidyr::replace_na(.data$flag_tmax, FALSE))
   
   #check if each month has enough observations, otherwise replace flags with FALSE
   obs_tmax <- weather %>%
-    dplyr::group_by(Month) %>%
-    dplyr::select(Tmax) %>%
-    na.omit() %>%
-    dplyr::summarise(n = n())
+    dplyr::group_by(.data$Month) %>%
+    dplyr::select(.data$Tmax) %>%
+    stats::na.omit() %>%
+    dplyr::summarise('n' = dplyr::n())
   
   obs_tmin <- weather %>%
-    dplyr::group_by(Month) %>%
-    dplyr::select(Tmin) %>%
-    na.omit() %>%
-    dplyr::summarise(n = n())
+    dplyr::group_by(.data$Month) %>%
+    dplyr::select(.data$Tmin) %>%
+    stats::na.omit() %>%
+    dplyr::summarise('n' = dplyr::n())
   
   too_few_obs <- which((obs_tmin$n >= min_obs) & (obs_tmax$n >= min_obs) == FALSE)
   
   #in case there are months with too few observations, replace Flag with FALSE
-  if(is_empty(too_few_obs) == FALSE){
+  if(purrr::is_empty(too_few_obs) == FALSE){
     
     flags[flags$Month == too_few_obs, c('flag_tmin', 'flag_tmax')] <- FALSE
   }

@@ -24,8 +24,6 @@
 #' please refer to section 5 "Internal and temporal consistency checks".
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")
-#' @param variable a character indicating the column name of the tested variable 
-#' in weather
 #' @param max_diff threshold for the test, spike and dips lower than this value
 #' are ignored
 #' @return data.frame with two columns and same amount of rows as in \code{weather}. 
@@ -40,7 +38,7 @@
 #' @export
 test_lagged_temperature_range <- function(weather, max_diff = 40){
   #get lowesr tmax for each day using a trhee day window
-  lowest_tmax <- apply(matrix(c(lag(weather$Tmax), weather$Tmax, lead(weather$Tmax)),nrow = nrow(weather),
+  lowest_tmax <- apply(matrix(c(dplyr::lag(weather$Tmax), weather$Tmax, dplyr::lead(weather$Tmax)),nrow = nrow(weather),
                               ncol = 3, byrow = FALSE), MARGIN = 1, function(x){
                                 if(all(is.na(x))){
                                   return(NA)
@@ -51,13 +49,17 @@ test_lagged_temperature_range <- function(weather, max_diff = 40){
   
   #create flag for tmin and tmax. each day of tmin tested true gets flagged, aswell as the tree day windows of tmax
   tmin_flag <- tmax_flag <- weather$Tmin <= lowest_tmax - max_diff
-  addtional_true <- c(which(tmax_flag) + 1, which(tmax_flag) - 1) %>%
-    .[. != 0 | .!= length(tmin_flag)]
+  
+  #additional days to flag
+  addtional_true <- c(which(tmax_flag) + 1, which(tmax_flag) - 1) 
+  #make sure the additional days are not outside the range of the vector
+  addtional_true <- addtional_true[addtional_true != 0 | addtional_true != length(tmin_flag)]
+
   tmax_flag[addtional_true] <- TRUE
   
   #same for tmax
   #get lowesr tmax for each day using a trhee day window
-  highest_tmin <- apply(matrix(c(lag(weather$Tmin), weather$Tmin, lead(weather$Tmin)),nrow = nrow(weather),
+  highest_tmin <- apply(matrix(c(dplyr::lag(weather$Tmin), weather$Tmin, dplyr::lead(weather$Tmin)),nrow = nrow(weather),
                                ncol = 3, byrow = FALSE), MARGIN = 1,  function(x){
                                  if(all(is.na(x))){
                                    return(NA)
@@ -68,13 +70,17 @@ test_lagged_temperature_range <- function(weather, max_diff = 40){
   
   #create flag for tmin and tmax. each day of tmin tested true gets flagged, aswell as the tree day windows of tmax
   tmin_flag2 <- tmax_flag2 <- weather$Tmax >= highest_tmin + max_diff
-  addtional_true <- c(which(tmax_flag2) + 1, which(tmax_flag2) - 1) %>%
-    .[. != 0 | .!= length(tmin_flag)]
+
+  #additional days to flag
+  addtional_true <- c(which(tmax_flag) + 1, which(tmax_flag) - 1) 
+  #make sure the additional days are not outside the range of the vector
+  addtional_true <- addtional_true[addtional_true != 0 | addtional_true != length(tmin_flag)]
+  
   tmax_flag2[addtional_true] <- TRUE
   
   #remove nas from flag, change them to NA
-  tmin_flag <- replace_na(tmin_flag | tmin_flag2, replace = FALSE)
-  tmax_flag <- replace_na(tmax_flag | tmax_flag2, replace = FALSE)
+  tmin_flag <- tidyr::replace_na(tmin_flag | tmin_flag2, replace = FALSE)
+  tmax_flag <- tidyr::replace_na(tmax_flag | tmax_flag2, replace = FALSE)
   
   
   #return any case of tmin_flag / tmin_flag2; tmax_flag | tmax_flag2
