@@ -17,7 +17,7 @@
 #' period_start = as.Date("1991-12-17", format = "%Y-%m-%d"), 
 #' period_end = as.Date("1991-02-15", format = "%y-%m-%d"))
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
-#' @export
+#' @noRd
 select_target_days <- function(df, variable, period_start, period_end){
   
   #if not present, add Date column
@@ -25,13 +25,13 @@ select_target_days <- function(df, variable, period_start, period_end){
   
   #in case every day of the target period is also present in the weather dataframe, then simply reutrn everything
   if(all(period_start:period_end %in% df$Date)){
-    return(pull(df[df$Date >= period_start & df$Date <= period_end,variable]))
+    return(unlist(df[df$Date >= period_start & df$Date <= period_end,variable]))
   } else{
     #make a placeholder for the selected days
     re_vec <- rep(NA, as.numeric(period_end-period_start +1))
     
     #change days which are present in the 
-    re_vec[period_start:period_end %in% df$Date] <- pull(df[df$Date >= period_start & df$Date <= period_end,variable])
+    re_vec[period_start:period_end %in% df$Date] <- unlist(df[df$Date >= period_start & df$Date <= period_end,variable])
     
     return(re_vec)
     

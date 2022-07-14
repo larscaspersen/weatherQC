@@ -102,15 +102,17 @@ For more information please refer to \insertCite{durre_comprehensive_2010;textua
 section 6 "Spatial consistency checks" and "Appendix B".
 }
 \examples{
+\dontrun{
 test_spatial_consistency(weather = target_weather,
-weather_coords = c(target_info$Longitude, target_info$Latidue),
+weather_coords = c(target_info$Longitude, target_info$Latitude),
 aux_info = neighbour_info, aux_list = neighbour_weather, variable = "Tmin")
+}
 }
 \references{
 \insertAllCited{}
 }
 \seealso{
-\code{\link{spat_consist_one_period}}
+\code{\link{test_precipitation_spatial_corroboration}}, \code{\link{test_temperature_corroboration}},
 }
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}

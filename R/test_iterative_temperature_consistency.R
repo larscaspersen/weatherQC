@@ -48,9 +48,9 @@ test_iterative_temperature_consistency <- function(weather){
   while(max_violations > 1){
     #check which observations are available
     tmin0 <- is.na(weather$Tmin) == FALSE
-    tmin1 <- is.na(lead(weather$Tmin)) == FALSE
+    tmin1 <- is.na(dplyr::lead(weather$Tmin)) == FALSE
     tmax0 <- is.na(weather$Tmax) == FALSE
-    tmax1 <- is.na(lead(weather$Tmax)) == FALSE
+    tmax1 <- is.na(dplyr::lead(weather$Tmax)) == FALSE
     tmean0 <- is.na(weather$Tmean) == FALSE
     
     #objects to count the amount of positive tests 
@@ -66,20 +66,20 @@ test_iterative_temperature_consistency <- function(weather){
     t3 <- ifelse(tmean0 & tmin0, yes = weather$Tmean < (weather$Tmin), no = FALSE)
     
     #4
-    t4 <- ifelse(tmax0 & tmin1, yes = (weather$Tmax < (lead(weather$Tmin) - 1)), no = FALSE)
+    t4 <- ifelse(tmax0 & tmin1, yes = (weather$Tmax < (dplyr::lead(weather$Tmin) - 1)), no = FALSE)
     
     #5
-    t5 <- ifelse(tmin0 & tmax1, yes = weather$Tmin > (lead(weather$Tmax) + 1), no = FALSE)
+    t5 <- ifelse(tmin0 & tmax1, yes = weather$Tmin > (dplyr::lead(weather$Tmax) + 1), no = FALSE)
     
     #6
-    t6 <- ifelse(tmax1 & tmean0, yes = lead(weather$Tmax) < (weather$Tmin -1), no = FALSE)
+    t6 <- ifelse(tmax1 & tmean0, yes = dplyr::lead(weather$Tmax) < (weather$Tmin -1), no = FALSE)
     
     #7
-    t7 <- ifelse(tmin1 & tmean0, yes = lead(weather$Tmin) > (weather$Tmean +1), no = FALSE)
+    t7 <- ifelse(tmin1 & tmean0, yes = dplyr::lead(weather$Tmin) > (weather$Tmean +1), no = FALSE)
     
     #count the amount of positive tests per reading, account for lead values
-    tmax_violations <- t1 + t2 + t4 + lag(t5) + lag(t6)
-    tmin_violations <- t1 + t3 + t5 + lag(t4) + lag(t7)
+    tmax_violations <- t1 + t2 + t4 + dplyr::lag(t5) + dplyr::lag(t6)
+    tmin_violations <- t1 + t3 + t5 + dplyr::lag(t4) + dplyr::lag(t7)
     tmean_violations <- t2 + t3 + t6 + t7
     
     #identify max amount of violations

@@ -22,7 +22,7 @@
 #' or larger, then function flags data. By default 300 mm
 #' @return Logical vector of same length as rows in \code{weather}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test.
-#' @examples perform_gap_check(weather = weather, variable = "Tmin")
+#' @examples perform_gap_check(weather = target_weather, variable = "Tmin")
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
@@ -30,6 +30,9 @@
 #' @export
 perform_gap_check <- function(weather, variable, temp_gap_threshold = 10, 
                               prec_gap_threshold = 300){
+  
+  #this is to avoid notes in the cmd check,
+  . <- NULL
   
   #set the threshold for the variable accordingly
   if(variable %in% c('Tmin', 'Tmax', 'Tmean')){
@@ -42,12 +45,12 @@ perform_gap_check <- function(weather, variable, temp_gap_threshold = 10,
   var_per_month <-  split(weather, weather$Month)
   
   #perform the search for gaps on the monthly split data
-  gap_flag <- map(var_per_month, function(x){
+  gap_flag <- purrr::map(var_per_month, function(x){
     #drop na values
     x <- x[is.na(x[,variable]) == FALSE,]
     
     #sort decreasing 
-    x <- arrange(x, x[,variable])
+    x <- dplyr::arrange(x, x[,variable])
     
     #get monthly flag
     x$gap_flag <-  get_gap_monthly(x = x[[variable]], gap_threshold = gap_threshold)
@@ -55,14 +58,14 @@ perform_gap_check <- function(weather, variable, temp_gap_threshold = 10,
     return(x)
     
   }) %>%
-    bind_rows() %>%
-    arrange(Date) %>%
+    dplyr::bind_rows() %>%
+    dplyr::arrange(.data$Date) %>%
     merge.data.frame(weather, ., by = colnames(weather), all.x = TRUE) %>%
-    select(gap_flag)
+    dplyr::select(gap_flag)
   
   #replace NAs with FALSE values
   gap_flag <- gap_flag[,1] %>%
-    replace_na(FALSE)
+    tidyr::replace_na(FALSE)
   
   #return gap_flag column
   return(gap_flag)

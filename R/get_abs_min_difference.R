@@ -25,7 +25,7 @@
 #' @examples 
 #' get_abs_min_difference(x = target_weather$Precip[1], target_date = target_weather$Date[1],
 #' variable = "Precip", aux_list = neighbour_weather)
-#' @export
+#' @noRd
 get_abs_min_difference <- function(x, target_date, variable, aux_list){
   
   if(is.na(x) == TRUE){
@@ -34,10 +34,10 @@ get_abs_min_difference <- function(x, target_date, variable, aux_list){
 
   
   #extract values from aux station with +-1 day
-  int <- map(aux_list, function(x){
-    x %>%
-      filter(Date >= (target_date - 1) & Date <= (target_date + 1)) %>%
-      .[[variable]]
+  int <- purrr::map(aux_list, function(x){
+    x <- x %>%
+      dplyr::filter(.data$Date >= (target_date - 1) & .data$Date <= (target_date + 1)) %>%
+    x[[variable]]
   }) %>%
     unlist() %>%
     unname()

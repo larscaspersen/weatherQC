@@ -31,19 +31,19 @@
 #' \insertAllCited{}
 #' @examples 
 #' #add needed columns to weather
-#' weather <- tibble::tibble(weather, 
-#'                           'Tmin_org' = weather$Tmin, 
-#'                           'Tmax_org' = weather$Tmax, 
-#'                           'Precip_org' = weather$Precip,
+#' weather <- tibble::tibble(target_weather, 
+#'                           'Tmin_org' = target_weather$Tmin, 
+#'                           'Tmax_org' = target_weather$Tmax, 
+#'                           'Precip_org' = target_weather$Precip,
 #'                           'flag_Tmin' = NA, 
 #'                           'flag_Tmax' = NA, 
 #'                           'flag_Precip' = NA)
 #'                           
 #' #perform test
-#' test_result <- test_spike_dip(weather = target_weather, variable = "Tmin")
+#' test_result <- test_spike_dip(weather = weather, variable = "Tmin")
 #' 
 #' #add test result to weather
-#' weather <- clear_flagged_data(weather = target_weather, variable = "Tmin",
+#' weather <- clear_flagged_data(weather = weather, variable = "Tmin",
 #'                               test_result = test_result,
 #'                               test_name = "spike_dip")
 #'

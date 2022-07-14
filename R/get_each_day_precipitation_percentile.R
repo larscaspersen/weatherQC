@@ -29,9 +29,9 @@ get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7,
                                                   min_non_zero_days = 20){
   
   #incase there is no doy in weather, add it
-  if(!'doy' %in% names(weather)){
+  if('doy' %in% colnames(weather) == FALSE){
     #in case no date in weather add it too
-    if(!'Date' %in% names(weather)){
+    if('Date' %in% colnames(weather) == FALSE){
       weather$Date <- as.Date(paste(weather$Year, weather$Month, weather$Day, sep = '-'),
                               format = '%Y-%m-%d')
     }
@@ -40,11 +40,15 @@ get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7,
   
   names <- c('doy', paste0(probs * 100, '%'))
   
-  map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
+  quantile_list <- purrr::map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
                                                        doy = .x,
                                                        probs = probs, 
-                                                       min_non_zero_days = min_non_zero_days)) %>%
-    do.call(rbind, .) %>%
-    data.frame(doy = unique(weather$doy), .) %>%
-    `colnames<-`(names)
+                                                       min_non_zero_days = min_non_zero_days))
+  quantile_df <- do.call(rbind, quantile_list)
+  
+  quantile_df <- data.frame(doy = unique(weather$doy), quantile_df)
+  
+  colnames(quantile_df) <- names
+
+  return(quantile_df)
 }

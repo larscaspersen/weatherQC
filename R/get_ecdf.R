@@ -23,7 +23,7 @@
 #' @importFrom Rdpack reprompt
 #' @references
 #' \insertAllCited{}
-#' @export
+#' @noRd
 get_ecdf <- function(weather, doy, min_non_zero_days = 20){
   #get doys of target days
   lim_doy <- doy + c(-14,14)
@@ -53,9 +53,12 @@ get_ecdf <- function(weather, doy, min_non_zero_days = 20){
   #take non zero precipitation data from the 29 window over all years, 
   #make it a empirical cumulative distribution function, then determine 
   #the percentile of the valuz 
-  return(weather$Precip[target_days] %>%
-           na.omit() %>%
-           .[.>0] %>%
-           ecdf())
+  precip <- weather$Precip[target_days] %>%
+    stats::na.omit()
+  
+  #skip zero precip observations
+  precip <- precip[precip > 0]
+  
+  return(stats::ecdf(precip))
   
 }

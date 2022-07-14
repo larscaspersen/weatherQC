@@ -7,7 +7,7 @@
 \format{
 A data frame with 11688 rows and 14 variables:
 \describe{
-  \item{Weather Station}{Name of station}
+  \item{Weather_Station}{Name of station}
   \item{Year}{Year}
   \item{Month}{Month}
   \item{Day}{Day}
@@ -27,7 +27,7 @@ A data frame with 11688 rows and 14 variables:
 \url{https://cimis.water.ca.gov/}
 }
 \usage{
-target_weather
+data(target_weather)
 }
 \description{
 A data set containing the daily observations of precipitation, minimum and 

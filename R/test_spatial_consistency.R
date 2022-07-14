@@ -63,10 +63,13 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples test_spatial_consistency(weather = target_weather,
-#' weather_coords = c(target_info$Longitude, target_info$Latidue),
+#' @examples 
+#' \dontrun{
+#' test_spatial_consistency(weather = target_weather,
+#' weather_coords = c(target_info$Longitude, target_info$Latitude),
 #' aux_info = neighbour_info, aux_list = neighbour_weather, variable = "Tmin")
-#' @seealso \code{\link{spat_consist_one_period}}
+#' }
+#' @seealso \code{\link{test_precipitation_spatial_corroboration}}, \code{\link{test_temperature_corroboration}},
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
@@ -85,7 +88,7 @@ test_spatial_consistency <- function(weather, weather_coords, aux_list, aux_info
   
   #select stations within the max distance, which are not the target station
   aux_info <- aux_info %>%
-    filter(dist > 0 & dist <= max_dist)
+    dplyr::filter(.data$dist > 0 & .data$dist <= max_dist)
   
   aux_list <- aux_list[aux_info$id]
   
@@ -104,13 +107,12 @@ test_spatial_consistency <- function(weather, weather_coords, aux_list, aux_info
     spat_consist_one_period(weather = weather, aux_list = aux_list,
                             aux_info = aux_info, variable = variable, period_start = x, 
                             window_width = window_width, max_res = max_res, 
-                            max_res_norm = max_res_norm, min_station = min_station, 
                             max_station = max_station, min_correlation = min_correlation, 
                             min_coverage = min_coverage)})
   
   
   #chnage nas to false
-  spatial_flags <- replace_na(unlist(spatial_flags), FALSE)
+  spatial_flags <- tidyr::replace_na(unlist(spatial_flags), FALSE)
   
   #return the the flags in form of a list
   return(spatial_flags)

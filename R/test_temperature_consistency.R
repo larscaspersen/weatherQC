@@ -38,7 +38,7 @@ test_temperature_consistency <- function(weather, probs = 0.99){
   
   #tmean should not be too different from (tmin + tmax)/2
   diff_tmean <- abs(((weather$Tmin + weather$Tmax)/2) - weather$Tmean)
-  perc_diff_tmean <- quantile(diff_tmean, prob = probs, na.rm = T)
+  perc_diff_tmean <- stats::quantile(diff_tmean, prob = probs, na.rm = T)
   cons4 <- diff_tmean > perc_diff_tmean
   
   

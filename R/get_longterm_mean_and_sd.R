@@ -12,11 +12,12 @@
 #' It should have columns c("Year", "Month", "Day")
 #' @param variable a character indicating the column name of the tested variable 
 #' in weather
+#' @param doy day of the year, for which longterm mean and sd should be calculated
 #' @return data.frame with columns c(doy, mean, sd)
 #' @seealso \code{\link{perform_climate_outlier_check}}
 #' @examples get_longterm_mean_and_sd(weather = target_weather, variable = "Tmin", doy = 1)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
-#' @export
+#' @noRd
 get_longterm_mean_and_sd <- function(weather, variable, doy){
   #get doys of target days
   lim_doy <- doy + c(-7,7)
@@ -42,6 +43,6 @@ get_longterm_mean_and_sd <- function(weather, variable, doy){
   
   return(data.frame(doy = doy,
                     mean = mean(weather[[variable]][target_days], na.rm =T), 
-                    sd = sd(weather[[variable]][target_days], na.rm =T)))
+                    sd = stats::sd(weather[[variable]][target_days], na.rm =T)))
   
 }

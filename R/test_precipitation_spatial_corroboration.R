@@ -9,7 +9,14 @@
 #' description of the test please refer to \insertCite{durre_comprehensive_2010;textual}{weatherQC}
 #' section 6 "Spatial consistency checks" and "Appendix C". 
 #' 
-#' Climatological percentile ranks of precipitation is calculated using \code{\link{get_prec_rank}}
+#' Climatological percentile ranks of precipitation are calculated using the following approach.
+#' It includes precipitation data of a 29 day window centered at
+#' the day of interest throughout all observed years and calculates the empirical
+#' cumulative density function (ecdf). Missing observations and 
+#' zer-precipitation observations are discarded. If there are fewer observations than 
+#' 20 days, then NA is returned instead of the ecdf. Then the 
+#' precipitation event of interest is inserted in the ecdf and the corresponding 
+#' percentile rank is calculated. This is done for each precipitation event.
 #' 
 #' @param weather data.frame containing a daily time series data set. 
 #' It should have columns c("Year", "Month", "Day")
@@ -32,10 +39,13 @@
 #' @return logical vector of same length as \code{nrow(weather)}. Values of \code{TRUE} indicate successful test,
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
-#' @examples test_precipitation_spatial_corroboration(weather = target_weather,
-#' weather_coords = c(target_info$Longitude, target_info$Latidue),
+#' @examples 
+#' \dontrun{
+#' test_precipitation_spatial_corroboration(weather = target_weather,
+#' weather_coords = c(target_info$Longitude[1], target_info$Latitude[1]),
 #' aux_info = neighbour_info, aux_list = neighbour_weather)
-#' @seealso \code{\link{get_prec_rank}}, \code{\link{get_abs_min_difference}}
+#' }
+#' @seealso \code{\link{test_temperature_corroboration}}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @importFrom Rdpack reprompt
 #' @references
@@ -45,14 +55,17 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
                                                    aux_list, max_dist = 75,
                                                    max_station = 7, min_station = 3){
   
+  #avoid notes in cmd test
+  . <- NULL
+  
   #calculate distance to aux_stations
   aux_info$dist <-  round(sp::spDistsN1(pts = as.matrix(aux_info[, c("Longitude", "Latitude")]),
                                         pt = weather_coords, longlat = TRUE), 2)
   
   #select stations within the max distance, which are not the target station
   aux_info <- aux_info %>%
-    filter(dist > 0 & dist <= max_dist) %>%
-    arrange(dist)
+    dplyr::filter(.data$dist > 0 & .data$dist <= max_dist) %>%
+    dplyr::arrange(.data$dist)
   
   #if too few neighbouring values, then the test can't be carried out
   if(nrow(aux_info) < min_station){
@@ -70,8 +83,8 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
   weather$prec_rank <- get_prec_rank(weather = weather)
   
   #also add prec rank to aux data
-  aux_list <-  map(aux_list, get_prec_rank) %>%
-    map2(., aux_list, function(x,y) tibble(y, prec_rank = x))
+  aux_list <-  purrr::map(aux_list, get_prec_rank) %>%
+    purrr::map2(., aux_list, function(x,y) tibble::tibble(y, prec_rank = x))
   
   ####
   #get absolute minimum difference
@@ -82,11 +95,11 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
   names(x_org)[2] <- 'x'
   
   #extract the precipitation data from the aux list
-  y_org <- map(aux_list, function(y){
+  y_org <- purrr::map(aux_list, function(y){
     int <- merge.data.frame(x_org, y[,c('Date', 'Precip')], 
                             by = 'Date', all.x = T)
     return(int[,'Precip'])}) %>%
-    bind_cols()
+    dplyr::bind_cols()
   
   #bind by columns to a matrix
   y_org <- tibble::tibble(y_org, dplyr::lead(y_org), dplyr::lag(y_org), .name_repair = 'minimal') %>%
@@ -120,11 +133,11 @@ test_precipitation_spatial_corroboration <- function(weather, weather_coords, au
   names(x_rank)[2] <- 'x'
   
   #extract the precipitation data from the aux list
-  y_rank <- map(aux_list, function(y){
+  y_rank <- purrr::map(aux_list, function(y){
     int <- merge.data.frame(x_rank, y[,c('Date', 'prec_rank')], 
                             by = 'Date', all.x = T)
     return(int[,'prec_rank'])}) %>%
-    bind_cols()
+    dplyr::bind_cols()
   
   #bind by columns to a matrix
   y_rank <- tibble::tibble(y_rank, dplyr::lead(y_rank), dplyr::lag(y_rank), .name_repair = 'minimal') %>%

@@ -11,15 +11,13 @@ data.frame with 12 row and 6 variables:
   \item{Name}{name of weather station}
   \item{Longitude}{longitude of weather station decimal format}
   \item{Latitude}{latitude of weather station in decimal format}
-  \item{Start_date}{first available day of weather observation of this station}
-  \item{End_date}{last available day of weather observation of this station}
 }
 }
 \source{
 \url{https://cimis.water.ca.gov/} and \url{http://ipm.ucanr.edu/}
 }
 \usage{
-neighbour_info
+data(neighbour_info)
 }
 \description{
 data.frames containing a unique identifier for the weather station, coordinates

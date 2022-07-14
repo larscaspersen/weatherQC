@@ -27,7 +27,7 @@ test_temporal_continuity <-  function(weather, variable, prob = 0.995){
   diffs <- c(abs(diff(as.matrix(weather[,variable]))), NA)
   
   #get the quantile of the jumps, everything above the quantile is labelled as suspicious
-  jump_quan <- quantile(diffs, probs = prob, na.rm = T)
+  jump_quan <- stats::quantile(diffs, probs = prob, na.rm = T)
   
   return(ifelse(is.na(diffs), yes = F, no = (diffs > jump_quan)))
   

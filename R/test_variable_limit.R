@@ -23,20 +23,26 @@
 #' @export
 test_variable_limit <- function(weather, variable, probs = c(0.01, 0.99)){
   
+  #avoid note by cmd test
+  . <- NULL
+  
   #split to monthly groups
   monthly_weather <- split(weather, f = weather$Month)
   
   
   monthly_test <- weather %>%
     split(f = .$Month) %>%
-    purrr::map(function(x) quantile(x[,variable], probs = probs, na.rm = T)) %>%
+    purrr::map(function(x) stats::quantile(x[,variable], probs = probs, na.rm = T)) %>%
     purrr::map2(monthly_weather, function(x,y) ifelse(is.na(y[,variable]), yes = FALSE, no = y[,variable] < x[1] | y[,variable] > x[2])) %>%
     unsplit(f = weather$Month)
   
   
   #also test for yearly quantiles
-  yearly_test <- quantile(weather[,variable], probs = c(probs[1], probs[2]), na.rm = T) %>%
-    {ifelse(is.na(weather[,variable]), yes = F, no = ((weather[, variable] < .[1])|(weather[,variable]>.[2])))}
+  test_quantiles <- stats::quantile(weather[,variable], probs = c(probs[1], probs[2]), na.rm = T)
+  
+  yearly_test <- ifelse(is.na(weather[,variable]), yes = F, 
+         no = ((weather[, variable] < test_quantiles[1])|(weather[,variable]>test_quantiles[2])))
+  
   
   return(yearly_test | monthly_test)
   

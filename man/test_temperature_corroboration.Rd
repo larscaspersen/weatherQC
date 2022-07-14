@@ -77,7 +77,7 @@ following day are included in the test to account for differences in the recordi
 protocol. For each observation and station the temperature anomaly is calculated,
 meaning the standardized residuals of observation to the long term mean of the day of the year
 of the respective weather station. Long term mean and standard deviation are 
-calculated using the same principle as in \code{\link{get_longterm_mean_and_sd}}.
+calculated using the same principle as in \code{\link{perform_climate_outlier_check}}.
 If the minimum absolute difference of the target to neighbor anomaly is larger than 
 the default threshold of 10 degree C, then the target value is flagged by the 
 test.
@@ -86,9 +86,11 @@ For a detailed description of the test please refer to \insertCite{durre_compreh
 section 6 "Spatial consistency checks".
 }
 \examples{
+\dontrun{
 test_temperature_corroboration(weather = target_weather,
-weather_coords = c(target_info$Longitude, target_info$Latidue),
-aux_info = neighbour_info, aux_list = neighbour_list, variable = "Tmin")
+weather_coords = c(target_info$Longitude, target_info$Latitude),
+aux_info = neighbour_info, aux_list = neighbour_weather, variable = "Tmin")
+}
 }
 \references{
 \insertAllCited{}
