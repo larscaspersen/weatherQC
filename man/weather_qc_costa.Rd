@@ -13,7 +13,8 @@ weather_qc_costa(
   aux_info = NULL,
   region = NULL,
   subregion = NULL,
-  records = NULL,
+  records_temp = NULL,
+  records_precip = NULL,
   probs_variable_limit = c(0.01, 0.99),
   probs_temporal_continuity = 0.995,
   probs_temperature_consistency = 0.99,
@@ -61,9 +62,13 @@ limits are supplied}
 In case of \code{region = "USA"} it should be the state's name the weather is obtained from.
 If user-defined limits are used, should be set to \code{NULL}}
 
-\item{records}{by default set to \code{NULL}. In case of user-defined limits, it should
-be a numeric vector of length two, containing lower and upper limits of tested variable.
-Needs to of length 2, first value indicates lower limit and second the upper limit}
+\item{records_temp}{minimum and maximum temperature in degree Celsius limits for the fixed
+limit test. If left NULL, either the function scraps records from the web if}
+
+\item{records_precip}{lower and upper limits of daily precipitation sum (mm) 
+for the fixed limit test. If left NULL, either the function scraps records 
+from the web if \code{region} and \code{subregion} are supplied, otherwise 
+global daily precipitation sum records are used}
 
 \item{probs_variable_limit}{percentile used as a testing threshold for variable limit test}
 
@@ -142,10 +147,31 @@ positive tests are required for an observation to be flagged. This is intended
 to reduce the amount of false-positive flags.
 }
 \examples{
+\dontrun{
+#prepare input data
 weather_list <- list(target_weather)
 names(weather_list) <- target_info$id
+
+#run without spatial test
 weather_qc_costa(weather_list = weather_list, 
 mute = TRUE, skip_spatial_test = TRUE)
+
+#run with spatial test
+weather_qc_costa(weather_list = weather_list, 
+weather_info = target_info,
+aux_list = neighbour_weather,
+aux_info = neighbour_info,
+mute = TRUE)
+
+#run with spatial test and region-specific test limit
+weather_qc_costa(weather_list = weather_list, 
+weather_info = target_info,
+aux_list = neighbour_weather,
+aux_info = neighbour_info,
+region = 'USA', subregion = 'California',
+mute = TRUE)
+
+}
 }
 \references{
 \insertAllCited{}
