@@ -51,9 +51,12 @@
 #' \code{region = "world"} it should indicate the country the weather data is from. 
 #' In case of \code{region = "USA"} it should be the state's name the weather is obtained from.
 #' If user-defined limits are used, should be set to \code{NULL}
-#' @param records by default set to \code{NULL}. In case of user-defined limits, it should
-#' be a numeric vector of length two, containing lower and upper limits of tested variable.
-#' Needs to of length 2, first value indicates lower limit and second the upper limit
+#' @param records_temp minimum and maximum temperature in degree Celsius limits for the fixed
+#' limit test. If left NULL, either the function scraps records from the web if
+#' @param records_precip lower and upper limits of daily precipitation sum (mm) 
+#' for the fixed limit test. If left NULL, either the function scraps records 
+#' from the web if \code{region} and \code{subregion} are supplied, otherwise 
+#' global daily precipitation sum records are used
 #' @param probs_variable_limit percentile used as a testing threshold for variable limit test
 #' @param probs_temporal_continuity percentile uded as a testing threshold for 
 #' temporal conitnuity test
@@ -90,7 +93,7 @@
 #' test yielded a positive test. Only in cases of two or more positive tests at
 #' the same time was the flagged observation of the weather variable removed.
 #' @examples 
-#' \donotrun{
+#' \dontrun{
 #' #prepare input data
 #' weather_list <- list(target_weather)
 #' names(weather_list) <- target_info$id
@@ -126,17 +129,37 @@ weather_qc_costa <- function(weather_list,
                              skip_spatial_test = FALSE,
                              aux_list = NULL, aux_info = NULL, 
                              region = NULL, subregion = NULL, 
-                             records = NULL,
+                             records_temp = NULL,
+                             records_precip = NULL,
                              probs_variable_limit = c(0.01, 0.99),
                              probs_temporal_continuity = 0.995,
                              probs_temperature_consistency = 0.99,
-                             max_dist = 75, window_width = 15, 
-                             min_coverage = 40, min_correlation = 0.8,
-                             min_station = 3, max_station = 7, max_res = 8, 
+                             max_dist = 75, 
+                             window_width = 15, 
+                             min_coverage = 40, 
+                             min_correlation = 0.8,
+                             min_station = 3, 
+                             max_station = 7, 
+                             max_res = 8, 
                              max_res_norm = 4){
   
   #avoid note cmd check
   . <- NULL
+  
+  
+  #### Testing of arguments ####
+  
+  #check that weather_list is a list which contains lists
+  if(is.list(weather_list)){
+    list_test <- purrr::map_lgl(weather_list, is.list)
+    if(any(list_test == F)){
+      stop('weather_list need to contain data.frames with daily weather observations.
+           elements of weather_list appear to be not of type list')
+    }
+    
+  } else{
+    stop('weather_list needs to be a list. weather_list is not of type "list" ')
+  }
   
   #check if needed columns are present
   column_check <- purrr::map_lgl(weather_list, function(x){
@@ -146,48 +169,141 @@ weather_qc_costa <- function(weather_list,
     stop("at least one weather station in weather_list does not contain the required columns c('Year', 'Month', 'Day', 'Tmin', 'Tmax', 'Tmean', 'Precip')")
   }
   
-  if(skip_spatial_test == F){
-    #make sure that all the names of weather info are also found in weather_list
-    if(!all(weather_info$id %in% names(weather_list))){
-      stop("Could not find all weather station ids mentioned in weather_info also
-         in names(weather_list")
-    }
-  }
-
-  
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
   weather_list <- purrr::map(weather_list, function(x){
     
-    if("Date" %in% colnames(x) == F){
+    if("Date" %in% colnames(x) == FALSE){
       x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")
     }
+    if("doy" %in% colnames(x) == FALSE){
+      x$doy <- lubridate::yday(x$Date)
+    }
     
-    tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax, 
+    tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax, 'Tmean_org' = x$Tmean,
                    'Precip_org' = x$Precip,'flag_Tmin' = NA, 
-                   'flag_Tmax' = NA, 'flag_Precip' = NA) %>%
-      dplyr::mutate(doy = lubridate::yday(.data$Date)) %>%
+                   'flag_Tmax' = NA, 'flag_Tmean' = NA,'flag_Precip' = NA) %>%
       dplyr::relocate(.data$Date, .data$doy)#make sure date and doy are in beginning of columns
     
   }) 
   
   if(is.null(aux_list) == F){
+    
+    if(is.list(aux_list) == FALSE){
+      stop('argument "aux_list" needs to be a list, if supplied')
+    } else{
+      if(any(purrr::map_lgl(aux_list, is.list) == FALSE)){
+        stop('"aux_list" needs to contain data.frames or tibbles of daily
+             weather observation. elements were not of type "list".')
+      }
+      #elements of aux_list need to contain several columns
+      test <- purrr::map_lgl(aux_list, function(x){
+        any(c("Year", "Month", "Day", "Tmin", "Tmax", "Precip") %in% colnames(x) == FALSE)
+        })
+      if(any(test)){
+        stop('elements of "aux_list" need to contain the columns c("Year", "Month", "Day", "Tmin", "Tmax", "Precip")' )
+      }
+    }
+    
     #make sure aux list contains tibbles and date and doy column
     aux_list <- purrr::map(aux_list, function(x){
-      tibble::tibble(x, 'Date' = as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")) %>%
-        dplyr::mutate(doy = lubridate::yday(.data$Date))
+      x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")
+      x$doy <-lubridate::yday(x$Date)
+      return(x)
     })
   }
-
-
   
-
-  #do testing of input stuff: 
-  #   weather needs to have certain columns
-  #   weather coords needs to be of length two and numeric
-  #   variable should be tmin, tmax (or preciptiation)
-  #   aux_list needs to be list, names need to be same as in aux_info$id; colnames should contain same objects as weather does
-  #   aux_info needs to contain coordinates and date?
+  #character, if supplied
+  if(is.null(region) == F | is.null(subregion) == FALSE){
+    test_list <- list(region, subregion)
+    tested_args <- c("region", "subregion")
+    test_res <- purrr::map_lgl(test_list, is.character) == FALSE
+    if(any(test_res)){
+      culprint <- tested_args[test_res]
+      stop(paste0('argument "', culprint, '" needs to be a character\n'))
+    }
+  }
+  
+  #logicals: mute, skip_spatial_test
+  test_list <- list(mute, skip_spatial_test)
+  tested_args <- c("mute", "skip_spatial_test")
+  test_res <- purrr::map_lgl(test_list, is.logical) == F
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    stop(paste0('argument: "', culprint, '" needs to be logical'))
+  }
+  
+  #numeric
+  test_list <- list(probs_temporal_continuity,
+                    probs_temperature_consistency,
+                    max_dist, window_width, 
+                    min_coverage, min_correlation,
+                    min_station, max_station, max_res, 
+                    max_res_norm)
+  
+  tested_args <- c("probs_temporal_continuity",
+                   "probs_temperature_consistency",
+                   "max_dist", "window_width", 
+                   "min_coverage", "min_correlation",
+                   "min_station", "max_station", "max_res", 
+                   "max_res_norm")
+  
+  #test for numeric
+  test_res <- purrr::map_lgl(test_list, is.numeric) == FALSE
+  
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    
+    stop(paste0('argument: "', culprint, '" is not numeric\n'))
+  }
+  
+  #test for length 1
+  #add logical and character to this test aswell
+  test_list <- c(test_list, region, subregion, mute, skip_spatial_test)
+  tested_args <- c(tested_args, "region", "subregion", "mute", "skip_spatial_test")
+  test_res <- purrr::map_dbl(test_list, length) != 1
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    stop(paste0('argument: "', culprint, '" needs to be of length 1\n'))
+  }
+  
+  
+  #if supplied, the record_temp, record_precip need to be numeric of length 2
+  if(is.null(records_temp) == FALSE | is.null(records_precip) == F){
+    test_list <- list(records_temp, records_precip)
+    tested_args <- c("records_temp", "records_precip")
+    test_res <- purrr::map(test_list, function(x){
+      is.numeric(x) == F | length(x) != 2
+    })
+    if(any(test_res)){
+      culprint <- tested_args[test_res]
+      stop(paste0('argument "', culprint, '" needs to be numeric and of length 2'))
+    }
+  }
+  
+  if(is.numeric(probs_variable_limit) == F | length(probs_variable_limit) != 2){
+    stop('argument "percentile_frequent_value_test" needs to be numeric of lenth 2')
+  }
+  
+  
+  if(skip_spatial_test == FALSE){
+    #make sure that all the names of weather info are also found in weather_list
+    if(!all(weather_info$id %in% names(weather_list))){
+      stop("Could not find all weather station ids mentioned in weather_info also
+         in names(weather_list")
+    }
+  } else{
+    #if at least one of the two are present, make sure that all of them are and
+    #that they are of the correct type
+    if(is.list(aux_info) == FALSE | is.list(aux_list) == FALSE  | is.list(weather_info) == FALSE){
+      stop('if any of the arguments "aux_list", "aux_info", "target_info", are
+            supplied, then all of the three need to be supplied. Furthermore they need
+            to be of type "list"')
+    }
+  }
+  
+  
+  
   
   #### Fixed limit test ####
   
@@ -200,13 +316,13 @@ weather_qc_costa <- function(weather_list,
   #apply test, add column with flag
   weather_list <- purrr::map(weather_list, function(x){
     x$fixed_lim_test_Tmin <- test_fixed_limit(weather = x, variable = 'Tmin', region = region,
-                     subregion = subregion, records = records)
+                     subregion = subregion, records = records_temp)
     
     x$fixed_lim_test_Tmax <- test_fixed_limit(weather = x, variable = 'Tmax', region = region,
-                                              subregion = subregion, records = records)
+                                              subregion = subregion, records = records_temp)
     
     x$fixed_lim_test_Precip <- test_fixed_limit(weather = x, variable = 'Precip', region = region,
-                                                subregion = subregion, records = records)
+                                                subregion = subregion, records = records_precip)
     
     return(x)
   })

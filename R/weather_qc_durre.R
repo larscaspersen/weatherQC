@@ -84,8 +84,6 @@
 #' If user-defined limits are used, should be set to \code{NULL}
 #' @param records_temp minimum and maximum temperature in degree Celsius limits for the fixed
 #' limit test. If left NULL, either the function scraps records from the web if
-#' \code{region} and \code{subregion} are supplied, otherwise global temperature
-#' records are used
 #' @param records_precip lower and upper limits of daily precipitation sum (mm) 
 #' for the fixed limit test. If left NULL, either the function scraps records 
 #' from the web if \code{region} and \code{subregion} are supplied, otherwise 
@@ -147,7 +145,7 @@
 #' the original value was removed, a comment indicating which test let to the removal
 #' can be found in the "flag_" plus variable name column.
 #' @examples 
-#' \donotrun{
+#' \dontrun{
 #' #prepare input
 #' weather_list <- list(target_weather)
 #' names(weather_list) <- target_info$id
@@ -211,6 +209,26 @@ weather_qc_durre <- function(weather_list,
                              max_diff_temp_corroboration = 10,
                              min_obs_megaconsistency = 140){
   
+  #check that weather_list is a list which contains lists
+  if(is.list(weather_list)){
+    list_test <- purrr::map_lgl(weather_list, is.list)
+    if(any(list_test == F)){
+      stop('weather_list need to contain data.frames with daily weather observations.
+           elements of weather_list appear to be not of type list')
+    }
+    
+  } else{
+    stop('weather_list needs to be a list. weather_list is not of type "list" ')
+  }
+  
+  #check if needed columns are present
+  column_check <- purrr::map_lgl(weather_list, function(x){
+    !all(c("Year", "Month", "Day", "Tmin", "Tmax", "Tmean", "Precip") %in% colnames(x))
+  })
+  if(any(column_check)){
+    stop("at least one weather station in weather_list does not contain the required columns c('Year', 'Month', 'Day', 'Tmin', 'Tmax', 'Tmean', 'Precip')")
+  }
+  
   #add a column to weather_list objects indicating which test performed positive
   #also add Date and doy
   weather_list <- purrr::map(weather_list, function(x){
@@ -234,7 +252,92 @@ weather_qc_durre <- function(weather_list,
     skip_spatial_test <- TRUE
     warning("Because arguments aux_info and aux_list were not provided, the spatial
             consistency tests are skipped")
+  } else{
+    #if at least one of the two are present, make sure that all of them are and
+    #that they are of the correct type
+    if(is.list(aux_info) == FALSE | is.list(aux_list) == FALSE  | is.list(weather_info) == FALSE){
+      stop('if any of the arguments "aux_list", "aux_info", "target_info", are
+            supplied, then all of the three need to be supplied. Furthermore they need
+            to be of type "list"')
+    }
   }
+  
+  #make sure other arguments are of the right type
+  
+  #character, if supplied
+  if(is.null(region) == F | is.null(subregion) == FALSE){
+    test_list <- list(region, subregion)
+    tested_args <- c("region", "subregion")
+    test_res <- purrr::map_lgl(test_list, is.character) == FALSE
+    if(any(test_res)){
+      culprint <- tested_args[test_res]
+      stop(paste0('argument "', culprint, '" needs to be a character\n'))
+    }
+  }
+  
+  #logicals: mute, skip_spatial_test
+  test_list <- list(mute, skip_spatial_test)
+  tested_args <- c("mute", "skip_spatial_test")
+  test_res <- purrr::map_lgl(test_list, is.logical) == F
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    stop(paste0('argument: "', culprint, '" needs to be logical'))
+  }
+  
+  #numeric
+  test_list <- list(duplicate_test_min_obs,same_temp_threshold, min_non_zero_days,
+       temp_gap_threshold, prec_gap_threshold, max_temperature_z,
+       max_prec_threshold,  max_prec_threshold_freezing,  prec_percentile_climate_outlier,
+       dip_threshold,  lagged_range_max_diff,  max_dist,  window_width,  min_coverage,
+       min_correlation,  min_station,  max_station,  max_res,  max_res_norm,
+       max_diff_temp_corroboration,  min_obs_megaconsistency)
+  
+  tested_args <- c("duplicate_test_min_obs","same_temp_threshold", "min_non_zero_days",
+                   "temp_gap_threshold", "prec_gap_threshold", "max_temperature_z",
+                   "max_prec_threshold",  "max_prec_threshold_freezing",  "prec_percentile_climate_outlier",
+                   "dip_threshold",  "lagged_range_max_diff",  "max_dist",  "window_width",  "min_coverage",
+                   "min_correlation",  "min_station",  "max_station",  "max_res",  "max_res_norm",
+                   "max_diff_temp_corroboration",  "min_obs_megaconsistency")
+  
+  #test for numeric
+  test_res <- purrr::map_lgl(test_list, is.numeric) == FALSE
+  
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    
+    stop(paste0('argument: "', culprint, '" is not numeric\n'))
+  }
+  
+  #test for length 1
+  #add logical and character to this test aswell
+  test_list <- c(test_list, region, subregion, mute, skip_spatial_test)
+  tested_args <- c(tested_args, "region", "subregion", "mute", "skip_spatial_test")
+  test_res <- purrr::map_dbl(test_list, length) != 1
+  if(any(test_res)){
+    culprint <- tested_args[test_res]
+    stop(paste0('argument: "', culprint, '" needs to be of length 1\n'))
+  }
+  
+  
+  #if supplied, the record_temp, record_precip need to be numeric of length 2
+  if(is.null(records_temp) == FALSE | is.null(records_precip) == F){
+    test_list <- list(records_temp, records_precip)
+    tested_args <- c("records_temp", "records_precip")
+    test_res <- purrr::map(test_list, function(x){
+      is.numeric(x) == F | length(x) != 2
+    })
+    if(any(test_res)){
+      culprint <- tested_args[test_res]
+      stop(paste0('argument "', culprint, '" needs to be numeric and of length 2'))
+    }
+  }
+  
+  if(is.numeric(percentile_frequent_value_test) == F | any(percentile_frequent_value_test <= 0) | any(percentile_frequent_value_test >= 1)){
+    stop('argument "percentile_frequent_value_test" needs to be numeric and should lie in between 0 and 1')
+  }
+  
+  
+  
   
   ####
   #basic integrity check
