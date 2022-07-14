@@ -55,7 +55,7 @@
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
 #' @examples 
-#' \donotrun{
+#' \dontrun{
 #' test_temperature_corroboration(weather = target_weather,
 #' weather_coords = c(target_info$Longitude, target_info$Latitude),
 #' aux_info = neighbour_info, aux_list = neighbour_weather, variable = "Tmin")

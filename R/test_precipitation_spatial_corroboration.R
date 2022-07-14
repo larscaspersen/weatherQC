@@ -40,7 +40,7 @@
 #' meaning that the tested variable exceeded the limits of the test and is flagged
 #' as suspicious
 #' @examples 
-#' \donotrun{
+#' \dontrun{
 #' test_precipitation_spatial_corroboration(weather = target_weather,
 #' weather_coords = c(target_info$Longitude[1], target_info$Latitude[1]),
 #' aux_info = neighbour_info, aux_list = neighbour_weather)
