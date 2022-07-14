@@ -66,9 +66,11 @@ precipitation event of interest is inserted in the ecdf and the corresponding
 percentile rank is calculated. This is done for each precipitation event.
 }
 \examples{
+\dontrun{
 test_precipitation_spatial_corroboration(weather = target_weather,
 weather_coords = c(target_info$Longitude[1], target_info$Latitude[1]),
 aux_info = neighbour_info, aux_list = neighbour_weather)
+}
 }
 \references{
 \insertAllCited{}
