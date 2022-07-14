@@ -18,9 +18,9 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(weatherQC)
-library(tidyverse)
-library(gridExtra) #for side by side plots
-library(dplyr)
+library(tidyverse, quietly = T)
+library(gridExtra, quietly = T) #for side by side plots
+library(dplyr, quietly = T)
 options(dplyr.summarise.inform = FALSE)
 ```
 
