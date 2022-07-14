@@ -1,0 +1,21 @@
+## code to prepare `weather_Tmax` dataset goes here
+
+weather_list <- chillR::load_temperature_scenarios(path = 'data-raw/',
+                                                   prefix = 'cleaned')
+
+#take data.frames, drop everything except Day, Year, Month, Tmin; then merge
+weather_Tmax <- purrr::map(weather_list, function(x){
+  x[,c('Year', 'Month', 'Day', 'Tmax')] %>%
+    filter(Year %in% c(1990, 1991)) %>%
+    select(Tmax) %>%
+    pull()
+}) %>%
+  cbind.data.frame()
+
+date_df <- chillR::make_all_day_table(data.frame(Year = c(1990, 1991), Month = c(1,12), 
+                                                 Day = c(1,31), Tmin = NA, Tmax = NA),
+                                      no_variable_check = T)
+
+weather_Tmax <- tibble(date_df[,c('Year', 'Month', 'Day')], weather_Tmax)
+
+usethis::use_data(weather_Tmax, overwrite = TRUE)
