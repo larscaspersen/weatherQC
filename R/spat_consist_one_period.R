@@ -83,13 +83,16 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   period_start <- period_start - window_width
   
   #extract data from target (x) and aux (y)
-  x <- select_target_days(df = weather, variable = variable, period_start = period_start, period_end = period_end)
+  x <- select_target_days(df = weather, variable = variable, 
+                          period_start = period_start, period_end = period_end) %>%
+    unname()
   y <- purrr::map(aux_list, function(x){
     select_target_days(df = x, variable = variable, period_start = period_start, 
                        period_end = period_end)
   }) %>%
     do.call(cbind.data.frame, .)
   
+
   #only keep aux stations which fulfill coverage criteria
   aux_info <- aux_info[colSums(is.na(x) == F & is.na(y) == F) >= min_coverage, ]
   
@@ -112,7 +115,10 @@ spat_consist_one_period <- function(weather, aux_list, aux_info, period_start, v
   y <- y[,aux_info$id]
   
   #iterate over all y columns, for each column iterate over x and find the closest y value given a 3 day window centered around i
-  y_closest <-  purrr::map(y, function(vec) purrr::imap_dbl(x,~get_closest_y(x = .x, y=vec, i = .y))) %>%
+  y_closest <-  purrr::map(y, function(vec){
+    purrr::imap_dbl(x,function(val, i){
+      get_closest_y(x = val, y=vec, i = i)})
+  }) %>%
     do.call(cbind.data.frame, .)
   
   #carry out linear regression
