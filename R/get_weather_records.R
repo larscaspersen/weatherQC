@@ -16,6 +16,9 @@
 #' @export
 get_weather_records <- function(region = "world"){
   
+  #hide from cmd run
+  . <- NULL
+  
   if(region == 'world'){
     
     #url from which data is scrapped
@@ -67,12 +70,15 @@ get_weather_records <- function(region = "world"){
     #take min and max temperature, change from fahrenheit to degree celsius
     records <- records %>%
       dplyr::select(.data$State, .data$Element, .data$Value) %>%
-      dplyr::filter(.data$Element %in% c('All-Time Maximum Temperature', 'All-Time Minimum Temperature', 'All-Time Greatest 24-Hour Precipitation')) %>%
+      dplyr::filter(.data$Element %in% c('All-Time Maximum Temperature', 
+                                         'All-Time Minimum Temperature', 
+                                         'All-Time Greatest 24-Hour Precipitation')) %>%
       dplyr::mutate('Element' = as.factor(.data$Element)) %>%
-      dplyr::mutate('Element' = dplyr::recode_factor(.data$Element, 'All-Time Minimum Temperature' = 'Tmin', 
+      dplyr::mutate('Element' = dplyr::recode_factor(.data$Element, 
+                                                     'All-Time Minimum Temperature' = 'Tmin', 
                                      'All-Time Maximum Temperature' = 'Tmax',
                                      'All-Time Greatest 24-Hour Precipitation' = 'Precip')) %>%
-      .data[!duplicated(.data),] %>%
+      .[!duplicated(.),] %>%
       reshape2::dcast(State ~ Element, value.variable = 'Value', value.var = 'Value') %>%
       dplyr::mutate('Tmin' = round((as.numeric(.data$Tmin) - 32) * (5/9), digits = 1),
              'Tmax' = round((as.numeric(.data$Tmax) - 32) * (5/9), digits = 1),
