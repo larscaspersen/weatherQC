@@ -1,7 +1,7 @@
 ## code to prepare `weather_Tmin` dataset goes here
 library(tidyverse)
-devtools::load_all()
-
+#devtools::load_all()
+#
 # target_weather <- read.csv('data-raw/target-weather_cimis_2.csv')
 # aux_weather <- chillR::load_temperature_scenarios(path = 'data-raw/',
 #                                                   prefix = 'neighbour-weather')
@@ -22,6 +22,9 @@ devtools::load_all()
 # chillR::save_temperature_scenarios(aux_weather, path = 'data-raw/',
 #                                    prefix = 'cleaned')
 
+weather_list <- chillR::load_temperature_scenarios(path = 'data-raw/',
+                                                   prefix = 'cleaned')
+
 
 #take data.frames, drop everything except Day, Year, Month, Tmin; then merge
 weather_Tmin <- purrr::map(aux_weather, function(x){
@@ -40,7 +43,7 @@ weather_Tmin <- tibble(date_df[,c('Year', 'Month', 'Day')], weather_Tmin)
 
 #add date
 weather_Tmin <- weather_Tmin %>%
-  dplyr::mutate(Date = paste(Year, Month, Day, sep = "-"), format = "Y-%m-%d") %>%
+  dplyr::mutate(Date = as.Date(paste(Year, Month, Day, sep = "-"), format = "%Y-%m-%d")) %>%
   dplyr::relocate(Date)
   
 

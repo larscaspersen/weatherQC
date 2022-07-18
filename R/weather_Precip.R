@@ -3,7 +3,8 @@
 #' Tibble of daily weather observations of precipitation sum (mm) for 13 weather
 #' stations in California taken from the CIMIS and UCIPM databases. Daily weather
 #' observations go from 1st January 1990 to 31st December 1991. After obtaining the data via 
-#' the chillR package (\code{\link{chillR::handle_cimis}}, \code{\link{chillR::handle_ucipm}}), the weather station observation was subject to quality control
+#' the chillR package (\code{\link[chillR]{handle_cimis}}, \code{\link[chillR]{handle_ucipm}}), 
+#' the weather station observation was subject to quality control
 #' with the weatherQC function \code{\link{weather_qc_durre}}. This lead to the removal
 #' of some erroneous observations.
 #' 
