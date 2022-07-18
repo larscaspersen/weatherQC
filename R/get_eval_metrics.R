@@ -8,16 +8,14 @@
 #' evaluation metrics supplied with this packaged, but also works with other
 #' packages evaluation metrics or user-defined functions. The only requirements
 #' are the arguments predicted and observed. If the function has differently
-#' named arguments a wrapper function might be necissary.
+#' named arguments a wrapper function might be necessary.
 #' 
 #' The function allows also the calculation of a summary score, of the different
-#' evaluation scores. This idea was taken from citation here. In case of negative
-#' values the score rescales the values, so that 0 is the lowest observed 
+#' evaluation scores. This idea was taken from \insertCite{teegavarapu_missing_2014;textual}{weatherQC}. In case of negative
+#' values the score re-scales the values, so that 0 is the lowest observed 
 #' score, otherwise the score can't handle negative values. It is possible
 #' to assign weights to the individual metrics. If no weights are specified, then
 #' they are equally weighted.
-#' 
-#' Add citation
 #' 
 #' @param eval_df data.frame with the columns c(station, patch_method, value and 
 #' original)
