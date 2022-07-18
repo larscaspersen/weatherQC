@@ -35,8 +35,8 @@ Takes data.frame of daily weather data of several neighboring weather stations
 and imputes gaps with either the "nipals" or "ppca" method.
 }
 \details{
-This is a simple wrapper function for the \code{\link{pcaMethods::pca}} and
-\code{\link{pcaMethods::completeObs}} functions.
+This is a simple wrapper function for the \code{\link[pcaMethods]{pca}} and
+\code{\link[pcaMethods]{completeObs}} functions.
 }
 \examples{
 patch_pca(weather = weather_Tmin, 

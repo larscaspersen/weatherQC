@@ -49,7 +49,7 @@ Takes data.frame of daily weather data of several neighboring weather stations
 and imputes gaps with multiple imputation method of the Amelia package.
 }
 \details{
-For more details of the function please refer to \code{\link{Amelia::amelia}}
+For more details of the function please refer to \code{\link[Amelia]{amelia}}
 }
 \examples{
 patch_amelia(weather = weather_Tmin, target = NA, 

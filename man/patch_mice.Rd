@@ -36,8 +36,8 @@ events. Values below are treated as zeros}
 \item{max.iter}{maximum amount of iterations of the multiple imputation algorithm,
 default is 5}
 
-\item{parallel}{logical, if true the paralleled version of \code{\link{mice::mice}} 
-called \code{\link{micemd::mice}} will be used instead}
+\item{parallel}{logical, if true the paralleled version of \code{\link[mice]{mice}} 
+called \code{\link[micemd]{mice}} will be used instead}
 
 \item{target}{redundant argument, just needed to be compatible with downstream 
 functions}
@@ -54,7 +54,7 @@ Takes data.frame of daily weather data of several neighboring weather stations
 and imputes gaps with multiple imputation method of the mice-package.
 }
 \details{
-For more details of the function please refer to \code{\link{mice::mice}}.
+For more details of the function please refer to \code{\link[mice]{mice}}.
 Also check out \insertCite{buuren_flexible_2018}{weatherQC} for a more detailed
 take on the mice concept and missing data imputation in general.
 }

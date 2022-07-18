@@ -53,7 +53,7 @@ Takes data.frame of daily weather data of several neighboring weather stations
 and imputes gaps with random forest method of the missforest package.
 }
 \details{
-For more details of the function please refer to \code{\link{missforest::missforest}}
+For more details of the function please refer to \code{\link[missforest]{missforest}}
 }
 \examples{
 patch_forest(weather = weather_Tmin, 

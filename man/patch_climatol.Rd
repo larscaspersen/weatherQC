@@ -28,7 +28,7 @@ Takes data.frame of daily weather data of several neighboring weather stations
 and imputes gaps with iterated normal-ration method of the climatol package.
 }
 \details{
-For more details of the function please refer to \code{\link{climatol::homogen}}
+For more details of the function please refer to \code{\link[climatol]{homogen}}
 
 Climatol requires the weather data via saved objects instead of the workspace
 in R and also returns the output as such. In the process of running climatol

@@ -14,7 +14,7 @@
 #' decimal format
 #' @param method character, describing which pca method is used. Valid options are
 #' "nipals" and "ppca". For more details on the methods please refer to 
-#' \code{\link{pcaMethods::pca}}
+#' \code{\link[pcaMethods]{pca}}
 #' @param nPcs amount of principle components created in the proces of the pca
 #' function
 #' @param target actually this argument is not needed and meaningless, but some higher
