@@ -17,7 +17,7 @@ decimal format}
 
 \item{method}{character, describing which pca method is used. Valid options are
 "nipals" and "ppca". For more details on the methods please refer to 
-\code{\link{pcaMethods::pca}}}
+\code{\link[pcaMethods]{pca}}}
 
 \item{nPcs}{amount of principle components created in the proces of the pca
 function}
