@@ -4,7 +4,7 @@
 #' especially suited for precipitation.
 #' 
 #' The hitscore is the mean of correctly identified precipitation events and 
-#' correctly identified dry-events \insertCite{simolo_improving_2010, oriani_missing_2020}{weatherQC}.
+#' correctly identified dry-events \insertCite{simolo_improving_2010,oriani_missing_2020}{weatherQC}.
 #' The function does not evaluate the imputed precipitation amount but only the 
 #' precipitation occurrence.
 #' 
