@@ -8,8 +8,9 @@
 #' of some erroneous observations.
 #' 
 #'
-#' @format A tibble with 16 columns and 730 rows:
+#' @format A tibble with 17 columns and 730 rows:
 #' \describe{
+#'   \item{Date}{Date}
 #'   \item{Year}{Year}
 #'   \item{Month}{Month}
 #'   \item{Day}{Day}

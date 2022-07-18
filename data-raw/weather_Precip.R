@@ -18,4 +18,9 @@ date_df <- chillR::make_all_day_table(data.frame(Year = c(1990, 1991), Month = c
 
 weather_Precip <- tibble(date_df[,c('Year', 'Month', 'Day')], weather_Precip)
 
+#add date
+weather_Precip <- weather_Precip %>%
+  dplyr::mutate(Date = paste(Year, Month, Day, sep = "-"), format = "Y-%m-%d") %>%
+  dplyr::relocate(Date)
+
 usethis::use_data(weather_Precip, overwrite = TRUE)

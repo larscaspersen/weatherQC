@@ -18,4 +18,9 @@ date_df <- chillR::make_all_day_table(data.frame(Year = c(1990, 1991), Month = c
 
 weather_Tmax <- tibble(date_df[,c('Year', 'Month', 'Day')], weather_Tmax)
 
+#add date
+weather_Tmax <- weather_Tmax %>%
+  dplyr::mutate(Date = paste(Year, Month, Day, sep = "-"), format = "Y-%m-%d") %>%
+  dplyr::relocate(Date)
+
 usethis::use_data(weather_Tmax, overwrite = TRUE)
