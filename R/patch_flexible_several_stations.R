@@ -5,7 +5,7 @@
 #' 
 #' The advantage of this function is, that it can be also used for patching
 #' methods not supplied by the weatherImpute package. The only demands the 
-#' functio does, is that the arguments "weather", "target" and "weather_info"
+#' function does, is that the arguments "weather", "target" and "weather_info"
 #' must be used by the user-defined patching function.
 #' 
 #' @param weather data.frame with columns for each weather station and rows for
@@ -25,10 +25,13 @@
 #' patch_flexible_several_stations is also compatible with patching methods
 #' like patch_mice or patch_amelia, which return all patched weather stations
 #' at one function call
-#' @return same data.frame as weather but with all NAs imputed for all columns. There
-#' can be still cases of NA, if for a certain observation none of the other stations
-#' had valid observations
-#' @examples #think of example here
+#' @return same data.frame with column Date and patched weather data of weather stations
+#' specified in \code{target}. There can be still cases of NA, if for a certain
+#' observation none of the other stations had valid observations
+#' @examples 
+#' patch_flexible_several_stations(weather = weather_Tmin, target = c('cimis_2', 'cimis_15'),
+#' weather_info = rbind(target_info, neighbour_info),
+#' method = 'patch_normal_ratio', method_patches_everything = F)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 patch_flexible_several_stations <- function(weather, target, weather_info, 

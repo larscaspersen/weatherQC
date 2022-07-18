@@ -3,12 +3,14 @@
 #' Takes data.frame of daily weather data of several neighboring weather stations
 #' and imputes gaps with multiple imputation method of the mice-package.
 #' 
-#' For more details of the function please refer to \code{\link{mice::mice}}
+#' For more details of the function please refer to \code{\link[mice]{mice}}.
+#' Also check out \insertCite{buuren_flexible_2018}{weatherQC} for a more detailed
+#' take on the mice concept and missing data imputation in general.
 #' 
 #' @param weather data.frame with columns for each weather station and rows for
 #' each daily observation. All columns need to contain observations of the same
 #' variable. Missing observations need to be marked with NA
-#' @param target character, column name in weather, on which the method should be applied
+#' @param target character, column name in weather, on which the method should be 
 #' @param weather_info data.frame containing the name / id of the weather station (needs
 #' to be the same as the column names in weather), Longitude and Latitude in
 #' decimal format
@@ -22,16 +24,23 @@
 #' @param max.iter maximum amount of iterations of the multiple imputation algorithm,
 #' default is 5
 #' @param n_impute number of multiple imputations, default is 5
-#' @param parallel logical, if true the paralleled version of \code{\link{mice::mice}} 
-#' called \code{\lin{micemd::mice}} will be used instead
+#' @param parallel logical, if true the paralleled version of \code{\link[mice]{mice}} 
+#' called \code{\link[micemd]{mice}} will be used instead
+#' @param target redundant argument, just needed to be compatible with downstream 
+#' functions
 #' @return same data.frame as weather but with all NAs imputed for all columns. There
 #' can be still cases of NA, if for a certain observation none of the other stations
 #' had valid observations
-#' @examples #think of example here
+#' @examples 
+#' patch_mice(weather = weather_Tmin, 
+#' weather_info = rbind(target_info, neighbour_info))
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
+#' @references
+#' \insertAllCited{}
 #' @export
-patch_mice <- function(weather, target, weather_info, rain_data = T, 
-                       prcp_threshold = 1, max.iter = 5, n.impute = 5, parallel = F){
+patch_mice <- function(weather, weather_info, rain_data = T, 
+                       prcp_threshold = 1, max.iter = 5, n.impute = 5, 
+                       parallel = F, target = NA){
   
   
   #columns to be ignored in the following
@@ -110,8 +119,8 @@ patch_mice <- function(weather, target, weather_info, rain_data = T,
     
     #impute rain amount 
     imp <- mice::mice(weather, predictorMatrix = pred, 
-                      method = methods, printFlag = F, )
-    
+                      method = methods, printFlag = F)
+
   }
   
   

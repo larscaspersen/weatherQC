@@ -3,7 +3,7 @@
 #' Takes data.frame of daily weather data of several neighboring weather stations
 #' and imputes gaps with random forest method of the missforest package.
 #' 
-#' For more details of the function please refer to \code{\link{missforest::missforest}}
+#' For more details of the function please refer to \code{\link[missforest]{missforest}}
 #' 
 #' @param weather data.frame with columns for each weather station and rows for
 #' each daily observation. All columns need to contain observations of the same
@@ -27,7 +27,10 @@
 #' @return vector, containing the imputed weather observations of target station.It is
 #' still possible, that cases of NA remain for days none or not enough neighboring stations
 #' had observations available
-#' @examples #think of example here
+#' @examples 
+#' patch_forest(weather = weather_Tmin, 
+#' target = 'cimis_2',
+#' weather_info = rbind(target_info, neighbour_info))
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 patch_forest <- function(weather, target, weather_info, rain_data = F, 
@@ -40,14 +43,17 @@ patch_forest <- function(weather, target, weather_info, rain_data = F,
   #drop columns which should not be imputed
   weather <- dplyr::select(weather, -ignore)
   
+  #make sure weather is data.frame
+  weather <- data.frame(weather)
+  
   if(donor_criterion == 'closest'){
     
     #extract lon and lat of target station
-    target_lon <- weather_info[weather_info$id == target, 'longitude']
-    target_lat <- weather_info[weather_info$id == target, 'latitude']
+    target_lon <- weather_info[weather_info$id == target, 'Longitude']
+    target_lat <- weather_info[weather_info$id == target, 'Latitude']
     
     #calculate distances between stations, choose the n closesest ones
-    weather_info$distance <- round(sp::spDistsN1(as.matrix(weather_info[, c("longitude", "latitude")]),
+    weather_info$distance <- round(sp::spDistsN1(as.matrix(weather_info[, c("Longitude", "Latitude")]),
                                               c(target_lon, target_lat), longlat = TRUE), 2)
     
     #sort to by increasing distance

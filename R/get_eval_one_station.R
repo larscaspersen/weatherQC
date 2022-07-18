@@ -3,8 +3,10 @@
 #' This function allows the evaluation and comparison of several patching methods for the same
 #' weather data.
 #' 
-#' Evaluation is done by identifying the longest conineous NA-free period in the
-#' target weather data and inserting p_missing amount of NA in the weather observations.
+#' Evaluation is done by identifying the longest continuous NA-free period in the
+#' target weather data and inserting p_missing amount of NA for desired weather station
+#' in \code{weather}. Targeted weather stations are also used as auxiliary weather stations
+#' along with non-targeted weather stations in \code{weather}.
 #' 
 #' @param weather data.frame with columns for each weather station and rows for
 #' each daily observation. All columns need to contain observations of the same
@@ -36,7 +38,11 @@
 #' the whole evaluation period including non-imputed observations and "everything"
 #' which returns a data frame with the same amount as \code{weather}
 #' @return see the description in \code{return_data}
-#' @examples #think of example here
+#' @examples 
+#' get_eval_one_station(weather = weather_Tmin, weather_info = rbind(neighbour_info, target_info),
+#'                    target = 'cimis_15', patch_methods = c('patch_normal_ratio'),
+#'                    p_missing = 0.3, additional_args = list(NA), 
+#'                    method_patches_everything = F)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 get_eval_one_station <- function(weather, weather_info, target, 
@@ -52,6 +58,15 @@ get_eval_one_station <- function(weather, weather_info, target,
   if (!("Year" %in% colnames(weather) & "Month" %in% 
         colnames(weather) & "Day" %in% colnames(weather) & "Date" %in% colnames(weather))) 
     stop("Required input column 'Year', 'Month', 'Day' and/or 'Date' is missing.")
+  
+  #make sure that weather is a datframe
+  weather <- data.frame(weather)
+  
+  #check if columns Longitude, Latitude and id are present in weather_info
+  if(any(c("id", "Longitude", "Latitude") %in% colnames(weather_info) == F)){
+    stop("columns c('id', 'Longitude', 'Latitude') need to be present in weather_info.
+         Maybe also check your spelling in the column names and if capitalized.")
+  }
   
   
   ######
@@ -74,7 +89,7 @@ get_eval_one_station <- function(weather, weather_info, target,
         } else {
           
           #look for the longest period without na
-          longest_coverage <- na.contiguous(weather[,x])
+          longest_coverage <- stats::na.contiguous(weather[,x])
           
           #get the row number of start and end of longest continous period
           period <- tsp(longest_coverage)
@@ -134,7 +149,7 @@ get_eval_one_station <- function(weather, weather_info, target,
   
   #period-list should be in the same order as target
   #--> add name to the period list as third element
-  period_list <-  mapply(function(x,y){c(x,y)}, period_list, target, SIMPLIFY = F)
+  period_list <-  mapply(function(x,y){c(x[1:2],y)}, period_list, target, SIMPLIFY = F)
   
   # #prepare data, combine target with target name in a list
   # prep_data <- mapply(function(x,y){
@@ -208,6 +223,12 @@ get_eval_one_station <- function(weather, weather_info, target,
   #make sure that names are still correct
   names(weather_eval) <- c("Year", "Month", "Day", 'Date', target)
   
+  #add non-target weather stations to weather-eval aswell
+  weather_eval <- cbind(weather_eval,
+        weather[,colnames(weather) %in% c("Year", "Month", "Day", "Date", target) == F])
+  
+  
+  
   #dataframe indicating if new hole created per weather station targeted
   holes_df <- dplyr::select(mod_weather, -all_of(target))
   
@@ -222,15 +243,7 @@ get_eval_one_station <- function(weather, weather_info, target,
   #run patching methods
   #####
   
-  #problem: if I want to run this function, then I need also a list of list with 
-  #additional arguments
-  
-  #I make evaluation only for one station but have model call for all stations, that doesnt make sense!
-  #waste of computing time
-  
-  
-  #there is a problem in patch several flexible: prblem when combining the model outcomes of everything patched and itereatively patched
-  
+
   #bind everything together in one list, per elemt have the items of additional arguments, method_patches_everything and method in one item
   prep_data <- mapply(function(x,y,z){
     list(method = x, additional_args = y, method_patches_everything = z)

@@ -3,12 +3,11 @@
 #' Takes data.frame of daily weather data of several neighboring weather stations
 #' and imputes gaps with multiple imputation method of the Amelia package.
 #' 
-#' For more details of the function please refer to \code{\link{Amelia::amelia}}
+#' For more details of the function please refer to \code{\link[Amelia]{amelia}}
 #' 
 #' @param weather data.frame with columns for each weather station and rows for
 #' each daily observation. All columns need to contain observations of the same
 #' variable. Missing observations need to be marked with NA
-#' @param target character, column name in weather, on which the method should be applied
 #' @param weather_info data.frame containing the name / id of the weather station (needs
 #' to be the same as the column names in weather), Longitude and Latitude in
 #' decimal format
@@ -21,15 +20,27 @@
 #' events. Values below are treated as zeros
 #' @param n_impute number of multiple imputations, default is 5
 #' @param parallel logical, if true the paralleled version Amelia::amelia is used
+#' @param target redundant argument, just needed to be compatible with downstream 
+#' functions
 #' @return same data.frame as weather but with all NAs imputed for all columns. There
 #' can be still cases of NA, if for a certain observation none of the other stations
 #' had valid observations
-#' @examples #think of example here
+#' @examples 
+#' patch_amelia(weather = weather_Tmin, target = NA, 
+#'             weather_info = rbind(target_info, neighbour_info), rain_data = F)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
-patch_amelia <- function(weather, target, weather_info, rain_data = F, 
+patch_amelia <- function(weather, weather_info, rain_data = F, 
                          prcp_threshold = 1, n.impute = 5,
-                         parallel = NA){
+                         parallel = NA, target){
+  
+  #bring parallel to format amelia needs it
+  if(is.na(parallel)){
+    parallel <- 'no'
+  }
+  
+  #make sure weather is a data.frame
+  weather <- data.frame(weather)
   
   #bring date to date-format
   weather$Date <- as.Date(weather$Date)
@@ -47,6 +58,7 @@ patch_amelia <- function(weather, target, weather_info, rain_data = F,
     #bring back to wide format
     weather <- reshape2::dcast(weather.long, formula = Date + Year + Month + Day ~ variable, value.var = 'value' )
   }
+  
   
   #run amelia patching on weather data
   weather.imp <- Amelia::amelia(weather, ts = 'Date', m = n.impute,

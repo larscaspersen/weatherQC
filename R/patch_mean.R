@@ -4,7 +4,11 @@
 #' observation gap of the target weather station.
 #' 
 #' For each day the closest weather station with observations are taken and
-#' the gap is filled with the mean of the auxiliary observations.
+#' the gap is filled with the mean of the auxiliary observations. This is a 
+#' relatively straightforward imputation method and
+#' usually more advanced patching methods yield better results 
+#' \insertCite{addi_evaluation_2022}{weatherQC}. It was nonethless added, to have
+#' a benchmark in patching performance.
 #' 
 #' @param weather data.frame with columns for each weather station and rows for
 #' each daily observation. All columns need to contain observations of the same
@@ -19,17 +23,22 @@
 #' @return vector, containing the imputed weather observations of target station.It is
 #' still possible, that cases of NA remain for days none or not enough neighboring stations
 #' had observations available
-#' @examples #still need to think of examples
+#' @examples 
+#' patch_mean(weather = weather_Tmin, 
+#' weather_info = rbind(target_info, neighbour_info),
+#' target = 'cimis_2')
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
+#' @references
+#' \insertAllCited{}
 #' @export 
 patch_mean <- function(weather, target, weather_info, n_donors = 5, max_dist = 150){
   
   #extract lon and lat of target station
-  target_lon <- weather_info[weather_info$id == target, 'longitude']
-  target_lat <- weather_info[weather_info$id == target, 'latitude']
+  target_lon <- weather_info[weather_info$id == target, 'Longitude']
+  target_lat <- weather_info[weather_info$id == target, 'Latitude']
   
   #calculate distances between stations, choose the n closesest ones
-  weather_info$distance <- round(sp::spDistsN1(as.matrix(weather_info[, c("longitude", "latitude")]),
+  weather_info$distance <- round(sp::spDistsN1(as.matrix(weather_info[, c("Longitude", "Latitude")]),
                                             c(target_lon, target_lat), longlat = TRUE), 2)
   
   #sort to by increasing distance
@@ -43,6 +52,9 @@ patch_mean <- function(weather, target, weather_info, n_donors = 5, max_dist = 1
     warning('There are less than 3 auxiliary stations within the specified maximum distance. Consider increasing the max_dist parameter or choosing a different patching function')
     return(weather[,target])
   }
+  
+  #make sure weather is data.frame
+  weather <- data.frame(weather)
   
   #order weather by distance
   weather <- weather[, weather_info$id]
