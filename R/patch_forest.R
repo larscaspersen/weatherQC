@@ -3,7 +3,7 @@
 #' Takes data.frame of daily weather data of several neighboring weather stations
 #' and imputes gaps with random forest method of the missforest package.
 #' 
-#' For more details of the function please refer to \code{\link[missforest]{missforest}}
+#' For more details of the function please refer to \code{\link[missForest]{missforest}}
 #' 
 #' @param weather data.frame with columns for each weather station and rows for
 #' each daily observation. All columns need to contain observations of the same
@@ -36,6 +36,10 @@
 patch_forest <- function(weather, target, weather_info, rain_data = F, 
                          prcp_threshold = 1, 
                          n_donors = 5, donor_criterion = 'closest', max.iter = 5){
+  
+  if(any(c("missForest") %in% rownames(installed.packages()) == F)){
+    stop('package: missForest is not installed. Please isntall')
+  }
   
   #columns to be ignored in the following
   ignore <- c('Year', 'Month', 'Day', 'Date')

@@ -30,6 +30,10 @@
 patch_pca  <- function(weather, weather_info, method = 'nipals', nPcs = 2,
                        target = NULL){
   
+  if(any(c("pcamethods") %in% rownames(installed.packages()) == F)){
+    stop('package: pcaMethods (from Bioconductor) is not installed. Please isntall')
+  }
+  
   #is this really needed? this should be handled when loading the package
   #and not when using a function
   #if (!require("BiocManager", quietly = TRUE)){

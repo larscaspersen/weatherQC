@@ -34,6 +34,10 @@ patch_amelia <- function(weather, weather_info, rain_data = F,
                          prcp_threshold = 1, n.impute = 5,
                          parallel = NA, target){
   
+  if(any(c("Amelia") %in% rownames(installed.packages()) == F)){
+    stop('package: Amelia is not installed. Please isntall')
+  }
+  
   #bring parallel to format amelia needs it
   if(is.na(parallel)){
     parallel <- 'no'

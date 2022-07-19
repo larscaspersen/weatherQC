@@ -29,6 +29,13 @@
 #' @export
 patch_climatol <- function(weather, weather_info, target = NA){
   
+  if(any(c("climatol", "elevatr") %in% rownames(installed.packages()) == F)){
+    which_missing <- c("climatol", "elevatr") %in% rownames(installed.packages()) == F
+    pkg_missing <- c("climatol", "elevatr")[which_missing]
+    stop(paste0('package: ', pkg_missing, ' is not installed. Please isntall'))
+  }
+  
+
   if( !('elevation' %in% colnames(weather_info))){
     #in case the elevation data was not provided in meta data, download it using elevatr package
    

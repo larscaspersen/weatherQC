@@ -42,6 +42,12 @@ patch_mice <- function(weather, weather_info, rain_data = T,
                        prcp_threshold = 1, max.iter = 5, n.impute = 5, 
                        parallel = F, target = NA){
   
+  if(any(c("mice", "micemd") %in% rownames(installed.packages()) == F)){
+    which_missing <- c("mice", "micemd") %in% rownames(installed.packages()) == F
+    pkg_missing <- c("mice", "micemd")[which_missing]
+    stop(paste0('package: ', pkg_missing, ' is not installed. Please isntall'))
+  }
+  
   
   #columns to be ignored in the following
   ignore <- c('Year', 'Month', 'Day', 'Date')
