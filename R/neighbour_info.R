@@ -3,7 +3,7 @@
 #' data.frames containing a unique identifier for the weather station, coordinates
 #' in decimal format and name of the weather startion.
 #'
-#' @format data.frame with 12 row and 6 variables:
+#' @format data.frame with 12 row and 4 variables:
 #' \describe{
 #'   \item{id}{unique identifies of weather station}
 #'   \item{Name}{name of weather station}
