@@ -31,5 +31,11 @@ License: GPL-3
 LazyData: true
 RoxygenNote: 7.2.0
 Suggests: 
+    ggrepel,
+    ggplot2,
+    gridExtra,
+    here,
+    knitr,
+    tidyverse,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
