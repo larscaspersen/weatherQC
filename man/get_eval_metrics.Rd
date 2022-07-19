@@ -55,6 +55,9 @@ they are equally weighted.
 \examples{
 #work on example
 }
+\references{
+\insertAllCited{}
+}
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}
 }

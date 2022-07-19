@@ -9,7 +9,7 @@ patch_flexible_several_stations(
   target,
   weather_info,
   method = "patch_mean",
-  additional_input = list(n_donors = 5),
+  additional_input = NULL,
   method_patches_everything = F
 )
 }

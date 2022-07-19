@@ -9,11 +9,12 @@ get_eval_one_station(
   weather_info,
   target,
   patch_methods,
-  p_missing,
-  additional_args,
+  p_missing = 0.3,
+  additional_args = NULL,
   method_patches_everything = F,
-  period = NA,
-  return_data = "only_new_imputed"
+  period = NULL,
+  return_data = "only_new_imputed",
+  mute = TRUE
 )
 }
 \arguments{
@@ -35,7 +36,9 @@ the evaluation period, relative to the evaluation period length. A value of 1
 would remove each observation in the evaluation period, a value of 0 would
 lead to no new gaps at all}
 
-\item{additional_args}{list with all the other arguments required by the
+\item{additional_args}{by default NULL, if additional arguments of the patching
+functions should be specified, then it needs to happen in form of a list
+with all the other arguments required by the
 patching function. elements of list need to have same name as arguments
 of the patching function}
 
@@ -45,15 +48,19 @@ patch_flexible_several_stations is also compatible with patching methods
 like patch_mice or patch_amelia, which return all patched weather stations
 at one function call}
 
-\item{period}{numerical vector of length two, row numbers of evaluation period, 
-if the user wants other evaluation period than the longest consecutive NA-free
-period per station in weather.}
+\item{period}{by default NULL, in that case the function searches for the longest
+continuous NQA-free period for each weather station. If user-specified
+period is wished for, it needs to be a numerical vector of length two, 
+row numbers of evaluation period}
 
 \item{return_data}{character, indicates what the function returns after successfull
 evaluation. Valid options are "only_new_imputed", which returns only the original and
 newly imputed observations per weather station, "evaluation_period" which returns
 the whole evaluation period including non-imputed observations and "everything"
 which returns a data frame with the same amount as \code{weather}}
+
+\item{mute}{boolean, by default set TRUE. If set FALSE, then function 
+keeps user updated on which patching function it is currently working on}
 }
 \value{
 see the description in \code{return_data}
@@ -69,10 +76,11 @@ in \code{weather}. Targeted weather stations are also used as auxiliary weather 
 along with non-targeted weather stations in \code{weather}.
 }
 \examples{
-get_eval_one_station(weather = weather_Tmin, weather_info = rbind(neighbour_info, target_info),
-                   target = 'cimis_15', patch_methods = c('patch_normal_ratio'),
-                   p_missing = 0.3, additional_args = list(NA), 
-                   method_patches_everything = F)
+get_eval_one_station(weather = weather_Tmin,
+weather_info = rbind(target_info, neighbour_info),
+target = 'cimis_2', 
+patch_methods = c('patch_idw','patch_normal_ratio'), 
+method_patches_everything = c(T,F))
 }
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}
