@@ -79,7 +79,7 @@ get_eval_metrics <- function(eval_df, eval_fun = c('get_MAE', 'RPIQ', 'RMSEP', '
   
   #join them row-wise to data frame
   id.vars <- lapply(id.vars, function(x) as.data.frame(t(x)))
-  id.vars <- bind_rows(id.vars)
+  id.vars <- dplyr::bind_rows(id.vars)
   colnames(id.vars) <- c('station', 'patch_method')
   
   #only take columns of station and patch_method
