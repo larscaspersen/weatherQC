@@ -36,7 +36,7 @@
 #' weather_info = rbind(target_info, neighbour_info),
 #' target = 'cimis_2', 
 #' patch_methods = c('patch_idw','patch_normal_ratio'), 
-#' method_patches_everything = c(T,F))
+#' method_patches_everything = c(TRUE, FALSE))
 #' 
 #' #bring result to long format
 #' patched_long <- reshape2::melt(patched, measure.vars = c('patch_idw','patch_normal_ratio'),

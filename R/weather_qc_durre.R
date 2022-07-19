@@ -260,7 +260,7 @@ weather_qc_durre <- function(weather_list,
   if(any(is.null(c(aux_info, aux_list)) == FALSE)){
     
     #if any of the two are not a list
-    if(any(is.list(aux_list, aux_info) == FALSE)){
+    if(any(is.list(c(aux_list, aux_info)) == FALSE)){
       stop("aux_list and aux_info need to be supplied together. 
            aux_info needs to be a tibble or data.frame and aux_list needs to be a list")
     }

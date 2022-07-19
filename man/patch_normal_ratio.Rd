@@ -21,9 +21,6 @@ decimal format}
 
 \item{mute}{boolean, if set TRUE then function can indicate in which cases the patching failed
 due to missing neighbouring observations}
-
-\item{max_dist}{maximum distance in km of a auxiliary weather station, to be considered
-in the gap imputation}
 }
 \value{
 vector, containing the imputed weather observations of target station.It is

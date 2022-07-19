@@ -6,10 +6,10 @@
 \usage{
 get_eval_metrics(
   eval_df,
-  eval_fun = c("get_MAE", "RPIQ", "RMSEP", "cor"),
+  eval_fun = c("calc_MAE", "chillR::RPIQ", "chillR::RMSEP", "stats::cor"),
   calc_summary_score = T,
   bigger_better = c(F, T, F, T),
-  weights = NA
+  weights = NULL
 )
 }
 \arguments{
@@ -53,7 +53,20 @@ to assign weights to the individual metrics. If no weights are specified, then
 they are equally weighted.
 }
 \examples{
-#work on example
+#patch weather stations
+patched <- get_eval_one_station(weather = weather_Tmin,
+weather_info = rbind(target_info, neighbour_info),
+target = 'cimis_2', 
+patch_methods = c('patch_idw','patch_normal_ratio'), 
+method_patches_everything = c(T,F))
+
+#bring result to long format
+patched_long <- reshape2::melt(patched, measure.vars = c('patch_idw','patch_normal_ratio'),
+               variable.name = 'patch_method')
+
+#calculate evaluation scores
+get_eval_metrics(eval_df = patched_long)
+
 }
 \references{
 \insertAllCited{}

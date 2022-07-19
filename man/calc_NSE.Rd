@@ -12,7 +12,7 @@ calc_NSE(predicted, observed)
 \item{observed}{numeric vector containing observed values, should be of same
 length as \code{predicted}}
 
-\item{Boolean}{parameter indicating whether NA values should be removed before the analysis}
+\item{na.rm}{boolean parameter indicating whether NA values should be removed before the analysis}
 }
 \value{
 numeric value of the NSE

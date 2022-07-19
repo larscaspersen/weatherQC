@@ -16,6 +16,14 @@
 #' @export
 get_weather_records <- function(region = "world"){
   
+  #check if certain packages are installed, otherwise stop and ask users to install the 
+  #missing ones
+  if(any(c("data.table", "readr", "rlang", "rvest") %in% rownames(installed.packages()) == F)){
+    which_missing <- c("data.table", "readr", "rlang", "rvest") %in% rownames(installed.packages()) == F
+    pkg_missing <- c("data.table", "readr", "rlang", "rvest")[which_missing]
+    stop(paste0('package: ', pkg_missing, ' is not installed. Please isntall'))
+  }
+  
   #hide from cmd run
   . <- NULL
   

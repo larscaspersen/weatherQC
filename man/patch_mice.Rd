@@ -36,13 +36,13 @@ events. Values below are treated as zeros}
 \item{max.iter}{maximum amount of iterations of the multiple imputation algorithm,
 default is 5}
 
+\item{n.impute}{number of multiple imputations, default is 5}
+
 \item{parallel}{logical, if true the paralleled version of \code{\link[mice]{mice}} 
-called \code{\link[micemd]{mice}} will be used instead}
+called \code{\link[micemd]{mice.par}} will be used instead}
 
 \item{target}{redundant argument, just needed to be compatible with downstream 
 functions}
-
-\item{n_impute}{number of multiple imputations, default is 5}
 }
 \value{
 same data.frame as weather but with all NAs imputed for all columns. There

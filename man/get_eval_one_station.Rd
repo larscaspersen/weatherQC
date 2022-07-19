@@ -11,7 +11,7 @@ get_eval_one_station(
   patch_methods,
   p_missing = 0.3,
   additional_args = NULL,
-  method_patches_everything = F,
+  method_patches_everything = FALSE,
   period = NULL,
   return_data = "only_new_imputed",
   mute = TRUE
@@ -80,7 +80,7 @@ get_eval_one_station(weather = weather_Tmin,
 weather_info = rbind(target_info, neighbour_info),
 target = 'cimis_2', 
 patch_methods = c('patch_idw','patch_normal_ratio'), 
-method_patches_everything = c(T,F))
+method_patches_everything = c(TRUE, FALSE))
 }
 \author{
 Lars Caspersen, \email{lars.caspersen@uni-bonn.de}
