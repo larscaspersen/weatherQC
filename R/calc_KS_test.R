@@ -15,6 +15,6 @@
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 calc_KS_test <- function(predicted, observed){
-  res <- ks.test(observed, predicted)
+  res <- stats::ks.test(observed, predicted)
   return(res$p.value)
 }
