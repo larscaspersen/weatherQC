@@ -23,9 +23,9 @@
 #' events. Values below are treated as zeros
 #' @param max.iter maximum amount of iterations of the multiple imputation algorithm,
 #' default is 5
-#' @param n_impute number of multiple imputations, default is 5
+#' @param n.impute number of multiple imputations, default is 5
 #' @param parallel logical, if true the paralleled version of \code{\link[mice]{mice}} 
-#' called \code{\link[micemd]{mice}} will be used instead
+#' called \code{\link[micemd]{mice.par}} will be used instead
 #' @param target redundant argument, just needed to be compatible with downstream 
 #' functions
 #' @return same data.frame as weather but with all NAs imputed for all columns. There
@@ -46,7 +46,7 @@ patch_mice <- function(weather, weather_info, rain_data = T,
   #columns to be ignored in the following
   ignore <- c('Year', 'Month', 'Day', 'Date')
   
-  weather <- dplyr::select(weather, -all_of(ignore))
+  weather <- dplyr::select(weather, -dplyr::all_of(ignore))
   
   
   if(rain_data){

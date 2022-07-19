@@ -12,13 +12,13 @@
 #' to be the same as the column names in weather), Longitude and Latitude in
 #' decimal format
 #' @param rain_data logical, in case precipitation data should be patched the 
-#' mice package allows to at first decide if precipitation occures and in a
+#' mice package allows to at first decide if precipitation occurs and in a
 #' second step to patch precipitation amount only in cases where the patching
 #' algorithm expects precipitation to happen.
 #' @param prcp_threshold numerical, setting the threshold until which
 #' precipitation amount the algorithm treats observations are real precipitation
 #' events. Values below are treated as zeros
-#' @param n_impute number of multiple imputations, default is 5
+#' @param n.impute number of multiple imputations, default is 5
 #' @param parallel logical, if true the paralleled version Amelia::amelia is used
 #' @param target redundant argument, just needed to be compatible with downstream 
 #' functions

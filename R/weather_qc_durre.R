@@ -260,7 +260,7 @@ weather_qc_durre <- function(weather_list,
   if(any(is.null(c(aux_info, aux_list)) == FALSE)){
     
     #if any of the two are not a list
-    if(any(is.lis(aux_list, aux_info) == FALSE)){
+    if(any(is.list(aux_list, aux_info) == FALSE)){
       stop("aux_list and aux_info need to be supplied together. 
            aux_info needs to be a tibble or data.frame and aux_list needs to be a list")
     }
@@ -282,7 +282,7 @@ weather_qc_durre <- function(weather_list,
     }
     
     #aux_list needs to be named after aux_info
-    if(any(names(aux_list) %oin% aux_info$id == F)){
+    if(any(names(aux_list) %in% aux_info$id == F)){
       stop('aux_list needs to be a named list, all names in aux_list need
            to be found in aux_info$id')
     }

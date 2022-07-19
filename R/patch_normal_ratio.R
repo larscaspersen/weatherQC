@@ -13,8 +13,6 @@
 #' to be the same as the column names in weather), Longitude and Latitude in
 #' decimal format
 #' @param n_donors amount of auxiliary observations used to fill the gap, by default 5
-#' @param max_dist maximum distance in km of a auxiliary weather station, to be considered
-#' in the gap imputation
 #' @param mute boolean, if set TRUE then function can indicate in which cases the patching failed
 #' due to missing neighbouring observations
 #' @return vector, containing the imputed weather observations of target station.It is
@@ -42,7 +40,7 @@ weather_info <- weather_info[order(weather_info$distance),]
 #get correlation coefficient 
 corr_weather <- weather %>%
   dplyr::select(-c('Date', 'Year', 'Month', 'Day')) %>%
-  cor(use = "pairwise.complete.obs")
+  stats::cor(use = "pairwise.complete.obs")
 
 #get cases in which we have observation
 x <- weather %>%
@@ -70,7 +68,7 @@ nr_of_closest_stations <- function(weather, stations_observed, weather_info,
                                    target,
                                    corr_weather = NA, 
                                    n_pairwise_obs = NA,
-                                   n_donors = 5, weight_type = 'ordinary'){
+                                   n_donors = 5){
   
   #extract the information of target row and the closest stations by 
   #increasing distance with readings for the target row
@@ -120,7 +118,7 @@ nr_of_closest_stations <- function(weather, stations_observed, weather_info,
 impute <- lapply(stat_obs, FUN = function(x){
   nr_of_closest_stations(weather = weather, stations_observed = x,
                          corr_weather = corr_weather, n_pairwise_obs = n_pairwise_obs,
-                         weather_info = weather_info, n_donors = n_donors, weight_type = weight_type,
+                         weather_info = weather_info, n_donors = n_donors, 
                          target = target)
 })
 

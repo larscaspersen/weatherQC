@@ -11,7 +11,7 @@
 #' @param predicted numeric vector containing predicted values
 #' @param observed numeric vector containing observed values, should be of same
 #' length as \code{predicted}
-#' @param Boolean parameter indicating whether NA values should be removed before the analysis
+#' @param na.rm boolean parameter indicating whether NA values should be removed before the analysis
 #' @return numeric value of mean absolute error
 #' @examples calc_MAE(predicted = 1:10, observed = 2:11)
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}

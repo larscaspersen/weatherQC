@@ -60,7 +60,7 @@ patch_climatol <- function(weather, weather_info, target = NA){
   }
   
   #drop year month day, date from weather
-  weather <- subset(weather, select = -c(Year, Month, Day, Date))
+  weather <- subset(weather, select = -c(.data$Year, .data$Month, .data$Day, .data$Date))
   
   #column names in weather need to be the same as in weather_info$id
   if(any(colnames(weather) %in% weather_info$id == F)){
@@ -83,7 +83,7 @@ patch_climatol <- function(weather, weather_info, target = NA){
   }
   
   #save object in workspace
-  write.table(weather_info, paste0('var_',min_year,'-', max_year,'.est'), row.names=FALSE, col.names=FALSE)
+  utils::write.table(weather_info, paste0('var_',min_year,'-', max_year,'.est'), row.names=FALSE, col.names=FALSE)
   
   #write table of observations
   write(as.matrix(weather), file = paste0('var_',min_year,'-',max_year,'.dat'))

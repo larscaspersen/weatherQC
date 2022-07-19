@@ -48,14 +48,14 @@
 #' weather_info = rbind(target_info, neighbour_info),
 #' target = 'cimis_2', 
 #' patch_methods = c('patch_idw','patch_normal_ratio'), 
-#' method_patches_everything = c(T,F))
+#' method_patches_everything = c(TRUE, FALSE))
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 get_eval_one_station <- function(weather, weather_info, target, 
                                  patch_methods, 
                                  p_missing = 0.3, 
                                  additional_args = NULL, 
-                                 method_patches_everything = F,
+                                 method_patches_everything = FALSE,
                                  period = NULL, 
                                  return_data = 'only_new_imputed',
                                  mute = TRUE){
@@ -73,7 +73,7 @@ get_eval_one_station <- function(weather, weather_info, target,
   weather <- data.frame(weather)
   
   #check if columns Longitude, Latitude and id are present in weather_info
-  if(any(c("id", "Longitude", "Latitude") %in% colnames(weather_info) == F)){
+  if(any(c("id", "Longitude", "Latitude") %in% colnames(weather_info) == FALSE)){
     stop("columns c('id', 'Longitude', 'Latitude') need to be present in weather_info.
          Maybe also check your spelling in the column names and if capitalized.")
   }
@@ -103,7 +103,7 @@ get_eval_one_station <- function(weather, weather_info, target,
         longest_coverage <- stats::na.contiguous(weather[,x])
         
         #get the row number of start and end of longest continous period
-        period <- tsp(longest_coverage)
+        period <- stats::tsp(longest_coverage)
         
         return(period)
       }
@@ -119,7 +119,7 @@ get_eval_one_station <- function(weather, weather_info, target,
         stop('If period is supplied in form of list, then it should have the same length as target')
         
         #check the first element of period, if stored as list, should be of length two and should be numeric
-      } else if(length(period[[1]]) != 2 | is.numeric(period[[1]]) == F){
+      } else if(length(period[[1]]) != 2 | is.numeric(period[[1]]) == FALSE){
         stop('Elements of period, when suppplied as a list, should be of length = 2 and should be numeric, in form of c(rownumber start, rownumber stop).')
         
         #case that everything is in right format
@@ -154,7 +154,7 @@ get_eval_one_station <- function(weather, weather_info, target,
   
   #period-list should be in the same order as target
   #--> add name to the period list as third element
-  period_list <-  mapply(function(x,y){c(x[1:2],y)}, period_list, target, SIMPLIFY = F)
+  period_list <-  mapply(function(x,y){c(x[1:2],y)}, period_list, target, SIMPLIFY = FALSE)
   
   # #prepare data, combine target with target name in a list
   # prep_data <- mapply(function(x,y){
@@ -230,12 +230,12 @@ get_eval_one_station <- function(weather, weather_info, target,
   
   #add non-target weather stations to weather-eval aswell
   weather_eval <- cbind(weather_eval,
-        weather[,colnames(weather) %in% c("Year", "Month", "Day", "Date", target) == F])
+        weather[,colnames(weather) %in% c("Year", "Month", "Day", "Date", target) == FALSE])
   
   
   
   #dataframe indicating if new hole created per weather station targeted
-  holes_df <- dplyr::select(mod_weather, -all_of(target))
+  holes_df <- dplyr::select(mod_weather, -dplyr::all_of(target))
   
   #add date column
   holes_df <- cbind(Year = weather$Year, Month = weather$Month, Day = weather$Day,
@@ -252,11 +252,11 @@ get_eval_one_station <- function(weather, weather_info, target,
   if(is.null(additional_args)){
     prep_data <- mapply(function(x,y){
       list(method = x, additional_args = NULL, method_patches_everything = y)
-    }, patch_methods, method_patches_everything, SIMPLIFY = F)
+    }, patch_methods, method_patches_everything, SIMPLIFY = FALSE)
   } else{
     prep_data <- mapply(function(x,y,z){
       list(method = x, additional_args = y, method_patches_everything = z)
-    }, patch_methods, additional_args, method_patches_everything, SIMPLIFY = F)
+    }, patch_methods, additional_args, method_patches_everything, SIMPLIFY = FALSE)
   }
 
   
@@ -317,8 +317,8 @@ get_eval_one_station <- function(weather, weather_info, target,
   
   #add info on evaluation period
   period_list <- lapply(period_list, function(x){
-    period_vec <- rep(F,nrow(weather_eval))
-    period_vec[as.numeric(x[1]):as.numeric(x[2])] <- T
+    period_vec <- rep(FALSE, nrow(weather_eval))
+    period_vec[as.numeric(x[1]):as.numeric(x[2])] <- TRUE
     
     return(period_vec)
   })

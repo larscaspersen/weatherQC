@@ -62,7 +62,7 @@ patch_forest <- function(weather, target, weather_info, rain_data = F,
   } else if(donor_criterion == 'correlation'){
     
     #calculate correlations, take only the ones regarding the target station
-    weather.cor <- cor(weather, use = 'pairwise.complete.obs' )[,target]
+    weather.cor <- stats::cor(weather, use = 'pairwise.complete.obs' )[,target]
     
     #create data frame of correlations, use names as id
     weather.cor <- data.frame(cor = weather.cor, id = names(weather.cor))
@@ -84,7 +84,7 @@ patch_forest <- function(weather, target, weather_info, rain_data = F,
   }
   
   #take data of target and donors
-  weather <- dplyr::select(weather, all_of(c(target, donors)))
+  weather <- dplyr::select(weather, dplyr::all_of(c(target, donors)))
   
   
   #impute variable of interest
