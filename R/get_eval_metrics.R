@@ -31,6 +31,8 @@
 #' @return data.frame with station_name, name of evaluation metric and value for
 #' evaluation metric
 #' @examples #work on example
+#' @references
+#' \insertAllCited{}
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 get_eval_metrics <- function(eval_df, eval_fun = c('get_MAE', 'RPIQ', 'RMSEP', 'cor'), 

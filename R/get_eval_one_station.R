@@ -21,7 +21,9 @@
 #' the evaluation period, relative to the evaluation period length. A value of 1 
 #' would remove each observation in the evaluation period, a value of 0 would
 #' lead to no new gaps at all
-#' @param additional_args list with all the other arguments required by the
+#' @param additional_args by default NULL, if additional arguments of the patching
+#' functions should be specified, then it needs to happen in form of a list
+#' with all the other arguments required by the
 #' patching function. elements of list need to have same name as arguments
 #' of the patching function
 #' @param method_patches_everything flag, indicates if the method returns all
@@ -29,9 +31,12 @@
 #' patch_flexible_several_stations is also compatible with patching methods
 #' like patch_mice or patch_amelia, which return all patched weather stations
 #' at one function call
-#' @param period numerical vector of length two, row numbers of evaluation period, 
-#' if the user wants other evaluation period than the longest consecutive NA-free
-#' period per station in weather. 
+#' @param period by default NULL, in that case the function searches for the longest
+#' continuous NQA-free period for each weather station. If user-specified
+#' period is wished for, it needs to be a numerical vector of length two, 
+#' row numbers of evaluation period
+#' @param mute boolean, by default set TRUE. If set FALSE, then function 
+#' keeps user updated on which patching function it is currently working on
 #' @param return_data character, indicates what the function returns after successfull
 #' evaluation. Valid options are "only_new_imputed", which returns only the original and
 #' newly imputed observations per weather station, "evaluation_period" which returns
@@ -39,27 +44,32 @@
 #' which returns a data frame with the same amount as \code{weather}
 #' @return see the description in \code{return_data}
 #' @examples 
-#' get_eval_one_station(weather = weather_Tmin, weather_info = rbind(neighbour_info, target_info),
-#'                    target = 'cimis_15', patch_methods = c('patch_normal_ratio'),
-#'                    p_missing = 0.3, additional_args = list(NA), 
-#'                    method_patches_everything = F)
+#' get_eval_one_station(weather = weather_Tmin,
+#' weather_info = rbind(target_info, neighbour_info),
+#' target = 'cimis_2', 
+#' patch_methods = c('patch_idw','patch_normal_ratio'), 
+#' method_patches_everything = c(T,F))
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 get_eval_one_station <- function(weather, weather_info, target, 
-                                 patch_methods, p_missing, 
-                                 additional_args, 
+                                 patch_methods, 
+                                 p_missing = 0.3, 
+                                 additional_args = NULL, 
                                  method_patches_everything = F,
-                                 period = NA, return_data = 'only_new_imputed'){
+                                 period = NULL, 
+                                 return_data = 'only_new_imputed',
+                                 mute = TRUE){
   
   #method patches everything needs to be of the same length as method
   
   
   #check if weather data contains columns of Date, Year, Month, Day
-  if (!("Year" %in% colnames(weather) & "Month" %in% 
-        colnames(weather) & "Day" %in% colnames(weather) & "Date" %in% colnames(weather))) 
+  if(!("Year" %in% colnames(weather) & "Month" %in% 
+        colnames(weather) & "Day" %in% colnames(weather) & "Date" %in% colnames(weather))){
     stop("Required input column 'Year', 'Month', 'Day' and/or 'Date' is missing.")
+    }
   
-  #make sure that weather is a datframe
+  #make sure that weather is a data.frame
   weather <- data.frame(weather)
   
   #check if columns Longitude, Latitude and id are present in weather_info
@@ -73,39 +83,34 @@ get_eval_one_station <- function(weather, weather_info, target,
   #check period data
   ######
   
+
   #in case no period provided, in which holes should be punched
-  if(length(period) == 1){
-    if(is.na(period)){
+
+  if(is.null(period)){
+    
+    #apply the search of NA free period to all target stations
+    #as a result have a list of the periods, in the order of the stations
+    period_list <- lapply(target, function(x){
       
-      #apply the search of NA free period to all target stations
-      #as a result have a list of the periods, in the order of the stations
-      period_list <- lapply(target, function(x){
+      #check if weather station has missing data
+      if(sum(is.na(weather[x])) == 0){
         
-        #check if weather station has missing data
-        if(sum(is.na(weather[x])) == 0){
-          
-          #in that case the period covers the whole dataframe
-          return(c(1, nrow(weather)))
-        } else {
-          
-          #look for the longest period without na
-          longest_coverage <- stats::na.contiguous(weather[,x])
-          
-          #get the row number of start and end of longest continous period
-          period <- tsp(longest_coverage)
-          
-          return(period)
-        }
-      })
-      
-      
-      
-    } else if(is.list(period)){
-      #case that there is a listof length = 1 and 
-      period_list <- period[[1]]
-    } else{
-      error('Period in wrong format')
-    }
+        #in that case the period covers the whole dataframe
+        return(c(1, nrow(weather)))
+      } else {
+        
+        #look for the longest period without na
+        longest_coverage <- stats::na.contiguous(weather[,x])
+        
+        #get the row number of start and end of longest continous period
+        period <- tsp(longest_coverage)
+        
+        return(period)
+      }
+    })
+    
+    
+    
   } else{
     #check if provided period is of right format:
     #can be supplied as list, but then it should have the same amount of elements as in target
@@ -243,18 +248,26 @@ get_eval_one_station <- function(weather, weather_info, target,
   #run patching methods
   #####
   
+  #check if additional args is null
+  if(is.null(additional_args)){
+    prep_data <- mapply(function(x,y){
+      list(method = x, additional_args = NULL, method_patches_everything = y)
+    }, patch_methods, method_patches_everything, SIMPLIFY = F)
+  } else{
+    prep_data <- mapply(function(x,y,z){
+      list(method = x, additional_args = y, method_patches_everything = z)
+    }, patch_methods, additional_args, method_patches_everything, SIMPLIFY = F)
+  }
 
-  #bind everything together in one list, per elemt have the items of additional arguments, method_patches_everything and method in one item
-  prep_data <- mapply(function(x,y,z){
-    list(method = x, additional_args = y, method_patches_everything = z)
-  }, patch_methods, additional_args, method_patches_everything, SIMPLIFY = F)
-  
   
   #run patching function on evaluation data
   patched <- lapply(prep_data, function(x){
     
     #give info which method is now used
-    print(paste0('Start patching method: ', x[['method']]))
+    if(mute == FALSE){
+      cat(paste0('Start patching method: ', x[['method']]))
+    }
+    
     
     #carryout patch function
     patched <- invisible(patch_flexible_several_stations(weather = weather_eval, 

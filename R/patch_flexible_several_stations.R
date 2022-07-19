@@ -35,7 +35,8 @@
 #' @author Lars Caspersen, \email{lars.caspersen@@uni-bonn.de}
 #' @export
 patch_flexible_several_stations <- function(weather, target, weather_info, 
-                                            method = 'patch_mean', additional_input = list(n_donors = 5),
+                                            method = 'patch_mean', 
+                                            additional_input = NULL,
                                             method_patches_everything = F){
   
   
@@ -51,17 +52,10 @@ patch_flexible_several_stations <- function(weather, target, weather_info,
     
     #prepare additional argents that need to be added to the function call
     #only add additional arguments if there are any
-    if(length(additional_input) == 1){
-      
-      #check if additional input is na, in that case do not add it to inputs
-      if(!is.na(additional_input)){
-        inputs <- c(inputs, additional_input)
-      }
-    } else{
-      #case that there are more than one arguments in additional inputs, then add it no matter what
+    if(is.null(additional_input) == FALSE){
       inputs <- c(inputs, additional_input)
     }
-    
+
     
     #call function with arguments
     weather_patched <- do.call(method, inputs)
@@ -89,18 +83,10 @@ patch_flexible_several_stations <- function(weather, target, weather_info,
       
       #prepare additional argents that need to be added to the function call
       #only add additional arguments if there are any
-      if(length(additional_input) == 1){
-        
-        #check if additional input is na, in that case do not add it to inputs
-        if(!is.na(additional_input)){
-          inputs <- c(inputs, additional_input)
-        }
-      } else{
-        #case that there are more than one arguments in additional inputs, then add it no matter what
+      if(is.null(additional_input) == FALSE){
         inputs <- c(inputs, additional_input)
       }
-      
-    
+
       #call function on the inputs, IMPORTANT method must be the same name as the function in the environment
       return(do.call(method, inputs))
     })
