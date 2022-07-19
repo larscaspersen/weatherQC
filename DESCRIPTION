@@ -9,10 +9,17 @@ Description: This package contains two daily weather quality control
 Depends: 
     R (>= 2.10)
 Imports: 
+    Amelia,
+    climatol,
     data.table,
     dplyr,
+    elebatr,
     lubridate,
     magrittr,
+    mice,
+    micemd,
+    missForest,
+    pcaMethods,
     purrr,
     Rdpack,
     readr,
