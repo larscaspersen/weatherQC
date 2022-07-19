@@ -17,6 +17,8 @@ Imports:
     Rdpack,
     readr,
     reshape2,
+    rlang,
+    rvest,
     sp,
     stringr,
     tibble,
@@ -29,15 +31,5 @@ License: GPL-3
 LazyData: true
 RoxygenNote: 7.2.0
 Suggests: 
-    Amelia,
-    climatol,
-    elevatr,
-    knitr,
-    mice,
-    micemd,
-    missForest,
-    pcaMethods,
-    rlang,
-    rvest,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
