@@ -223,7 +223,7 @@ weather_qc_durre <- function(weather_list,
   
   #check if needed columns are present
   column_check <- purrr::map_lgl(weather_list, function(x){
-    !all(c("Year", "Month", "Day", "Tmin", "Tmax", "Tmean", "Precip") %in% colnames(x))
+    !all(c("Year", "Month", "Day", "Tmin", "Tmax", "Precip") %in% colnames(x))
   })
   if(any(column_check)){
     stop("at least one weather station in weather_list does not contain the required columns c('Year', 'Month', 'Day', 'Tmin', 'Tmax', 'Tmean', 'Precip')")
@@ -237,30 +237,88 @@ weather_qc_durre <- function(weather_list,
       x$Date <- as.Date(paste(x$Year, x$Month, x$Day, sep = '-'), format = "%Y-%m-%d")
     }
     
-    tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax, 'Tmean_org' = x$Tmean,
+    x <- tibble::tibble(x, 'Tmin_org' = x$Tmin, 'Tmax_org' = x$Tmax,
                    'Precip_org' = x$Precip,'flag_Tmin' = NA, 
-                   'flag_Tmax' = NA, 'flag_Tmean' = NA,'flag_Precip' = NA) %>%
+                   'flag_Tmax' = NA,'flag_Precip' = NA) %>%
       dplyr::mutate(doy = lubridate::yday(.data$Date)) %>%
       dplyr::relocate(.data$Date, .data$doy)#make sure date and doy are in beginning of columns
     
+    #only add columns if Tmean is present in data.frmae
+    if("Tmean" %in% colnames(x)){
+      x$Tmean_org <- x$Tmean
+      x$flag_Tmean <- NA
+    }
+    return(x)
   }) 
+  
+  
+  
+  
   
   #if the user does not provide any information on auxilliary weather stations, 
   #then spatial consistency tests are skipped
+  if(any(is.null(c(aux_info, aux_list)) == FALSE)){
+    
+    #if any of the two are not a list
+    if(any(is.list(c(aux_list, aux_info)) == FALSE)){
+      stop("aux_list and aux_info need to be supplied together. 
+           aux_info needs to be a tibble or data.frame and aux_list needs to be a list")
+    }
+    
+
+    if(any(c('id', 'Latitude', 'Longitude') %in% colnames(aux_info) == F)){
+      stop('aux_info needs to contain the columns ("id", "Latitude", "Longitude")')
+    }
+    if(is.character(aux_info$id) == F){
+      stop('column "id" in aux_info needs to be a character')
+    }
+    if(any(is.numeric(c(aux_info$Longitude, aux_info$Latitude)) == F)){
+      stop('columns "Latitude" and "Longitude" in aux_info need to be numeric')
+    }
+    
+    #test if aux_list elements are lists
+    if(any(purrr::map_lgl(aux_list, is.list) == F)){
+      stop('elements of aux_list need to be data.frames or tibbles')
+    }
+    
+    #aux_list needs to be named after aux_info
+    if(any(names(aux_list) %in% aux_info$id == F)){
+      stop('aux_list needs to be a named list, all names in aux_list need
+           to be found in aux_info$id')
+    }
+    
+    if(any(purrr::map(aux_list, function(x){
+      any(c('Year', 'Month', 'Day', 'Tmax', 'Tmin', 'Precip') %in% colnames(x) == FALSE)
+    }))){
+      stop("tibbles or data.frames in elements of aux_list need to contain the 
+           columns c('Year', 'Month', 'Day', 'Tmax', 'Tmin', 'Precip')")
+    }
+    
+    if(any(purrr::map(aux_list, function(x){
+      any(is.numeric(c(x$Year, x$Month, x$Day, x$Tmin, x$Tmax, x$Precip)) == F)
+    }))){
+      stop("columns c('Year', 'Month', 'Day', 'Tmax', 'Tmin', 'Precip')
+           of elements in aux_list need to be numeric")
+    }
+    
+    
+  }
   
-  if(is.null(aux_info) == T | is.null(aux_list) == T){
-    skip_spatial_test <- TRUE
-    warning("Because arguments aux_info and aux_list were not provided, the spatial
-            consistency tests are skipped")
-  } else{
-    #if at least one of the two are present, make sure that all of them are and
-    #that they are of the correct type
-    if(is.list(aux_info) == FALSE | is.list(aux_list) == FALSE  | is.list(weather_info) == FALSE){
-      stop('if any of the arguments "aux_list", "aux_info", "target_info", are
-            supplied, then all of the three need to be supplied. Furthermore they need
-            to be of type "list"')
+  if(is.null(weather_info) == FALSE){
+    if(is.list(weather_info) == FALSE){
+      stop('weather_info needs to be a data.frame or tibble')
+    }
+    if(any(c('id', 'Latitude', 'Longitude') %in% colnames(weather_info) == F)){
+      stop('weather_info needs to contain the columns ("id", "Latitude", "Longitude")')
+    }
+    if(is.character(weather_info$id) == F){
+      stop('column "id" in weather_info needs to be a character')
+    }
+    if(any(is.numeric(c(weather_info$Longitude, weather_info$Latitude)) == F)){
+      stop('columns "Latitude" and "Longitude" in weather_info need to be numeric')
     }
   }
+  
   
   #make sure other arguments are of the right type
   
@@ -713,11 +771,25 @@ weather_qc_durre <- function(weather_list,
       cat('', '\n')
     }
     
+    #in case no additional neighbourings stations are supplied
+    if(is.null(aux_list) == T){
+      aux_list <- list()
+    }
+    
+    #add weather_info to aux_info
+    aux_info <- rbind(aux_info, weather_info)
+    
     #make sure weather_info is of same order as weather_list
     weather_info <- weather_info[match(weather_info$id, names(weather_list)), ]
     
     #add cleaned weather_list to aux_list and make sure there are no duplicates
     aux_list[weather_info$id] <- weather_list
+    
+    if(length(unique(names(aux_list))) != length(names(aux_list))){
+      stop("either there are duplictaed names in aux_list or there are weather stations
+           both in aux_list and weather_list. weather_stations cannot be in both. 
+           observations in weather_list are automatically added to aux_list for spatial tests")
+    }
     
     #make sure that each element of aux_list is a tibble and contains date
     aux_list <- purrr::map(aux_list, function(x){
@@ -727,7 +799,14 @@ weather_qc_durre <- function(weather_list,
                          format = "%Y-%m-%d")
       }
       
+      if("doy" %in% colnames(x) == FALSE){
+        x$doy <- lubridate::yday(x$Date)
+      }
+      
       tibble::tibble(x)})
+    
+    
+    
     
     if(mute == FALSE){
       cat('Spatial Regression Test', '\n')

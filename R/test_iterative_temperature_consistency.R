@@ -39,6 +39,11 @@
 #' @export
 test_iterative_temperature_consistency <- function(weather){
   
+  #if weather does not contain Tmean, then add empty Tmean to it
+  if('Tmean' %in% colnames(weather) == FALSE){
+    weather$Tmean <- (weather$Tmin + weather$Tmax) / 2
+  }
+  
   #this objects determines how long the while loop goes, start value is arbetrary and just chosen, so that the while loop runs at least one time
   max_violations <- 2
   

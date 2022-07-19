@@ -5,7 +5,7 @@
 \alias{neighbour_info}
 \title{Metadata of neighbouring weather stations}
 \format{
-data.frame with 12 row and 6 variables:
+data.frame with 12 row and 4 variables:
 \describe{
   \item{id}{unique identifies of weather station}
   \item{Name}{name of weather station}

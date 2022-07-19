@@ -16,6 +16,7 @@
 #' @export
 get_weather_records <- function(region = "world"){
   
+
   #hide from cmd run
   . <- NULL
   
