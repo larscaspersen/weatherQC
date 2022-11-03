@@ -209,6 +209,11 @@ weather_qc_durre <- function(weather_list,
                              max_diff_temp_corroboration = 10,
                              min_obs_megaconsistency = 140){
   
+  #---------------------------#
+  # Tests 
+  #---------------------------#
+  
+  
   #check that weather_list is a list which contains lists
   if(is.list(weather_list)){
     list_test <- purrr::map_lgl(weather_list, is.list)
@@ -304,6 +309,7 @@ weather_qc_durre <- function(weather_list,
     
   }
   
+  #check for names of weather info
   if(is.null(weather_info) == FALSE){
     if(is.list(weather_info) == FALSE){
       stop('weather_info needs to be a data.frame or tibble')
@@ -397,9 +403,10 @@ weather_qc_durre <- function(weather_list,
   
   
   
-  ####
+  #---------------------#
   #basic integrity check
-  ####
+  #---------------------#
+  
   if(mute == FALSE){
     cat(paste0(rep('-', 10), recycle0 = FALSE), '\n')
     cat('Basic integrity checks', '\n')
@@ -409,6 +416,7 @@ weather_qc_durre <- function(weather_list,
   if(mute == FALSE){
     cat('Naught check', '\n')
   }
+  
   #1: naught check
   weather_list <- purrr::map(weather_list, function(x){
     #Tmin
@@ -551,11 +559,20 @@ weather_qc_durre <- function(weather_list,
   }
   
   weather_list <- purrr::map2(weather_list, prec_percentile_list, function(x,y){
-    clear_flagged_data(weather = x, variable = 'Precip', 
-                       test_result = check_frequent_value(weather = x, 
-                                                          percentile_df = y,
-                                                          min_non_zero_days = min_non_zero_days),
-                       test_name = 'frequent_ident_value')
+    
+    #check if the percentile object contains legit data
+    if(all(is.na(y[,2]))){
+      #in case all rows contain NA, skip the test
+      return(x)
+    } else {
+      clear_flagged_data(weather = x, variable = 'Precip', 
+                         test_result = check_frequent_value(weather = x, 
+                                                            percentile_df = y,
+                                                            min_non_zero_days = min_non_zero_days),
+                         test_name = 'frequent_ident_value')
+    }
+    
+
   })
   
   
