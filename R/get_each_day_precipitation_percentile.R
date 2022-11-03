@@ -38,16 +38,29 @@ get_each_day_precipitation_percentile <- function(weather, probs = c(.3, .5, .7,
     weather$doy <- lubridate::yday(weather$Date)
   }
   
+  #names for the columns
   names <- c('doy', paste0(probs * 100, '%'))
   
+  #iterate over all doys, calculate the requested quantiles
   quantile_list <- purrr::map(unique(weather$doy), ~ get_clim_percentiles_prec(weather = weather, 
                                                        doy = .x,
                                                        probs = probs, 
                                                        min_non_zero_days = min_non_zero_days))
-  quantile_df <- do.call(rbind, quantile_list)
   
+  #in case the demand of the data coverage was not fulfilled, then NA was returned
+  #--> create data.frame with same columns but only with NAs
+  if(all(purrr::map_lgl(quantile_list, function(x) length(x) == 1))){
+    warning('Calculating precipitation quantiles failed for at least one station')
+    quantile_df <- data.frame(matrix(ncol =length(probs), nrow = 366, data = NA))
+  } else {
+    #in case it went normal, bind by rows
+    quantile_df <- do.call(rbind, quantile_list)
+  }
+  
+  #add doy
   quantile_df <- data.frame(doy = unique(weather$doy), quantile_df)
   
+  #adjust column names
   colnames(quantile_df) <- names
 
   return(quantile_df)
